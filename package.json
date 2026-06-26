@@ -1,13 +1,13 @@
 {
   "name": "komnour",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "clean": "turbo run clean"
+    "dev": "pnpm --filter @komnour/server dev & pnpm --filter @komnour/editor dev",
+    "server": "pnpm --filter @komnour/server dev",
+    "editor": "pnpm --filter @komnour/editor dev"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
     "typescript": "^5.0.0"
   }
 }

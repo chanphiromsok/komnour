@@ -1,2 +1,7 @@
 packages:
-  - 'packages/*'
+  - packages/*
+
+allowBuilds:
+  esbuild: true
+  skia-canvas: true
+  '@parcel/watcher': true
