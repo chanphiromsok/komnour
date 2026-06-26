@@ -256,7 +256,17 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       cell.bg(s.backgroundColor || '#1a1a2e')
       wrapped.forEach((c: any) => { try { c.color(s.color || 'white').weight('bold') } catch {} })
     }
-    applyBox(cell, s)
+    // Simulate CSS border-collapse: a full 'border' shorthand on each cell stacks
+    // with neighbours to create doubled lines at shared edges. Convert it to
+    // right+bottom only — adjacent cells no longer double up. The <table> border
+    // (or the first row/column's explicit side borders) covers outer left+top edges.
+    const cellStyle = { ...s }
+    if (cellStyle.border) {
+      cellStyle.borderRight  = cellStyle.borderRight  ?? cellStyle.border
+      cellStyle.borderBottom = cellStyle.borderBottom ?? cellStyle.border
+      delete cellStyle.border
+    }
+    applyBox(cell, cellStyle)
     return cell as any
   }
 
