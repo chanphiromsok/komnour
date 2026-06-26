@@ -220,6 +220,14 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   // ── br — line break character inside Text ─────────────────────
   if (tag === 'br') return '\n' as any
 
+  // ── tab — fixed-width horizontal gap (<tab width="40">) ───────
+  // Works inline inside <p>/<h1>/etc. as a Span with letter-spacing.
+  // Falls back to 32px when no width attribute is given.
+  if (tag === 'tab') {
+    const w = px(el.getAttribute('width') ?? '') ?? 32
+    return Span(' ').letterSpacing(Math.max(0, w - 4)) as any
+  }
+
   // ── img — grey placeholder box ────────────────────────────────
   if (tag === 'img') {
     const imgW = px(el.getAttribute('width') ?? '') ?? 0
@@ -271,10 +279,11 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     const wrapped = dropWS(kids).map(c =>
       typeof c === 'string' ? applyTextStyle(Text(c), s) : c
     )
-    const cell = Column(...wrapped as any).flex(1).padding(7, 10)
+    const colSpan = parseInt(el.getAttribute('colspan') ?? '1', 10) || 1
+    const cell = Column(...wrapped as any).flex(colSpan).padding(7, 10)
     if (tag === 'th') {
-      cell.bg(s.backgroundColor || '#1a1a2e')
-      wrapped.forEach((c: any) => { try { c.color(s.color || 'white').weight('bold') } catch {} })
+      if (s.backgroundColor) cell.bg(s.backgroundColor)
+      wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
     }
     // Simulate CSS border-collapse: a full 'border' shorthand on each cell stacks
     // with neighbours to create doubled lines at shared edges. Convert to
@@ -284,17 +293,22 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     const cellStyle = { ...s }
     if (cellStyle.border) {
       const tr = el.parentNode as HTMLElement
-      const tbody = tr?.parentNode as HTMLElement
-      const table = tbody?.parentNode as HTMLElement
+      // Find the actual <table> element: td → tr → tbody/thead/tfoot → table
+      // or td → tr → table (when there's no wrapper section element).
+      const trParent = tr?.parentNode as HTMLElement
+      const trParentTag = trParent?.tagName?.toLowerCase() ?? ''
+      const tableEl = ['tbody', 'thead', 'tfoot'].includes(trParentTag)
+        ? (trParent.parentNode as HTMLElement)
+        : trParent
 
-      // First column: first element-node sibling in the <tr>
+      // First column: first td/th sibling in the same <tr>
       const trCells = tr?.childNodes.filter(
         n => ['td', 'th'].includes((n as HTMLElement).tagName?.toLowerCase() ?? '')
       ) ?? []
       const isFirstCol = trCells[0] === el
 
-      // First row: first <tr> in the table (accounting for thead/tbody wrappers)
-      const allRows = table?.querySelectorAll('tr') ?? []
+      // First row: first <tr> in the table (works for thead/tbody/bare structures)
+      const allRows = tableEl?.querySelectorAll('tr') ?? []
       const isFirstRow = allRows.length > 0 && allRows[0] === tr
 
       cellStyle.borderRight  = cellStyle.borderRight  ?? cellStyle.border
@@ -367,9 +381,13 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   }
 
   // ── container (div, section, header, footer…) ────────────────
-  const wrapped = dropWS(kids).map(c =>
-    typeof c === 'string' ? applyTextStyle(Text(c), s) : c
-  )
+  const wrapped = dropWS(kids).map(c => {
+    if (typeof c === 'string') return applyTextStyle(Text(c), s)
+    // Bare Span nodes (e.g. from <tab>) can't live directly in a Column/Row;
+    // wrap them in Text so the layout engine sees a proper block child.
+    if (c && (c as any).type === 'span') return Text(c as any)
+    return c
+  })
   const isRow = s.flexDirection === 'row'
   if (isRow) {
     // Text nodes don't participate in flex row layout correctly (yoga custom measure).
