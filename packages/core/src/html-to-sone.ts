@@ -207,9 +207,8 @@ function dropWS(kids: AnyNode[]): AnyNode[] {
   return kids.filter(c => typeof c !== 'string' || c.trim() !== '')
 }
 
-// Stack of { totalCols, w } pushed/popped as we enter/exit <table> elements.
-// Enables nested-table support and gives <td>/<th> the info to compute minWidth.
-const _tableCtxStack: Array<{ totalCols: number; w: number }> = []
+// Stack pushed/popped as we enter/exit <table> elements — nested-table safe.
+const _tableCtxStack: Array<{ totalCols: number; w: number; hasRowspan: boolean }> = []
 
 function countTableCols(tableEl: HTMLElement): number {
   let max = 0
@@ -217,9 +216,8 @@ function countTableCols(tableEl: HTMLElement): number {
     let n = 0
     for (const child of rowEl.childNodes) {
       const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
-      if (t === 'td' || t === 'th') {
+      if (t === 'td' || t === 'th')
         n += (parseInt((child as HTMLElement).getAttribute('colspan') ?? '1', 10) || 1)
-      }
     }
     if (n > max) max = n
   }
@@ -232,6 +230,13 @@ function countTableCols(tableEl: HTMLElement): number {
   }
   walk(tableEl)
   return max || 1
+}
+
+function tableHasRowspan(tableEl: HTMLElement): boolean {
+  for (const cell of tableEl.querySelectorAll('td, th')) {
+    if ((parseInt((cell as HTMLElement).getAttribute('rowspan') ?? '1', 10) || 1) > 1) return true
+  }
+  return false
 }
 
 function convertNode(node: HTMLElement | TextNode): AnyNode | null {
@@ -316,8 +321,12 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     // wrappers. sone's Table() requires flat TableRow children and uses the real
     // table layout algorithm — the only way rowspan and colspan actually work.
     const totalCols = countTableCols(el)
-    const tblWidth = px(s.width) ?? 794
-    _tableCtxStack.push({ totalCols, w: tblWidth })
+    const hasRowspan = tableHasRowspan(el)
+    // pxOrPct returns '100%' for percentages — treat as page width 794.
+    // px('100%') would return 100 (wrong), so use pxOrPct + number check.
+    const wRaw = pxOrPct(s.width)
+    const tblWidth = typeof wRaw === 'number' ? wRaw : 794
+    _tableCtxStack.push({ totalCols, w: tblWidth, hasRowspan })
     const rows: any[] = []
     const collectRows = (parent: HTMLElement) => {
       for (const child of parent.childNodes) {
@@ -384,13 +393,15 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     const cell = TableCell(...wrapped as any).padding(7, 10)
     if (colSpan > 1) cell.colspan(colSpan)
     if (rowSpan > 1) cell.rowspan(rowSpan)
-    // Default: set proportional minWidth so Phase 4 merged-cell width matches
-    // the sum of the spanned columns exactly (no flex growth discrepancy).
     if (!s.width && !s.flex && !s.flexGrow) {
       const ctx = _tableCtxStack[_tableCtxStack.length - 1]
-      if (ctx) {
-        cell.minWidth(colSpan / ctx.totalCols * ctx.w)
+      if (ctx?.hasRowspan) {
+        // Explicit width so sone's Phase 1 measures exactly this value regardless
+        // of content size. Phase 4 then uses sum-of-colWidths for the merged cell,
+        // which matches the visual column widths exactly (no grow discrepancy).
+        cell.width(colSpan / ctx.totalCols * ctx.w)
       } else {
+        // No rowspan → Phase 4 never runs. Use grow for content-based distribution.
         cell.grow(colSpan)
       }
     }
