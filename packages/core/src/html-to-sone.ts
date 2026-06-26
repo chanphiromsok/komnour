@@ -287,6 +287,31 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     collectRows(el)
     const tbl = SoneTable(...rows as any)
     applyBox(tbl, s)
+
+    // drawTableNode always strokes internal grid lines. Feed it the border style
+    // extracted from cells so the Table node is the sole grid renderer — cells must
+    // not draw their own borders or every internal edge appears twice.
+    let cellBorderW: number | undefined
+    let cellBorderC: string | undefined
+    for (const cellEl of el.querySelectorAll('td, th')) {
+      const cs = parseStyle((cellEl as HTMLElement).getAttribute('style') ?? '')
+      const b = cs.border || cs.borderRight || cs.borderBottom || cs.borderLeft || cs.borderTop
+      if (b) {
+        const parts = b.trim().split(/\s+/)
+        const w = px(parts[0])
+        if (w != null) { cellBorderW = w; cellBorderC = parseBorderColor(parts) ?? undefined; break }
+      }
+    }
+    if (cellBorderW != null && cellBorderW > 0) {
+      tbl.borderWidth(cellBorderW)
+      if (cellBorderC) tbl.borderColor(cellBorderC)
+    } else if ((tbl as any).props.borderWidth == null &&
+               (tbl as any).props.borderTopWidth == null &&
+               (tbl as any).props.borderColor == null) {
+      // No border on table element or cells — use transparent to suppress
+      // drawTableNode's default inherited-state grid lines.
+      tbl.borderColor('transparent')
+    }
     return tbl as any
   }
 
@@ -317,38 +342,13 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       if (s.backgroundColor) cell.bg(s.backgroundColor)
       wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
     }
-    // Simulate CSS border-collapse: a full 'border' shorthand on each cell stacks
-    // with neighbours to create doubled lines at shared edges. Convert to
-    // right+bottom only so inner shared edges are drawn once.
-    // Restore left for the first column and top for the first row so outer
-    // table edges remain visible.
+    // The Table node owns all border drawing via drawTableNode — strip border styles
+    // from cells to avoid duplicating the grid lines it draws.
     const cellStyle = { ...s }
-    if (cellStyle.border) {
-      const tr = el.parentNode as HTMLElement
-      // Find the actual <table> element: td → tr → tbody/thead/tfoot → table
-      // or td → tr → table (when there's no wrapper section element).
-      const trParent = tr?.parentNode as HTMLElement
-      const trParentTag = trParent?.tagName?.toLowerCase() ?? ''
-      const tableEl = ['tbody', 'thead', 'tfoot'].includes(trParentTag)
-        ? (trParent.parentNode as HTMLElement)
-        : trParent
-
-      // First column: first td/th sibling in the same <tr>
-      const trCells = tr?.childNodes.filter(
-        n => ['td', 'th'].includes((n as HTMLElement).tagName?.toLowerCase() ?? '')
-      ) ?? []
-      const isFirstCol = trCells[0] === el
-
-      // First row: first <tr> in the table (works for thead/tbody/bare structures)
-      const allRows = tableEl?.querySelectorAll('tr') ?? []
-      const isFirstRow = allRows.length > 0 && allRows[0] === tr
-
-      cellStyle.borderRight  = cellStyle.borderRight  ?? cellStyle.border
-      cellStyle.borderBottom = cellStyle.borderBottom ?? cellStyle.border
-      if (isFirstCol) cellStyle.borderLeft = cellStyle.borderLeft ?? cellStyle.border
-      if (isFirstRow) cellStyle.borderTop  = cellStyle.borderTop  ?? cellStyle.border
-      delete cellStyle.border
-    }
+    delete cellStyle.border
+    delete cellStyle.borderTop; delete cellStyle.borderRight
+    delete cellStyle.borderBottom; delete cellStyle.borderLeft
+    delete cellStyle.borderWidth; delete cellStyle.borderColor
     applyBox(cell, cellStyle)
     return cell as any
   }
