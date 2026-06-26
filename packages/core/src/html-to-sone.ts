@@ -23,6 +23,32 @@ function px(v?: string): number | undefined {
   return isNaN(n) ? undefined : n
 }
 
+// Parse CSS box shorthand (1–4 values) into [top, right, bottom, left]
+function parseShorthand4(v?: string): [number, number, number, number] | undefined {
+  if (!v) return undefined
+  const parts = v.trim().split(/\s+/).map(p => px(p))
+  if (parts.some(n => n == null)) return undefined
+  const [a, b, c, d] = parts as number[]
+  if (parts.length === 1) return [a, a, a, a]
+  if (parts.length === 2) return [a, b, a, b]
+  if (parts.length === 3) return [a, b, c, b]
+  return [a, b, c, d]
+}
+
+// Flatten nested inline AnyNodes to a plain string (preserves text, drops inner styling)
+function flattenText(nodes: AnyNode[]): string {
+  return nodes.map(n => {
+    if (typeof n === 'string') return n
+    if (n && typeof n === 'object') {
+      const spanText = (n as any).props?.text
+      if (typeof spanText === 'string') return spanText
+      const children: AnyNode[] = (n as any).children
+      if (Array.isArray(children)) return flattenText(children)
+    }
+    return ''
+  }).join('')
+}
+
 const BORDER_STYLE_KEYWORDS = new Set([
   'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge',
   'inset', 'outset', 'none', 'hidden',
@@ -35,40 +61,57 @@ function parseBorderColor(parts: string[]): string | null {
 }
 
 function applyBox(node: any, s: Record<string, string>) {
-  // Padding: compute combined call so individual sides don't override each other
-  const baseP = px(s.padding)
-  const pt = px(s.paddingTop), pr = px(s.paddingRight)
-  const pb = px(s.paddingBottom), pl = px(s.paddingLeft)
-  if (baseP != null || pt != null || pr != null || pb != null || pl != null) {
-    node.padding(pt ?? baseP ?? 0, pr ?? baseP ?? 0, pb ?? baseP ?? 0, pl ?? baseP ?? 0)
+  // Padding: multi-value shorthand + individual overrides, computed in one call
+  const baseP = parseShorthand4(s.padding)
+  const pt = px(s.paddingTop)   ?? baseP?.[0]
+  const pr = px(s.paddingRight)  ?? baseP?.[1]
+  const pb = px(s.paddingBottom) ?? baseP?.[2]
+  const pl = px(s.paddingLeft)   ?? baseP?.[3]
+  if (baseP || pt != null || pr != null || pb != null || pl != null) {
+    node.padding(pt ?? 0, pr ?? 0, pb ?? 0, pl ?? 0)
   }
 
-  // Margin: same combined approach, now including left/right
-  const baseM = px(s.margin)
-  const mt = px(s.marginTop), mr = px(s.marginRight)
-  const mb = px(s.marginBottom), ml = px(s.marginLeft)
-  if (baseM != null || mt != null || mr != null || mb != null || ml != null) {
-    node.margin(mt ?? baseM ?? 0, mr ?? baseM ?? 0, mb ?? baseM ?? 0, ml ?? baseM ?? 0)
+  // Margin: same, including left/right
+  const baseM = parseShorthand4(s.margin)
+  const mt = px(s.marginTop)   ?? baseM?.[0]
+  const mr = px(s.marginRight)  ?? baseM?.[1]
+  const mb = px(s.marginBottom) ?? baseM?.[2]
+  const ml = px(s.marginLeft)   ?? baseM?.[3]
+  if (baseM || mt != null || mr != null || mb != null || ml != null) {
+    node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
   }
 
-  const g  = px(s.gap);      if (g  != null) node.gap(g)
-  const w  = px(s.width);    if (w  != null) node.width(w)
-  const h  = px(s.height);   if (h  != null) node.height(h)
-  const mw = px(s.minWidth); if (mw != null) node.minWidth(mw)
-  const fl = px(s.flex);     if (fl != null) node.flex(fl)
+  const g   = px(s.gap);       if (g   != null) node.gap(g)
+  const w   = px(s.width);     if (w   != null) node.width(w)
+  const h   = px(s.height);    if (h   != null) node.height(h)
+  const mw  = px(s.minWidth);  if (mw  != null) node.minWidth(mw)
+  const mxw = px(s.maxWidth);  if (mxw != null) { try { node.maxWidth(mxw) } catch {} }
+  const mnh = px(s.minHeight); if (mnh != null) { try { node.minHeight(mnh) } catch {} }
+  const mxh = px(s.maxHeight); if (mxh != null) { try { node.maxHeight(mxh) } catch {} }
+  const fl  = px(s.flex);      if (fl  != null) node.flex(fl)
+  const fg  = px(s.flexGrow);  if (fg  != null) { try { node.flexGrow(fg) } catch {} }
+  const fs  = px(s.flexShrink); if (fs != null) { try { node.flexShrink(fs) } catch {} }
+
+  // background: skip gradient functions (sone can't render them)
   const bg = s.backgroundColor || s.background
-  if (bg) node.bg(bg)
+  if (bg && !bg.includes('gradient') && !bg.includes('url(')) node.bg(bg)
+
   if (s.borderRadius) node.rounded(px(s.borderRadius) ?? 0)
   if (s.justifyContent) node.justifyContent(s.justifyContent)
   if (s.alignItems)     node.alignItems(s.alignItems)
+  if (s.alignSelf)      { try { node.alignSelf(s.alignSelf) } catch {} }
   if (s.flexWrap)       node.wrap(s.flexWrap)
   if (s.position)       node.position(s.position)
-  const top = px(s.top);     if (top  != null) node.top(top)
-  const left = px(s.left);   if (left != null) node.left(left)
+  const top = px(s.top);    if (top  != null) node.top(top)
+  const left = px(s.left);  if (left != null) node.left(left)
   const right = px(s.right); if (right != null) node.right(right)
-  const bot = px(s.bottom);  if (bot  != null) node.bottom(bot)
+  const bot = px(s.bottom); if (bot  != null) node.bottom(bot)
 
-  // border shorthand — color is 3rd token (skip style keyword)
+  // Standalone border-width / border-color (applied before shorthands so shorthands override)
+  const sbw = px(s.borderWidth); if (sbw != null) node.borderWidth(sbw)
+  if (s.borderColor) node.borderColor(s.borderColor)
+
+  // Border shorthands — color extracted by skipping style keywords
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
     const bw = px(parts[0]); if (bw != null) node.borderWidth(bw)
@@ -169,7 +212,8 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── inline elements ───────────────────────────────────────────
   if (['span', 'strong', 'b', 'em', 'i'].includes(tag)) {
-    const str = kids.filter(c => typeof c === 'string').join('')
+    // Flatten all children — strings directly, nested Spans via text extraction
+    const str = flattenText(kids)
     const sp = Span(str)
     if (s.color) sp.color(s.color)
     if (s.fontWeight || tag === 'strong' || tag === 'b') sp.weight('bold')
