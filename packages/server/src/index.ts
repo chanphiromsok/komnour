@@ -4,12 +4,12 @@ import { join } from "node:path";
 import { renderToBuffer, renderToPages, sanitize } from "@komnour/core";
 import { Font } from "sone";
 
-const fontsDir = join("../../font");
+const glyphFonts = join(import.meta.dirname, "../../glyphs/fonts");
 
-Font.load("KhmerOSsiemreap", `${fontsDir}/KhmerOSsiemreap.ttf`);
-Font.load("Kh-Siemreap", `${fontsDir}/Kh-Siemreap.ttf`);
-Font.load("Khmer-OS-Muol-Light", `${fontsDir}/Khmer-OS-Muol-Light.ttf`);
-Font.load("Wingdings2", `${fontsDir}/Wingdings2.ttf`);
+Font.load("KhmerOSsiemreap", join(glyphFonts, "KhmerOsSiemreab/KhmerOSsiemreap.ttf"));
+Font.load("Kh-Siemreap",     join(glyphFonts, "KhSiemreap/Kh-Siemreap.ttf"));
+Font.load("Khmer-OS-Muol-Light", join(glyphFonts, "KhmerOSMuolLight/Khmer-OS-Muol-Light.ttf"));
+Font.load("Wingdings2",      join(glyphFonts, "KhmerWing2/wingdings2.ttf"));
 
 const app = Fastify({ logger: false });
 app.register(cors, { origin: true });
