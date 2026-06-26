@@ -21,7 +21,7 @@ const SUPPORTED_CSS: Array<{ prop: string; values?: string[] }> = [
   { prop: 'color' },
   { prop: 'font-size' },
   { prop: 'font-weight', values: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-  { prop: 'font-family', values: ['Noto Sans Khmer', 'Inter', 'sans-serif', 'serif', 'monospace'] },
+  { prop: 'font-family', values: ['Kh-Siemreap',"Wingdings2","KhmerOSsiemreap",'Khmer-OS-Muol-Light'] },
   { prop: 'font-style', values: ['normal', 'italic', 'oblique'] },
   { prop: 'line-height' },
   { prop: 'text-align', values: ['left', 'right', 'center', 'justify'] },
@@ -67,22 +67,64 @@ const HTML_SNIPPETS = [
   {
     label: 'table.basic',
     insertText: [
-      '<table style="width: 100%; border-collapse: collapse;">',
+      '<table style="width: 100%">',
       '  <thead>',
       '    <tr>',
-      '      <th style="padding: 8px; background: #f5f5f5; font-weight: bold;">$1</th>',
-      '      <th style="padding: 8px; background: #f5f5f5; font-weight: bold;">$2</th>',
+      '      <th style="border: 1px solid #333; background-color: #f5f5f5; font-weight: bold;">$1</th>',
+      '      <th style="border: 1px solid #333; background-color: #f5f5f5; font-weight: bold;">$2</th>',
       '    </tr>',
       '  </thead>',
       '  <tbody>',
       '    <tr>',
-      '      <td style="padding: 8px; border-bottom: 1px solid #eee;">$3</td>',
-      '      <td style="padding: 8px; border-bottom: 1px solid #eee;">$4</td>',
+      '      <td style="border: 1px solid #333;">$3</td>',
+      '      <td style="border: 1px solid #333;">$4</td>',
       '    </tr>',
       '  </tbody>',
       '</table>',
     ].join('\n'),
-    detail: 'Basic table structure',
+    detail: 'Basic table with borders',
+    doc: 'Border collapse is applied automatically — just add border on th/td.',
+    isSnippet: true,
+  },
+  {
+    label: 'table.colspan',
+    insertText: [
+      '<table style="width: 100%">',
+      '  <tr>',
+      '    <td colspan="${1:2}" style="border: 1px solid #333;">Spans $1 columns</td>',
+      '  </tr>',
+      '  <tr>',
+      '    <td style="border: 1px solid #333;">Col 1</td>',
+      '    <td style="border: 1px solid #333;">Col 2</td>',
+      '  </tr>',
+      '</table>',
+    ].join('\n'),
+    detail: 'Table with colspan',
+    doc: 'colspan="N" makes a cell span N columns horizontally.',
+    isSnippet: true,
+  },
+  {
+    label: 'table.rowspan',
+    insertText: [
+      '<table style="width: 100%">',
+      '  <tr>',
+      '    <td rowspan="${1:2}" style="border: 1px solid #333;">Spans $1 rows</td>',
+      '    <td style="border: 1px solid #333;">Row 1</td>',
+      '  </tr>',
+      '  <tr>',
+      '    <td style="border: 1px solid #333;">Row 2</td>',
+      '  </tr>',
+      '</table>',
+    ].join('\n'),
+    detail: 'Table with rowspan',
+    doc: 'rowspan="N" makes a cell span N rows vertically.',
+    isSnippet: true,
+  },
+  {
+    label: 'tab',
+    insertText: '<tab width="${1:32}"></tab>',
+    detail: 'Komnour — fixed-width horizontal gap',
+    doc: 'Inserts a fixed-width horizontal space inside a text element (p, h1–h6, etc.). Default 32px.',
     isSnippet: true,
   },
 ]
@@ -181,6 +223,33 @@ export function setupMonaco(monaco: typeof Monaco) {
       })
 
       const suggestions: Monaco.languages.CompletionItem[] = []
+
+      // HTML attribute completions for <td> and <th>
+      const tdThMatch = linePrefix.match(/<(td|th)\b[^>]*\s([\w-]*)$/)
+      if (tdThMatch) {
+        const tag = tdThMatch[1]
+        const typed = tdThMatch[2]
+        const attrs = [
+          { name: 'colspan', snippet: 'colspan="${1:2}"', doc: `Number of columns this <${tag}> spans (default: 1)` },
+          { name: 'rowspan', snippet: 'rowspan="${1:2}"', doc: `Number of rows this <${tag}> spans (default: 1)` },
+          { name: 'style',   snippet: 'style="$1"',       doc: 'Inline CSS styles' },
+        ]
+        for (const attr of attrs) {
+          if (!typed || attr.name.startsWith(typed)) {
+            suggestions.push({
+              label: attr.name,
+              kind: monaco.languages.CompletionItemKind.Property,
+              insertText: attr.snippet,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: `<${tag}> attribute`,
+              documentation: attr.doc,
+              range,
+              sortText: `0_${attr.name}`,
+            })
+          }
+        }
+        return { suggestions }
+      }
 
       // CSS property completions inside style="..."
       const inlineStyleMatch = linePrefix.match(/style="([^"]*);?\s*([\w-]*)$/)

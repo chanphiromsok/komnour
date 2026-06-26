@@ -1,5 +1,5 @@
 import { parse, HTMLElement, TextNode } from 'node-html-parser'
-import { Column, Row, Text, Span, PageBreak, Path } from 'sone'
+import { Column, Row, Text, Span, PageBreak, Path, Table as SoneTable, TableRow, TableCell } from 'sone'
 
 type AnyNode = ReturnType<typeof Column> | ReturnType<typeof Text> | ReturnType<typeof Span>
 
@@ -21,6 +21,15 @@ function px(v?: string): number | undefined {
   if (!v) return undefined
   const n = parseFloat(v)
   return isNaN(n) ? undefined : n
+}
+
+// Like px() but also accepts percentage strings ("25%", "100%") which sone width/height support.
+function pxOrPct(v?: string): number | `${number}%` | undefined {
+  if (!v) return undefined
+  const n = parseFloat(v)
+  if (!isNaN(n)) return n
+  const t = v.trim()
+  return /^\d+(\.\d+)?%$/.test(t) ? (t as `${number}%`) : undefined
 }
 
 // Parse CSS box shorthand (1–4 values) into [top, right, bottom, left]
@@ -61,6 +70,11 @@ function parseBorderColor(parts: string[]): string | null {
   return color ?? null
 }
 
+// Find the numeric border-width from a shorthand token list (any order: e.g. "solid 1px black")
+function parseBorderWidth(parts: string[]): number | undefined {
+  return parts.map(px).find(n => n != null)
+}
+
 function applyBox(node: any, s: Record<string, string>) {
   // Padding: multi-value shorthand + individual overrides, computed in one call
   const baseP = parseShorthand4(s.padding)
@@ -82,16 +96,27 @@ function applyBox(node: any, s: Record<string, string>) {
     node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
   }
 
-  const g   = px(s.gap);       if (g   != null) node.gap(g)
-  const w   = px(s.width);     if (w   != null) node.width(w)
-  const h   = px(s.height);    if (h   != null) node.height(h)
-  const mw  = px(s.minWidth);  if (mw  != null) node.minWidth(mw)
-  const mxw = px(s.maxWidth);  if (mxw != null) { try { node.maxWidth(mxw) } catch {} }
-  const mnh = px(s.minHeight); if (mnh != null) { try { node.minHeight(mnh) } catch {} }
-  const mxh = px(s.maxHeight); if (mxh != null) { try { node.maxHeight(mxh) } catch {} }
-  const fl  = px(s.flex);      if (fl  != null) node.flex(fl)
-  const fg  = px(s.flexGrow);  if (fg  != null) { try { node.flexGrow(fg) } catch {} }
-  const fs  = px(s.flexShrink); if (fs != null) { try { node.flexShrink(fs) } catch {} }
+  const g   = px(s.gap);             if (g   != null) node.gap(g)
+  const w   = pxOrPct(s.width);      if (w   != null) node.width(w as any)
+  const h   = pxOrPct(s.height);     if (h   != null) node.height(h as any)
+  const mw  = pxOrPct(s.minWidth);   if (mw  != null) node.minWidth(mw as any)
+  const mxw = pxOrPct(s.maxWidth);   if (mxw != null) { try { node.maxWidth(mxw as any) } catch {} }
+  const mnh = pxOrPct(s.minHeight);  if (mnh != null) { try { node.minHeight(mnh as any) } catch {} }
+  const mxh = pxOrPct(s.maxHeight);  if (mxh != null) { try { node.maxHeight(mxh as any) } catch {} }
+  // flex shorthand: "1" → grow=1; "1 1 0%" → grow=1 shrink=1 basis=0; "0 0 200px" → grow=0 shrink=0 basis=200
+  if (s.flex != null) {
+    const flexParts = s.flex.trim().split(/\s+/)
+    if (flexParts.length === 1) {
+      const fl = px(flexParts[0]); if (fl != null) node.flex(fl)
+    } else {
+      const fg2 = px(flexParts[0]); if (fg2 != null) { try { node.flexGrow(fg2) } catch {} }
+      const fs2 = px(flexParts[1]); if (fs2 != null) { try { node.flexShrink(fs2) } catch {} }
+      const fb  = px(flexParts[2]); if (fb  != null) { try { node.flexBasis(fb) } catch {} }
+    }
+  }
+  const fg  = px(s.flexGrow);    if (fg != null) { try { node.flexGrow(fg) } catch {} }
+  const fs  = px(s.flexShrink);  if (fs != null) { try { node.flexShrink(fs) } catch {} }
+  const fb  = px(s.flexBasis);   if (fb != null) { try { node.flexBasis(fb) } catch {} }
 
   // background: skip gradient functions (sone can't render them)
   const bg = s.backgroundColor || s.background
@@ -108,36 +133,47 @@ function applyBox(node: any, s: Record<string, string>) {
   const right = px(s.right); if (right != null) node.right(right)
   const bot = px(s.bottom); if (bot  != null) node.bottom(bot)
 
-  // Standalone border-width / border-color (applied before shorthands so shorthands override)
-  const sbw = px(s.borderWidth); if (sbw != null) node.borderWidth(sbw)
-  if (s.borderColor) node.borderColor(s.borderColor)
+  // Accumulate per-side border widths into one call — each borderWidth(t,r,b,l) call
+  // replaces ALL four values, so multiple calls would zero out previously set sides.
+  let bwT: number | undefined, bwR: number | undefined,
+      bwB: number | undefined, bwL: number | undefined
+  let borderCol: string | undefined
 
-  // Border shorthands — color extracted by skipping style keywords
+  const sbw = px(s.borderWidth)
+  if (sbw != null) { bwT = bwR = bwB = bwL = sbw }
+  if (s.borderColor) borderCol = s.borderColor
+
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(bw)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = parseBorderWidth(parts)
+    if (bw != null) { bwT ??= bw; bwR ??= bw; bwB ??= bw; bwL ??= bw }
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderTop) {
     const parts = s.borderTop.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(bw, 0, 0, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = parseBorderWidth(parts); if (bw != null) bwT = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderBottom) {
     const parts = s.borderBottom.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, bw, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = parseBorderWidth(parts); if (bw != null) bwB = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderRight) {
     const parts = s.borderRight.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, bw, 0, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = parseBorderWidth(parts); if (bw != null) bwR = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderLeft) {
     const parts = s.borderLeft.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, 0, bw)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = parseBorderWidth(parts); if (bw != null) bwL = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
+
+  if (bwT != null || bwR != null || bwB != null || bwL != null) {
+    node.borderWidth(bwT ?? 0, bwR ?? 0, bwB ?? 0, bwL ?? 0)
+  }
+  if (borderCol) node.borderColor(borderCol)
   return node
 }
 
@@ -165,10 +201,46 @@ function applyTextStyle(node: any, s: Record<string, string>) {
 
 const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h5: 14, h6: 13 }
 
+// Drop whitespace-only strings from block-container child lists.
+// Inline containers (p, h1–h6, Text) must NOT use this — they need the spaces.
+function dropWS(kids: AnyNode[]): AnyNode[] {
+  return kids.filter(c => typeof c !== 'string' || c.trim() !== '')
+}
+
+// Stack of { totalCols, w } pushed/popped as we enter/exit <table> elements.
+// Enables nested-table support and gives <td>/<th> the info to compute minWidth.
+const _tableCtxStack: Array<{ totalCols: number; w: number }> = []
+
+function countTableCols(tableEl: HTMLElement): number {
+  let max = 0
+  const countRow = (rowEl: HTMLElement) => {
+    let n = 0
+    for (const child of rowEl.childNodes) {
+      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+      if (t === 'td' || t === 'th') {
+        n += (parseInt((child as HTMLElement).getAttribute('colspan') ?? '1', 10) || 1)
+      }
+    }
+    if (n > max) max = n
+  }
+  const walk = (el: HTMLElement) => {
+    for (const child of el.childNodes) {
+      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+      if (t === 'tr') countRow(child as HTMLElement)
+      else if (t === 'thead' || t === 'tbody' || t === 'tfoot') walk(child as HTMLElement)
+    }
+  }
+  walk(tableEl)
+  return max || 1
+}
+
 function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   if (node instanceof TextNode) {
-    const t = node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
-    return t ? (t as any) : null
+    const t = node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ')
+    // Keep a single space (" ") so that inline text runs like
+    //   <span>A</span> <span>B</span>  preserve the gap between words.
+    // Truly empty strings ("") are still dropped.
+    return t || null
   }
 
   const el = node as HTMLElement
@@ -199,6 +271,14 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── br — line break character inside Text ─────────────────────
   if (tag === 'br') return '\n' as any
+
+  // ── tab — fixed-width horizontal gap (<tab width="40">) ───────
+  // Works inline inside <p>/<h1>/etc. as a Span with letter-spacing.
+  // Falls back to 32px when no width attribute is given.
+  if (tag === 'tab') {
+    const w = px(el.getAttribute('width') ?? '') ?? 32
+    return Span(' ').letterSpacing(Math.max(0, w - 4)) as any
+  }
 
   // ── img — grey placeholder box ────────────────────────────────
   if (tag === 'img') {
@@ -232,31 +312,100 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── table structure ───────────────────────────────────────────
   if (tag === 'table') {
-    const c = Column(...kids as any)
-    applyBox(c, s)
-    return c as any
+    // Collect TableRow nodes directly from the DOM, bypassing thead/tbody/tfoot
+    // wrappers. sone's Table() requires flat TableRow children and uses the real
+    // table layout algorithm — the only way rowspan and colspan actually work.
+    const totalCols = countTableCols(el)
+    const tblWidth = px(s.width) ?? 794
+    _tableCtxStack.push({ totalCols, w: tblWidth })
+    const rows: any[] = []
+    const collectRows = (parent: HTMLElement) => {
+      for (const child of parent.childNodes) {
+        const ct = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+        if (ct === 'tr') {
+          const row = convertNode(child as any)
+          if (row) rows.push(row)
+        } else if (['thead', 'tbody', 'tfoot'].includes(ct)) {
+          collectRows(child as HTMLElement)
+        }
+      }
+    }
+    collectRows(el)
+    _tableCtxStack.pop()
+    const tbl = SoneTable(...rows as any)
+    applyBox(tbl, s)
+
+    // drawTableNode always strokes internal grid lines. Feed it the border style
+    // extracted from cells so the Table node is the sole grid renderer — cells must
+    // not draw their own borders or every internal edge appears twice.
+    let cellBorderW: number | undefined
+    let cellBorderC: string | undefined
+    for (const cellEl of el.querySelectorAll('td, th')) {
+      const cs = parseStyle((cellEl as HTMLElement).getAttribute('style') ?? '')
+      const b = cs.border || cs.borderRight || cs.borderBottom || cs.borderLeft || cs.borderTop
+      if (b) {
+        const parts = b.trim().split(/\s+/)
+        const w = parseBorderWidth(parts)
+        if (w != null) { cellBorderW = w; cellBorderC = parseBorderColor(parts) ?? undefined; break }
+      }
+    }
+    if (cellBorderW != null && cellBorderW > 0) {
+      tbl.borderWidth(cellBorderW)
+      if (cellBorderC) tbl.borderColor(cellBorderC)
+    } else if ((tbl as any).props.borderWidth == null &&
+               (tbl as any).props.borderTopWidth == null &&
+               (tbl as any).props.borderColor == null) {
+      // No border on table element or cells — use transparent to suppress
+      // drawTableNode's default inherited-state grid lines.
+      tbl.borderColor('transparent')
+    }
+    return tbl as any
   }
 
+  // thead/tbody/tfoot outside a <table> — rare, fall back to Column
   if (tag === 'thead' || tag === 'tbody' || tag === 'tfoot') {
-    return Column(...kids as any) as any
+    return Column(...dropWS(kids) as any) as any
   }
 
   if (tag === 'tr') {
-    const c = Row(...kids as any)
+    const c = TableRow(...dropWS(kids) as any)
     applyBox(c, s)
     return c as any
   }
 
   if (tag === 'th' || tag === 'td') {
-    const wrapped = kids.map(c =>
-      typeof c === 'string' ? applyTextStyle(Text(c), s) : c
-    )
-    const cell = Column(...wrapped as any).flex(1).padding(7, 10)
-    if (tag === 'th') {
-      cell.bg(s.backgroundColor || '#1a1a2e')
-      wrapped.forEach((c: any) => { try { c.color(s.color || 'white').weight('bold') } catch {} })
+    const wrapped = dropWS(kids).map(c => {
+      if (typeof c === 'string') return applyTextStyle(Text(c), s)
+      if (c && (c as any).type === 'span') return Text(c as any)
+      return c
+    })
+    const colSpan = parseInt(el.getAttribute('colspan') ?? '1', 10) || 1
+    const rowSpan = parseInt(el.getAttribute('rowspan') ?? '1', 10) || 1
+    const cell = TableCell(...wrapped as any).padding(7, 10)
+    if (colSpan > 1) cell.colspan(colSpan)
+    if (rowSpan > 1) cell.rowspan(rowSpan)
+    // Default: set proportional minWidth so Phase 4 merged-cell width matches
+    // the sum of the spanned columns exactly (no flex growth discrepancy).
+    if (!s.width && !s.flex && !s.flexGrow) {
+      const ctx = _tableCtxStack[_tableCtxStack.length - 1]
+      if (ctx) {
+        cell.minWidth(colSpan / ctx.totalCols * ctx.w)
+      } else {
+        cell.grow(colSpan)
+      }
     }
-    applyBox(cell, s)
+    if (tag === 'th') {
+      if (s.backgroundColor) cell.bg(s.backgroundColor)
+      wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
+    }
+    // The Table node owns all border drawing via drawTableNode — strip border styles
+    // from cells to avoid duplicating the grid lines it draws.
+    const cellStyle = { ...s }
+    delete cellStyle.border
+    delete cellStyle.borderTop; delete cellStyle.borderRight
+    delete cellStyle.borderBottom; delete cellStyle.borderLeft
+    delete cellStyle.borderWidth; delete cellStyle.borderColor
+    applyBox(cell, cellStyle)
     return cell as any
   }
 
@@ -314,16 +463,23 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── ul / ol ───────────────────────────────────────────────────
   if (tag === 'ul' || tag === 'ol') {
-    const list = Column(...kids as any).padding(0, 0, 0, 8)
+    const list = Column(...dropWS(kids) as any).padding(0, 0, 0, 8)
     applyBox(list, s)
     return list as any
   }
 
   // ── container (div, section, header, footer…) ────────────────
-  const wrapped = kids.map(c =>
-    typeof c === 'string' ? applyTextStyle(Text(c), s) : c
-  )
-  const isRow = s.flexDirection === 'row'
+  const wrapped = dropWS(kids).map(c => {
+    if (typeof c === 'string') return applyTextStyle(Text(c), s)
+    // Bare Span nodes (e.g. from <tab>) can't live directly in a Column/Row;
+    // wrap them in Text so the layout engine sees a proper block child.
+    if (c && (c as any).type === 'span') return Text(c as any)
+    return c
+  })
+  // display:flex defaults to flex-direction:row in CSS — treat it as a Row
+  // unless flex-direction:column is explicit. Pure flex-direction:row also works.
+  const isRow = s.flexDirection === 'row' ||
+    (s.display === 'flex' && s.flexDirection !== 'column')
   if (isRow) {
     // Text nodes don't participate in flex row layout correctly (yoga custom measure).
     // Wrap them in a Column so width constraints flow from the Row to the text measure func.
