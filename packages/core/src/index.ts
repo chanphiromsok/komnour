@@ -29,7 +29,7 @@ export async function renderToBuffer(html: string, format: 'png' | 'pdf' = 'png'
   const { htmlToSone } = await import('./html-to-sone.ts')
   const { sanitize } = await import('./sanitize.ts')
   const { html: clean } = sanitize(html)
-  const layout = htmlToSone(clean).width(794).bg('white')
+  const layout = htmlToSone(clean).width(794).minHeight(1).bg('white')
   if (format === 'pdf') {
     return sone(layout, { pageHeight: 1123 }).pdf()
   }
@@ -73,7 +73,7 @@ export async function renderToPages(html: string): Promise<Buffer[]> {
   const { htmlToSone } = await import('./html-to-sone.ts')
   const { sanitize } = await import('./sanitize.ts')
   const { html: clean } = sanitize(html)
-  const layout = htmlToSone(clean).width(794).bg('white')
+  const layout = htmlToSone(clean).width(794).minHeight(1).bg('white')
   const pages: any[] = await soneRenderPages(layout, hiDpiRenderer as any, { pageHeight: 1123 })
   return Promise.all(pages.map((canvas: any) => canvas.toBuffer('image/png') as Promise<Buffer>))
 }

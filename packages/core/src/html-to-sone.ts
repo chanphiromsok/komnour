@@ -23,20 +23,39 @@ function px(v?: string): number | undefined {
   return isNaN(n) ? undefined : n
 }
 
+const BORDER_STYLE_KEYWORDS = new Set([
+  'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge',
+  'inset', 'outset', 'none', 'hidden',
+])
+
+function parseBorderColor(parts: string[]): string | null {
+  // Border shorthand: [width] [style] [color] — color is the non-width, non-style-keyword token
+  const color = parts.slice(1).find(p => !BORDER_STYLE_KEYWORDS.has(p.toLowerCase()))
+  return color ?? null
+}
+
 function applyBox(node: any, s: Record<string, string>) {
-  const p  = px(s.padding);       if (p  != null) node.padding(p)
-  const pt = px(s.paddingTop);    if (pt != null) node.padding(pt, 0, 0, 0)
-  const pb = px(s.paddingBottom); if (pb != null) node.padding(0, 0, pb, 0)
-  const pl = px(s.paddingLeft);   if (pl != null) node.padding(0, 0, 0, pl)
-  const pr = px(s.paddingRight);  if (pr != null) node.padding(0, pr, 0, 0)
-  const m  = px(s.margin);        if (m  != null) node.margin(m)
-  const mt = px(s.marginTop);     if (mt != null) node.margin(mt, 0, 0, 0)
-  const mb = px(s.marginBottom);  if (mb != null) node.margin(0, 0, mb, 0)
-  const g  = px(s.gap);           if (g  != null) node.gap(g)
-  const w  = px(s.width);         if (w  != null) node.width(w)
-  const h  = px(s.height);        if (h  != null) node.height(h)
-  const mw = px(s.minWidth);      if (mw != null) node.minWidth(mw)
-  const fl = px(s.flex);          if (fl != null) node.flex(fl)
+  // Padding: compute combined call so individual sides don't override each other
+  const baseP = px(s.padding)
+  const pt = px(s.paddingTop), pr = px(s.paddingRight)
+  const pb = px(s.paddingBottom), pl = px(s.paddingLeft)
+  if (baseP != null || pt != null || pr != null || pb != null || pl != null) {
+    node.padding(pt ?? baseP ?? 0, pr ?? baseP ?? 0, pb ?? baseP ?? 0, pl ?? baseP ?? 0)
+  }
+
+  // Margin: same combined approach, now including left/right
+  const baseM = px(s.margin)
+  const mt = px(s.marginTop), mr = px(s.marginRight)
+  const mb = px(s.marginBottom), ml = px(s.marginLeft)
+  if (baseM != null || mt != null || mr != null || mb != null || ml != null) {
+    node.margin(mt ?? baseM ?? 0, mr ?? baseM ?? 0, mb ?? baseM ?? 0, ml ?? baseM ?? 0)
+  }
+
+  const g  = px(s.gap);      if (g  != null) node.gap(g)
+  const w  = px(s.width);    if (w  != null) node.width(w)
+  const h  = px(s.height);   if (h  != null) node.height(h)
+  const mw = px(s.minWidth); if (mw != null) node.minWidth(mw)
+  const fl = px(s.flex);     if (fl != null) node.flex(fl)
   const bg = s.backgroundColor || s.background
   if (bg) node.bg(bg)
   if (s.borderRadius) node.rounded(px(s.borderRadius) ?? 0)
@@ -44,24 +63,36 @@ function applyBox(node: any, s: Record<string, string>) {
   if (s.alignItems)     node.alignItems(s.alignItems)
   if (s.flexWrap)       node.wrap(s.flexWrap)
   if (s.position)       node.position(s.position)
-  const top = px(s.top);    if (top  != null) node.top(top)
-  const left = px(s.left);  if (left != null) node.left(left)
+  const top = px(s.top);     if (top  != null) node.top(top)
+  const left = px(s.left);   if (left != null) node.left(left)
   const right = px(s.right); if (right != null) node.right(right)
-  const bot = px(s.bottom); if (bot  != null) node.bottom(bot)
+  const bot = px(s.bottom);  if (bot  != null) node.bottom(bot)
+
+  // border shorthand — color is 3rd token (skip style keyword)
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
     const bw = px(parts[0]); if (bw != null) node.borderWidth(bw)
-    const bc = parts[2] || parts[1]; if (bc) node.borderColor(bc)
-  }
-  if (s.borderBottom) {
-    const parts = s.borderBottom.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, bw, 0)
-    const bc = parts[2] || parts[1]; if (bc) node.borderColor(bc)
+    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
   }
   if (s.borderTop) {
     const parts = s.borderTop.trim().split(/\s+/)
     const bw = px(parts[0]); if (bw != null) node.borderWidth(bw, 0, 0, 0)
-    const bc = parts[2] || parts[1]; if (bc) node.borderColor(bc)
+    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+  }
+  if (s.borderBottom) {
+    const parts = s.borderBottom.trim().split(/\s+/)
+    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, bw, 0)
+    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+  }
+  if (s.borderRight) {
+    const parts = s.borderRight.trim().split(/\s+/)
+    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, bw, 0, 0)
+    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+  }
+  if (s.borderLeft) {
+    const parts = s.borderLeft.trim().split(/\s+/)
+    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, 0, bw)
+    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
   }
   return node
 }
@@ -73,7 +104,7 @@ function applyTextStyle(node: any, s: Record<string, string>) {
   const fs = px(s.fontSize); if (fs != null) node.size(fs)
   if (s.lineHeight) {
     const lhPx = px(s.lineHeight)
-    if (lhPx != null) {
+    if (lhPx != null && lhPx > 0) {
       // sone lineHeight is a MULTIPLIER (not pixels). Convert px → ratio vs font size.
       const size = fs ?? 16
       node.lineHeight(lhPx / size)
@@ -121,6 +152,20 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── other input types — skip ───────────────────────────────────
   if (tag === 'input') return null
+
+  // ── br — line break character inside Text ─────────────────────
+  if (tag === 'br') return '\n' as any
+
+  // ── img — grey placeholder box ────────────────────────────────
+  if (tag === 'img') {
+    const imgW = px(el.getAttribute('width') ?? '') ?? 0
+    const imgH = px(el.getAttribute('height') ?? '') ?? 0
+    const node = Column().bg('#e8e8e8') as any
+    if (imgW > 0) node.width(imgW)
+    if (imgH > 0) node.height(imgH)
+    applyBox(node, s)
+    return node
+  }
 
   // ── inline elements ───────────────────────────────────────────
   if (['span', 'strong', 'b', 'em', 'i'].includes(tag)) {
@@ -300,5 +345,13 @@ export function htmlToSone(htmlString: string) {
   const kids = root.childNodes
     .map(c => convertNode(c as any))
     .filter((c): c is AnyNode => c !== null)
-  return Column(...hoistPageBreaks(kids) as any)
+
+  // Wrap root-level strings and Spans in Text so Column can handle them
+  const normalized = kids.map(k => {
+    if (typeof k === 'string') return Text(k as any) as any
+    if (k && (k as any).type === 'span') return Text(k as any) as any
+    return k
+  })
+
+  return Column(...hoistPageBreaks(normalized) as any)
 }
