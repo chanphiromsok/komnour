@@ -167,8 +167,8 @@ const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h
 
 function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   if (node instanceof TextNode) {
-    const t = node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
-    return t ? (t as any) : null
+    const t = node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ')
+    return t.trim() ? (t as any) : null
   }
 
   const el = node as HTMLElement
