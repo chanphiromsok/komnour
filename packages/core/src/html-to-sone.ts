@@ -24,9 +24,10 @@ function px(v?: string): number | undefined {
 }
 
 // Parse CSS box shorthand (1–4 values) into [top, right, bottom, left]
+// 'auto' is treated as 0 since sone has no auto-margin concept
 function parseShorthand4(v?: string): [number, number, number, number] | undefined {
   if (!v) return undefined
-  const parts = v.trim().split(/\s+/).map(p => px(p))
+  const parts = v.trim().split(/\s+/).map(p => p === 'auto' ? 0 : px(p))
   if (parts.some(n => n == null)) return undefined
   const [a, b, c, d] = parts as number[]
   if (parts.length === 1) return [a, a, a, a]
@@ -55,8 +56,8 @@ const BORDER_STYLE_KEYWORDS = new Set([
 ])
 
 function parseBorderColor(parts: string[]): string | null {
-  // Border shorthand: [width] [style] [color] — color is the non-width, non-style-keyword token
-  const color = parts.slice(1).find(p => !BORDER_STYLE_KEYWORDS.has(p.toLowerCase()))
+  // Find any token that is neither a numeric width nor a style keyword
+  const color = parts.find(p => px(p) == null && !BORDER_STYLE_KEYWORDS.has(p.toLowerCase()))
   return color ?? null
 }
 
@@ -216,9 +217,15 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     const str = flattenText(kids)
     const sp = Span(str)
     if (s.color) sp.color(s.color)
-    if (s.fontWeight || tag === 'strong' || tag === 'b') sp.weight('bold')
-    if (tag === 'em' || tag === 'i') sp.weight('normal')
-    const fs = px(s.fontSize); if (fs) sp.size(fs)
+    // Explicit font-weight style takes precedence over tag semantics
+    if (s.fontWeight) {
+      sp.weight(s.fontWeight === 'bold' || parseInt(s.fontWeight) >= 600 ? 'bold' : 'normal')
+    } else if (tag === 'strong' || tag === 'b') {
+      sp.weight('bold')
+    } else if (tag === 'em' || tag === 'i') {
+      sp.weight('normal')
+    }
+    const fs = px(s.fontSize); if (fs != null) sp.size(fs)
     if (s.fontFamily) sp.font(s.fontFamily.replace(/['"]/g, '').split(',')[0].trim())
     return sp as any
   }
@@ -361,7 +368,13 @@ function hoistPageBreaks(nodes: AnyNode[]): AnyNode[] {
     let bucket: any[] = []
     const flush = () => {
       if (bucket.length === 0) return
-      result.push({ ...(node as any), id: -1, children: bucket })
+      // Wrap any bare strings or Spans so Column children are always block nodes
+      const safe = bucket.map((c: any) => {
+        if (typeof c === 'string') return Text(c as any) as any
+        if (c?.type === 'span') return Text(c) as any
+        return c
+      })
+      result.push({ ...(node as any), id: -1, children: safe })
       bucket = []
     }
     for (const child of children) {
