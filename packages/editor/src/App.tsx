@@ -290,17 +290,25 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
 
-  const downloadPdf = async () => {
-    const res = await fetch(`${SERVER}/render`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, format: 'pdf' }),
-    })
-    const blob = await res.blob()
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'document.pdf'
-    a.click()
+  const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null)
+
+  const exportFile = async (fmt: 'pdf' | 'png') => {
+    setExporting(fmt)
+    try {
+      const res = await fetch(`${SERVER}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html, format: fmt }),
+      })
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `document.${fmt}`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+    } finally {
+      setExporting(null)
+    }
   }
 
   const handleMonacoMount = (_: unknown, monaco: Monaco) => {
@@ -392,25 +400,49 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
-        {/* Download button */}
-        <button
-          onClick={downloadPdf}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: '#1f6feb', color: '#ffffff',
-            border: '1px solid #388bfd40',
-            borderRadius: 6, padding: '5px 14px',
-            fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            transition: 'background 0.12s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#388bfd')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#1f6feb')}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Export PDF
-        </button>
+        {/* Export buttons */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => exportFile('png')}
+            disabled={exporting !== null}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'transparent', color: '#7d8590',
+              border: '1px solid #30363d',
+              borderRadius: 6, padding: '5px 12px',
+              fontSize: 12, fontWeight: 500, cursor: exporting ? 'wait' : 'pointer',
+              transition: 'all 0.12s', opacity: exporting === 'pdf' ? 0.5 : 1,
+            }}
+            onMouseEnter={e => { if (!exporting) e.currentTarget.style.color = '#e6edf3' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#7d8590' }}
+          >
+            {exporting === 'png'
+              ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 1s linear infinite' }}><circle cx="6" cy="6" r="4.5" stroke="#30363d" strokeWidth="1.5" fill="none" /><path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="#7d8590" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+              : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            }
+            PNG
+          </button>
+          <button
+            onClick={() => exportFile('pdf')}
+            disabled={exporting !== null}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: '#1f6feb', color: '#ffffff',
+              border: '1px solid #388bfd40',
+              borderRadius: 6, padding: '5px 12px',
+              fontSize: 12, fontWeight: 500, cursor: exporting ? 'wait' : 'pointer',
+              transition: 'background 0.12s', opacity: exporting === 'png' ? 0.5 : 1,
+            }}
+            onMouseEnter={e => { if (!exporting) e.currentTarget.style.background = '#388bfd' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#1f6feb' }}
+          >
+            {exporting === 'pdf'
+              ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 1s linear infinite' }}><circle cx="6" cy="6" r="4.5" stroke="#1f6feb" strokeWidth="1.5" fill="none" /><path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+              : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            }
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* ── Warnings panel ─────────────────────────────────────────────── */}
