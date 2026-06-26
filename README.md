@@ -178,19 +178,43 @@ Apply `border` as an inline style on `<td>` and `<th>`. The engine simulates `bo
 
 You can also apply individual sides: `border-top`, `border-right`, `border-bottom`, `border-left`.
 
-### Column widths
+### colspan — span multiple columns
 
-Cells share the available row width equally by default (each gets `flex: 1`). Use `colspan` to make a cell span multiple columns — it receives proportionally more width (`flex: N`):
+`colspan="N"` makes a cell take the width of N columns:
 
 ```html
-<tr>
-  <td colspan="2" style="border: 1px solid #333">Spans both columns</td>
-</tr>
-<tr>
-  <td style="border: 1px solid #333">Left</td>
-  <td style="border: 1px solid #333">Right</td>
-</tr>
+<table style="width: 100%">
+  <tr>
+    <td colspan="3" style="border: 1px solid #333">Full-width header cell</td>
+  </tr>
+  <tr>
+    <td style="border: 1px solid #333">A</td>
+    <td style="border: 1px solid #333">B</td>
+    <td style="border: 1px solid #333">C</td>
+  </tr>
+</table>
 ```
+
+### rowspan — span multiple rows
+
+`rowspan="N"` makes a cell extend down N rows. The following rows must omit the cell in that column position:
+
+```html
+<table style="width: 100%">
+  <tr>
+    <td rowspan="3" style="border: 1px solid #333">Spans 3 rows</td>
+    <td style="border: 1px solid #333">Row 1, Col 2</td>
+  </tr>
+  <tr>
+    <td style="border: 1px solid #333">Row 2, Col 2</td>
+  </tr>
+  <tr>
+    <td style="border: 1px solid #333">Row 3, Col 2</td>
+  </tr>
+</table>
+```
+
+Both attributes can be combined: `<td colspan="2" rowspan="2">` spans a 2×2 block.
 
 ### Header styling
 
@@ -204,10 +228,12 @@ Cells share the available row width equally by default (each gets `flex: 1`). Us
 
 | Feature | Status |
 |---|---|
-| `rowspan` | Not supported — cells always occupy one row |
-| `<caption>` | Rendered as a plain block above the table (no caption semantics) |
-| `<col>` / `<colgroup>` | Ignored |
-| `border-collapse: collapse` in a `<style>` block | Not applicable — apply `border` directly on `td`/`th` |
+| `colspan` | ✅ Supported |
+| `rowspan` | ✅ Supported |
+| `<caption>` | Tag removed, content preserved as a plain block above the table |
+| `<col>` / `<colgroup>` | Tag removed, content discarded |
+| `border-collapse: collapse` | Not needed — collapse is applied automatically; writing it produces a warning |
+| Per-side border color | Only one color per element — last specified wins (`border-left: red; border-right: blue` → both blue) |
 
 ---
 

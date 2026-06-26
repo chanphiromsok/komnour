@@ -19,6 +19,7 @@ const ALLOWED_TAGS = new Set([
   'input',        // type=checkbox only
   'img',          // Photo()
   'page-break',   // sone PageBreak()
+  'tab',          // fixed-width horizontal gap (<tab width="N">)
 ])
 
 // Unknown tags are UNWRAPPED — their children are preserved inline
@@ -45,6 +46,25 @@ const ALLOWED_ATTRS: Record<string, Set<string>> = {
   'img':   new Set(['src', 'width', 'height', 'alt', 'style']),
   'th':    new Set(['colspan', 'rowspan', 'style']),
   'td':    new Set(['colspan', 'rowspan', 'style']),
+  'tab':   new Set(['width']),
+}
+
+// CSS properties that are stripped but deserve a specific helpful message
+const CSS_HINTS: Record<string, string> = {
+  'border-collapse': 'borders on <td>/<th> collapse automatically — remove this property',
+  'border-spacing':  'not supported — use padding on <td>/<th> instead',
+  'table-layout':    'not supported — columns divide space equally by default',
+  'vertical-align':  'not supported on table cells — use align-self instead',
+  'text-decoration': 'not supported',
+  'overflow':        'not supported',
+  'white-space':     'not supported',
+  'list-style':      'not supported — use <ul>/<ol> with default markers',
+  'list-style-type': 'not supported',
+  'visibility':      'not supported — use display: none to hide elements',
+  'opacity':         'not supported',
+  'box-shadow':      'not supported',
+  'text-transform':  'not supported',
+  'text-indent':     'not supported — use <tab width="N"> for indentation',
 }
 
 export interface SanitizeResult {
@@ -63,7 +83,10 @@ function filterStyle(raw: string, warnings: string[]): string {
     if (ALLOWED_CSS.has(prop)) {
       kept.push(trimmed)
     } else {
-      warnings.push(`CSS property "${prop}" is not supported and was removed`)
+      const hint = CSS_HINTS[prop]
+      warnings.push(hint
+        ? `CSS "${prop}" is not supported — ${hint}`
+        : `CSS property "${prop}" is not supported and was removed`)
     }
   }
   return kept.join('; ')
