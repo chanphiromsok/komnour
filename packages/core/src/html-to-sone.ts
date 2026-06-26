@@ -1,5 +1,5 @@
 import { parse, HTMLElement, TextNode } from 'node-html-parser'
-import { Column, Row, Text, Span, PageBreak, Path } from 'sone'
+import { Column, Row, Text, Span, PageBreak, Path, TableRow, TableCell } from 'sone'
 
 type AnyNode = ReturnType<typeof Column> | ReturnType<typeof Text> | ReturnType<typeof Span>
 
@@ -270,7 +270,7 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   }
 
   if (tag === 'tr') {
-    const c = Row(...dropWS(kids) as any)
+    const c = TableRow(...dropWS(kids) as any)
     applyBox(c, s)
     return c as any
   }
@@ -280,7 +280,10 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       typeof c === 'string' ? applyTextStyle(Text(c), s) : c
     )
     const colSpan = parseInt(el.getAttribute('colspan') ?? '1', 10) || 1
-    const cell = Column(...wrapped as any).flex(colSpan).padding(7, 10)
+    const rowSpan = parseInt(el.getAttribute('rowspan') ?? '1', 10) || 1
+    const cell = TableCell(...wrapped as any).padding(7, 10)
+    if (colSpan > 1) cell.colspan(colSpan)
+    if (rowSpan > 1) cell.rowspan(rowSpan)
     if (tag === 'th') {
       if (s.backgroundColor) cell.bg(s.backgroundColor)
       wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
