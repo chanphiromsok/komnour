@@ -21,7 +21,7 @@ const SUPPORTED_CSS: Array<{ prop: string; values?: string[] }> = [
   { prop: 'color' },
   { prop: 'font-size' },
   { prop: 'font-weight', values: ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-  { prop: 'font-family', values: ['Noto Sans Khmer', 'Inter', 'sans-serif', 'serif', 'monospace'] },
+  { prop: 'font-family', values: ['Kh-Siemreap',"Wingdings2","KhmerOSsiemreap",'Khmer-OS-Muol-Light'] },
   { prop: 'font-style', values: ['normal', 'italic', 'oblique'] },
   { prop: 'line-height' },
   { prop: 'text-align', values: ['left', 'right', 'center', 'justify'] },

@@ -88,6 +88,9 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
+      sone:
+        specifier: ^1.4.0
+        version: 1.4.0(shiki@4.2.0)(skia-canvas@3.0.8)
     devDependencies:
       tsx:
         specifier: ^4.0.0
