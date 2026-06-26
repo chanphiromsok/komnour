@@ -70,6 +70,11 @@ function parseBorderColor(parts: string[]): string | null {
   return color ?? null
 }
 
+// Find the numeric border-width from a shorthand token list (any order: e.g. "solid 1px black")
+function parseBorderWidth(parts: string[]): number | undefined {
+  return parts.map(px).find(n => n != null)
+}
+
 function applyBox(node: any, s: Record<string, string>) {
   // Padding: multi-value shorthand + individual overrides, computed in one call
   const baseP = parseShorthand4(s.padding)
@@ -129,28 +134,28 @@ function applyBox(node: any, s: Record<string, string>) {
 
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
-    const bw = px(parts[0])
+    const bw = parseBorderWidth(parts)
     if (bw != null) { bwT ??= bw; bwR ??= bw; bwB ??= bw; bwL ??= bw }
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderTop) {
     const parts = s.borderTop.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) bwT = bw
+    const bw = parseBorderWidth(parts); if (bw != null) bwT = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderBottom) {
     const parts = s.borderBottom.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) bwB = bw
+    const bw = parseBorderWidth(parts); if (bw != null) bwB = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderRight) {
     const parts = s.borderRight.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) bwR = bw
+    const bw = parseBorderWidth(parts); if (bw != null) bwR = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderLeft) {
     const parts = s.borderLeft.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) bwL = bw
+    const bw = parseBorderWidth(parts); if (bw != null) bwL = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
 
@@ -189,6 +194,33 @@ const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h
 // Inline containers (p, h1–h6, Text) must NOT use this — they need the spaces.
 function dropWS(kids: AnyNode[]): AnyNode[] {
   return kids.filter(c => typeof c !== 'string' || c.trim() !== '')
+}
+
+// Stack of { totalCols, w } pushed/popped as we enter/exit <table> elements.
+// Enables nested-table support and gives <td>/<th> the info to compute minWidth.
+const _tableCtxStack: Array<{ totalCols: number; w: number }> = []
+
+function countTableCols(tableEl: HTMLElement): number {
+  let max = 0
+  const countRow = (rowEl: HTMLElement) => {
+    let n = 0
+    for (const child of rowEl.childNodes) {
+      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+      if (t === 'td' || t === 'th') {
+        n += (parseInt((child as HTMLElement).getAttribute('colspan') ?? '1', 10) || 1)
+      }
+    }
+    if (n > max) max = n
+  }
+  const walk = (el: HTMLElement) => {
+    for (const child of el.childNodes) {
+      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+      if (t === 'tr') countRow(child as HTMLElement)
+      else if (t === 'thead' || t === 'tbody' || t === 'tfoot') walk(child as HTMLElement)
+    }
+  }
+  walk(tableEl)
+  return max || 1
 }
 
 function convertNode(node: HTMLElement | TextNode): AnyNode | null {
@@ -272,6 +304,9 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     // Collect TableRow nodes directly from the DOM, bypassing thead/tbody/tfoot
     // wrappers. sone's Table() requires flat TableRow children and uses the real
     // table layout algorithm — the only way rowspan and colspan actually work.
+    const totalCols = countTableCols(el)
+    const tblWidth = px(s.width) ?? 794
+    _tableCtxStack.push({ totalCols, w: tblWidth })
     const rows: any[] = []
     const collectRows = (parent: HTMLElement) => {
       for (const child of parent.childNodes) {
@@ -285,6 +320,7 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       }
     }
     collectRows(el)
+    _tableCtxStack.pop()
     const tbl = SoneTable(...rows as any)
     applyBox(tbl, s)
 
@@ -298,7 +334,7 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       const b = cs.border || cs.borderRight || cs.borderBottom || cs.borderLeft || cs.borderTop
       if (b) {
         const parts = b.trim().split(/\s+/)
-        const w = px(parts[0])
+        const w = parseBorderWidth(parts)
         if (w != null) { cellBorderW = w; cellBorderC = parseBorderColor(parts) ?? undefined; break }
       }
     }
@@ -327,17 +363,26 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   }
 
   if (tag === 'th' || tag === 'td') {
-    const wrapped = dropWS(kids).map(c =>
-      typeof c === 'string' ? applyTextStyle(Text(c), s) : c
-    )
+    const wrapped = dropWS(kids).map(c => {
+      if (typeof c === 'string') return applyTextStyle(Text(c), s)
+      if (c && (c as any).type === 'span') return Text(c as any)
+      return c
+    })
     const colSpan = parseInt(el.getAttribute('colspan') ?? '1', 10) || 1
     const rowSpan = parseInt(el.getAttribute('rowspan') ?? '1', 10) || 1
     const cell = TableCell(...wrapped as any).padding(7, 10)
     if (colSpan > 1) cell.colspan(colSpan)
     if (rowSpan > 1) cell.rowspan(rowSpan)
-    // Default: grow to fill row width proportionally to colspan.
-    // Explicit width / flex / flex-grow in the style attr overrides this via applyBox.
-    if (!s.width && !s.flex && !s.flexGrow) cell.grow(colSpan)
+    // Default: set proportional minWidth so Phase 4 merged-cell width matches
+    // the sum of the spanned columns exactly (no flex growth discrepancy).
+    if (!s.width && !s.flex && !s.flexGrow) {
+      const ctx = _tableCtxStack[_tableCtxStack.length - 1]
+      if (ctx) {
+        cell.minWidth(colSpan / ctx.totalCols * ctx.w)
+      } else {
+        cell.grow(colSpan)
+      }
+    }
     if (tag === 'th') {
       if (s.backgroundColor) cell.bg(s.backgroundColor)
       wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
