@@ -103,9 +103,20 @@ function applyBox(node: any, s: Record<string, string>) {
   const mxw = pxOrPct(s.maxWidth);   if (mxw != null) { try { node.maxWidth(mxw as any) } catch {} }
   const mnh = pxOrPct(s.minHeight);  if (mnh != null) { try { node.minHeight(mnh as any) } catch {} }
   const mxh = pxOrPct(s.maxHeight);  if (mxh != null) { try { node.maxHeight(mxh as any) } catch {} }
-  const fl  = px(s.flex);      if (fl  != null) node.flex(fl)
-  const fg  = px(s.flexGrow);  if (fg  != null) { try { node.flexGrow(fg) } catch {} }
-  const fs  = px(s.flexShrink); if (fs != null) { try { node.flexShrink(fs) } catch {} }
+  // flex shorthand: "1" → grow=1; "1 1 0%" → grow=1 shrink=1 basis=0; "0 0 200px" → grow=0 shrink=0 basis=200
+  if (s.flex != null) {
+    const flexParts = s.flex.trim().split(/\s+/)
+    if (flexParts.length === 1) {
+      const fl = px(flexParts[0]); if (fl != null) node.flex(fl)
+    } else {
+      const fg2 = px(flexParts[0]); if (fg2 != null) { try { node.flexGrow(fg2) } catch {} }
+      const fs2 = px(flexParts[1]); if (fs2 != null) { try { node.flexShrink(fs2) } catch {} }
+      const fb  = px(flexParts[2]); if (fb  != null) { try { node.flexBasis(fb) } catch {} }
+    }
+  }
+  const fg  = px(s.flexGrow);    if (fg != null) { try { node.flexGrow(fg) } catch {} }
+  const fs  = px(s.flexShrink);  if (fs != null) { try { node.flexShrink(fs) } catch {} }
+  const fb  = px(s.flexBasis);   if (fb != null) { try { node.flexBasis(fb) } catch {} }
 
   // background: skip gradient functions (sone can't render them)
   const bg = s.backgroundColor || s.background
@@ -465,7 +476,10 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     if (c && (c as any).type === 'span') return Text(c as any)
     return c
   })
-  const isRow = s.flexDirection === 'row'
+  // display:flex defaults to flex-direction:row in CSS — treat it as a Row
+  // unless flex-direction:column is explicit. Pure flex-direction:row also works.
+  const isRow = s.flexDirection === 'row' ||
+    (s.display === 'flex' && s.flexDirection !== 'column')
   if (isRow) {
     // Text nodes don't participate in flex row layout correctly (yoga custom measure).
     // Wrap them in a Column so width constraints flow from the Row to the text measure func.
