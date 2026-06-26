@@ -1,5 +1,5 @@
 import { parse, HTMLElement, TextNode } from 'node-html-parser'
-import { Column, Row, Text, Span, PageBreak, Path, TableRow, TableCell } from 'sone'
+import { Column, Row, Text, Span, PageBreak, Path, Table as SoneTable, TableRow, TableCell } from 'sone'
 
 type AnyNode = ReturnType<typeof Column> | ReturnType<typeof Text> | ReturnType<typeof Span>
 
@@ -21,6 +21,15 @@ function px(v?: string): number | undefined {
   if (!v) return undefined
   const n = parseFloat(v)
   return isNaN(n) ? undefined : n
+}
+
+// Like px() but also accepts percentage strings ("25%", "100%") which sone width/height support.
+function pxOrPct(v?: string): number | `${number}%` | undefined {
+  if (!v) return undefined
+  const n = parseFloat(v)
+  if (!isNaN(n)) return n
+  const t = v.trim()
+  return /^\d+(\.\d+)?%$/.test(t) ? (t as `${number}%`) : undefined
 }
 
 // Parse CSS box shorthand (1–4 values) into [top, right, bottom, left]
@@ -82,13 +91,13 @@ function applyBox(node: any, s: Record<string, string>) {
     node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
   }
 
-  const g   = px(s.gap);       if (g   != null) node.gap(g)
-  const w   = px(s.width);     if (w   != null) node.width(w)
-  const h   = px(s.height);    if (h   != null) node.height(h)
-  const mw  = px(s.minWidth);  if (mw  != null) node.minWidth(mw)
-  const mxw = px(s.maxWidth);  if (mxw != null) { try { node.maxWidth(mxw) } catch {} }
-  const mnh = px(s.minHeight); if (mnh != null) { try { node.minHeight(mnh) } catch {} }
-  const mxh = px(s.maxHeight); if (mxh != null) { try { node.maxHeight(mxh) } catch {} }
+  const g   = px(s.gap);             if (g   != null) node.gap(g)
+  const w   = pxOrPct(s.width);      if (w   != null) node.width(w as any)
+  const h   = pxOrPct(s.height);     if (h   != null) node.height(h as any)
+  const mw  = pxOrPct(s.minWidth);   if (mw  != null) node.minWidth(mw as any)
+  const mxw = pxOrPct(s.maxWidth);   if (mxw != null) { try { node.maxWidth(mxw as any) } catch {} }
+  const mnh = pxOrPct(s.minHeight);  if (mnh != null) { try { node.minHeight(mnh as any) } catch {} }
+  const mxh = pxOrPct(s.maxHeight);  if (mxh != null) { try { node.maxHeight(mxh as any) } catch {} }
   const fl  = px(s.flex);      if (fl  != null) node.flex(fl)
   const fg  = px(s.flexGrow);  if (fg  != null) { try { node.flexGrow(fg) } catch {} }
   const fs  = px(s.flexShrink); if (fs != null) { try { node.flexShrink(fs) } catch {} }
@@ -260,11 +269,28 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── table structure ───────────────────────────────────────────
   if (tag === 'table') {
-    const c = Column(...dropWS(kids) as any)
-    applyBox(c, s)
-    return c as any
+    // Collect TableRow nodes directly from the DOM, bypassing thead/tbody/tfoot
+    // wrappers. sone's Table() requires flat TableRow children and uses the real
+    // table layout algorithm — the only way rowspan and colspan actually work.
+    const rows: any[] = []
+    const collectRows = (parent: HTMLElement) => {
+      for (const child of parent.childNodes) {
+        const ct = (child as HTMLElement).tagName?.toLowerCase() ?? ''
+        if (ct === 'tr') {
+          const row = convertNode(child as any)
+          if (row) rows.push(row)
+        } else if (['thead', 'tbody', 'tfoot'].includes(ct)) {
+          collectRows(child as HTMLElement)
+        }
+      }
+    }
+    collectRows(el)
+    const tbl = SoneTable(...rows as any)
+    applyBox(tbl, s)
+    return tbl as any
   }
 
+  // thead/tbody/tfoot outside a <table> — rare, fall back to Column
   if (tag === 'thead' || tag === 'tbody' || tag === 'tfoot') {
     return Column(...dropWS(kids) as any) as any
   }
@@ -284,6 +310,9 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
     const cell = TableCell(...wrapped as any).padding(7, 10)
     if (colSpan > 1) cell.colspan(colSpan)
     if (rowSpan > 1) cell.rowspan(rowSpan)
+    // Default: grow to fill row width proportionally to colspan.
+    // Explicit width / flex / flex-grow in the style attr overrides this via applyBox.
+    if (!s.width && !s.flex && !s.flexGrow) cell.grow(colSpan)
     if (tag === 'th') {
       if (s.backgroundColor) cell.bg(s.backgroundColor)
       wrapped.forEach((c: any) => { try { c.color(s.color ?? '#000').weight('bold') } catch {} })
