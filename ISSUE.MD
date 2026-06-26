@@ -11,10 +11,8 @@
     </td>
   </tr>
   <tr>
-    <td rowspan="7" style="border: 1px solid black;">
+    <td colspan="2" rowspan="7" style="border: 1px solid black;">
       <p style="font-family: Kh-Siemreap;">កម្ចីប្រើប្រាស់ផ្ទាល់ខ្លួន</p>
-    </td>
-    <td rowspan="7" style="border: 1px solid black;">
       <p style="font-family: Kh-Siemreap;">[12] [...]</p>
     </td>
     <td style="border: 1px solid black;">
