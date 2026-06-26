@@ -108,36 +108,47 @@ function applyBox(node: any, s: Record<string, string>) {
   const right = px(s.right); if (right != null) node.right(right)
   const bot = px(s.bottom); if (bot  != null) node.bottom(bot)
 
-  // Standalone border-width / border-color (applied before shorthands so shorthands override)
-  const sbw = px(s.borderWidth); if (sbw != null) node.borderWidth(sbw)
-  if (s.borderColor) node.borderColor(s.borderColor)
+  // Accumulate per-side border widths into one call — each borderWidth(t,r,b,l) call
+  // replaces ALL four values, so multiple calls would zero out previously set sides.
+  let bwT: number | undefined, bwR: number | undefined,
+      bwB: number | undefined, bwL: number | undefined
+  let borderCol: string | undefined
 
-  // Border shorthands — color extracted by skipping style keywords
+  const sbw = px(s.borderWidth)
+  if (sbw != null) { bwT = bwR = bwB = bwL = sbw }
+  if (s.borderColor) borderCol = s.borderColor
+
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(bw)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = px(parts[0])
+    if (bw != null) { bwT ??= bw; bwR ??= bw; bwB ??= bw; bwL ??= bw }
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderTop) {
     const parts = s.borderTop.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(bw, 0, 0, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = px(parts[0]); if (bw != null) bwT = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderBottom) {
     const parts = s.borderBottom.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, bw, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = px(parts[0]); if (bw != null) bwB = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderRight) {
     const parts = s.borderRight.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, bw, 0, 0)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = px(parts[0]); if (bw != null) bwR = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderLeft) {
     const parts = s.borderLeft.trim().split(/\s+/)
-    const bw = px(parts[0]); if (bw != null) node.borderWidth(0, 0, 0, bw)
-    const bc = parseBorderColor(parts); if (bc) node.borderColor(bc)
+    const bw = px(parts[0]); if (bw != null) bwL = bw
+    const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
+
+  if (bwT != null || bwR != null || bwB != null || bwL != null) {
+    node.borderWidth(bwT ?? 0, bwR ?? 0, bwB ?? 0, bwL ?? 0)
+  }
+  if (borderCol) node.borderColor(borderCol)
   return node
 }
 
@@ -165,10 +176,19 @@ function applyTextStyle(node: any, s: Record<string, string>) {
 
 const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h5: 14, h6: 13 }
 
+// Drop whitespace-only strings from block-container child lists.
+// Inline containers (p, h1–h6, Text) must NOT use this — they need the spaces.
+function dropWS(kids: AnyNode[]): AnyNode[] {
+  return kids.filter(c => typeof c !== 'string' || c.trim() !== '')
+}
+
 function convertNode(node: HTMLElement | TextNode): AnyNode | null {
   if (node instanceof TextNode) {
     const t = node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ')
-    return t.trim() ? (t as any) : null
+    // Keep a single space (" ") so that inline text runs like
+    //   <span>A</span> <span>B</span>  preserve the gap between words.
+    // Truly empty strings ("") are still dropped.
+    return t || null
   }
 
   const el = node as HTMLElement
@@ -232,23 +252,23 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── table structure ───────────────────────────────────────────
   if (tag === 'table') {
-    const c = Column(...kids as any)
+    const c = Column(...dropWS(kids) as any)
     applyBox(c, s)
     return c as any
   }
 
   if (tag === 'thead' || tag === 'tbody' || tag === 'tfoot') {
-    return Column(...kids as any) as any
+    return Column(...dropWS(kids) as any) as any
   }
 
   if (tag === 'tr') {
-    const c = Row(...kids as any)
+    const c = Row(...dropWS(kids) as any)
     applyBox(c, s)
     return c as any
   }
 
   if (tag === 'th' || tag === 'td') {
-    const wrapped = kids.map(c =>
+    const wrapped = dropWS(kids).map(c =>
       typeof c === 'string' ? applyTextStyle(Text(c), s) : c
     )
     const cell = Column(...wrapped as any).flex(1).padding(7, 10)
@@ -257,13 +277,30 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
       wrapped.forEach((c: any) => { try { c.color(s.color || 'white').weight('bold') } catch {} })
     }
     // Simulate CSS border-collapse: a full 'border' shorthand on each cell stacks
-    // with neighbours to create doubled lines at shared edges. Convert it to
-    // right+bottom only — adjacent cells no longer double up. The <table> border
-    // (or the first row/column's explicit side borders) covers outer left+top edges.
+    // with neighbours to create doubled lines at shared edges. Convert to
+    // right+bottom only so inner shared edges are drawn once.
+    // Restore left for the first column and top for the first row so outer
+    // table edges remain visible.
     const cellStyle = { ...s }
     if (cellStyle.border) {
+      const tr = el.parentNode as HTMLElement
+      const tbody = tr?.parentNode as HTMLElement
+      const table = tbody?.parentNode as HTMLElement
+
+      // First column: first element-node sibling in the <tr>
+      const trCells = tr?.childNodes.filter(
+        n => ['td', 'th'].includes((n as HTMLElement).tagName?.toLowerCase() ?? '')
+      ) ?? []
+      const isFirstCol = trCells[0] === el
+
+      // First row: first <tr> in the table (accounting for thead/tbody wrappers)
+      const allRows = table?.querySelectorAll('tr') ?? []
+      const isFirstRow = allRows.length > 0 && allRows[0] === tr
+
       cellStyle.borderRight  = cellStyle.borderRight  ?? cellStyle.border
       cellStyle.borderBottom = cellStyle.borderBottom ?? cellStyle.border
+      if (isFirstCol) cellStyle.borderLeft = cellStyle.borderLeft ?? cellStyle.border
+      if (isFirstRow) cellStyle.borderTop  = cellStyle.borderTop  ?? cellStyle.border
       delete cellStyle.border
     }
     applyBox(cell, cellStyle)
@@ -324,13 +361,13 @@ function convertNode(node: HTMLElement | TextNode): AnyNode | null {
 
   // ── ul / ol ───────────────────────────────────────────────────
   if (tag === 'ul' || tag === 'ol') {
-    const list = Column(...kids as any).padding(0, 0, 0, 8)
+    const list = Column(...dropWS(kids) as any).padding(0, 0, 0, 8)
     applyBox(list, s)
     return list as any
   }
 
   // ── container (div, section, header, footer…) ────────────────
-  const wrapped = kids.map(c =>
+  const wrapped = dropWS(kids).map(c =>
     typeof c === 'string' ? applyTextStyle(Text(c), s) : c
   )
   const isRow = s.flexDirection === 'row'
