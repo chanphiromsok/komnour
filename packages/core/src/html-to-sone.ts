@@ -1,11 +1,11 @@
 import { parse } from 'node-html-parser'
-import { Column, Row, Text, Span, PageBreak, Path } from 'sone'
+import { Column, Row, Text, Span, PageBreak, Path, Photo } from 'sone'
 import { makeConverter } from '@komnour/html-to-syntax'
 
 type AnyNode = ReturnType<typeof Column> | ReturnType<typeof Text> | ReturnType<typeof Span>
 
 // Single converter instance — shared logic lives in @komnour/html-to-syntax
-const convertNode = makeConverter({ Column, Row, Text, Span, PageBreak, Path })
+const convertNode = makeConverter({ Column, Row, Text, Span, PageBreak, Path, Photo })
 
 function isPageBreakNode(n: any): boolean {
   return n && typeof n === 'object' && n.type === 'column' &&

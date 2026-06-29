@@ -171,6 +171,12 @@ class SNode {
   maxLines(v: number)             { return this._m('maxLines', fmt(v)) }
   shadow(s: string)               { return this._m('shadow', q(s)) }
   direction(s: string)            { return this._m('direction', q(s)) }
+  scaleType(v: string, alignment?: string) {
+    return alignment ? this._m('scaleType', q(v), q(alignment)) : this._m('scaleType', q(v))
+  }
+  preserveAspectRatio()           { return this._m('preserveAspectRatio') }
+  flipHorizontal()                { return this._m('flipHorizontal') }
+  flipVertical()                  { return this._m('flipVertical') }
   // path
   stroke(c: string)               { return this._m('stroke', q(c)) }
   strokeWidth(v: number)          { return this._m('strokeWidth', fmt(v)) }
@@ -205,6 +211,7 @@ const snodeBuilders = {
   Span:   (text: string):         SNode  => new SNode('span',      'Span',      [text]),
   PageBreak: ():                  SNode  => new SNode('pageBreak', 'PageBreak', []),
   Path:   (d: string):            SNode  => new SNode('path',      'Path',      [d]),
+  Photo:  (src: string):          SNode  => new SNode('photo',     'Photo',     [src]),
 }
 
 // ── Shared builder interface ───────────────────────────────────────────────
@@ -216,6 +223,7 @@ export interface SoneBuilderSet {
   Span:      (text: string) => any
   PageBreak: () => any
   Path:      (d: string) => any
+  Photo:     (src: string) => any
 }
 
 // ── Shared converter factory ───────────────────────────────────────────────
@@ -225,7 +233,7 @@ export interface SoneBuilderSet {
 // Pass snodeBuilders to produce SNode trees that render to syntax strings.
 
 export function makeConverter(b: SoneBuilderSet) {
-  const { Column, Row, Text, Span, PageBreak, Path } = b
+  const { Column, Row, Text, Span, PageBreak, Path, Photo } = b
 
   const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h5: 14, h6: 13 }
 
@@ -416,11 +424,33 @@ export function makeConverter(b: SoneBuilderSet) {
     }
 
     if (tag === 'img') {
-      const imgW = px(el.getAttribute('width') ?? '') ?? 0
-      const imgH = px(el.getAttribute('height') ?? '') ?? 0
-      const nd = Column().bg('#e8e8e8')
-      if (imgW > 0) nd.width(imgW)
-      if (imgH > 0) nd.height(imgH)
+      const src = el.getAttribute('src') ?? ''
+      const attrW = px(el.getAttribute('width') ?? '')
+      const attrH = px(el.getAttribute('height') ?? '')
+
+      if (!src) {
+        const nd = Column().bg('#e8e8e8')
+        if (!s.width  && attrW != null && attrW > 0) nd.width(attrW)
+        if (!s.height && attrH != null && attrH > 0) nd.height(attrH)
+        applyBox(nd, s)
+        return nd
+      }
+
+      const nd = Photo(src)
+      if (!s.width  && attrW != null && attrW > 0) nd.width(attrW)
+      if (!s.height && attrH != null && attrH > 0) nd.height(attrH)
+
+      const fit = s.objectFit
+      if (fit === 'cover' || fit === 'fill' || fit === 'contain') {
+        const pos = (s.objectPosition ?? '').toLowerCase()
+        const alignment = pos.includes('top') || pos.includes('left') || pos.includes('start')
+          ? 'start'
+          : pos.includes('bottom') || pos.includes('right') || pos.includes('end')
+          ? 'end'
+          : pos ? 'center' : undefined
+        nd.scaleType(fit, alignment)
+      }
+
       applyBox(nd, s)
       return nd
     }
