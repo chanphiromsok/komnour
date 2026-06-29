@@ -51,6 +51,12 @@ importers:
 
   packages/editor:
     dependencies:
+      '@fontsource/inter':
+        specifier: ^4.0.0
+        version: 4.5.15
+      '@fontsource/noto-sans-khmer':
+        specifier: ^4.5.0
+        version: 4.5.11
       '@komnour/html-to-syntax':
         specifier: workspace:*
         version: link:../html-to-syntax
@@ -69,6 +75,9 @@ importers:
       react-resizable-panels:
         specifier: ^4.11.2
         version: 4.11.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      sone:
+        specifier: ^1.4.0
+        version: 1.4.0(shiki@4.2.0)(skia-canvas@3.0.8)
     devDependencies:
       '@types/react':
         specifier: ^18.0.0
