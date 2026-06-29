@@ -35,14 +35,6 @@ function px(v?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
-function pxOrPct(v?: string): number | `${number}%` | undefined {
-  if (!v) return undefined
-  const num = parseFloat(v)
-  if (!isNaN(num)) return num
-  const t = v.trim()
-  return /^\d+(\.\d+)?%$/.test(t) ? (t as `${number}%`) : undefined
-}
-
 function parseShorthand4(v?: string): [number, number, number, number] | undefined {
   if (!v) return undefined
   const parts = v.trim().split(/\s+/).map(p => p === 'auto' ? 0 : px(p))
@@ -62,10 +54,6 @@ const BORDER_STYLE_KEYWORDS = new Set([
 function parseBorderColor(parts: string[]): string | null {
   const color = parts.find(p => px(p) == null && !BORDER_STYLE_KEYWORDS.has(p.toLowerCase()))
   return color ?? null
-}
-
-function parseBorderWidth(parts: string[]): number | undefined {
-  return parts.map(px).find(v => v != null)
 }
 
 // ── SNode: string-building stand-in for sone's builder API ───────────────
@@ -135,8 +123,6 @@ class SNode {
   strokeLineCap(s: string)   { return this._m('strokeLineCap', q(s)) }
   strokeLineJoin(s: string)  { return this._m('strokeLineJoin', q(s)) }
   fill(c: string)            { return this._m('fill', q(c)) }
-  colspan(v: number)         { return this._m('colspan', n(v)) }
-  rowspan(v: number)         { return this._m('rowspan', n(v)) }
 
   toString(indent = 0): string {
     const pad = '  '.repeat(indent)
@@ -164,9 +150,6 @@ function Text(...children: Child[]): SNode    { return new SNode('text',      'T
 function Span(text: string): SNode            { return new SNode('span',      'Span',      [text]) }
 function PageBreak(): SNode                   { return new SNode('pageBreak', 'PageBreak', []) }
 function Path(d: string): SNode              { return new SNode('path',      'Path',      [d]) }
-function Table(...children: Child[]): SNode   { return new SNode('table',     'Table',     children) }
-function TableRow(...children: Child[]): SNode { return new SNode('tableRow', 'TableRow',  children) }
-function TableCell(...children: Child[]): SNode { return new SNode('tableCell','TableCell', children) }
 
 // ── text flattening ───────────────────────────────────────────────────────
 
@@ -204,13 +187,13 @@ function applyBox(node: SNode, s: Record<string, string>) {
     node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
   }
 
-  const g   = px(s.gap);             if (g   != null) node.gap(g)
-  const w   = pxOrPct(s.width);      if (w   != null) node.width(w as any)
-  const h   = pxOrPct(s.height);     if (h   != null) node.height(h as any)
-  const mw  = pxOrPct(s.minWidth);   if (mw  != null) node.minWidth(mw as any)
-  const mxw = pxOrPct(s.maxWidth);   if (mxw != null) node.maxWidth(mxw as any)
-  const mnh = pxOrPct(s.minHeight);  if (mnh != null) node.minHeight(mnh as any)
-  const mxh = pxOrPct(s.maxHeight);  if (mxh != null) node.maxHeight(mxh as any)
+  const g   = px(s.gap);        if (g   != null) node.gap(g)
+  const w   = px(s.width);      if (w   != null) node.width(w)
+  const h   = px(s.height);     if (h   != null) node.height(h)
+  const mw  = px(s.minWidth);   if (mw  != null) node.minWidth(mw)
+  const mxw = px(s.maxWidth);   if (mxw != null) node.maxWidth(mxw)
+  const mnh = px(s.minHeight);  if (mnh != null) node.minHeight(mnh)
+  const mxh = px(s.maxHeight);  if (mxh != null) node.maxHeight(mxh)
   const fl  = px(s.flex);            if (fl  != null) node.flex(fl)
   const fg  = px(s.flexGrow);        if (fg  != null) node.flexGrow(fg)
   const fs  = px(s.flexShrink);      if (fs  != null) node.flexShrink(fs)
@@ -239,28 +222,28 @@ function applyBox(node: SNode, s: Record<string, string>) {
 
   if (s.border) {
     const parts = s.border.trim().split(/\s+/)
-    const bw = parseBorderWidth(parts)
+    const bw = px(parts[0])
     if (bw != null) { bwT ??= bw; bwR ??= bw; bwB ??= bw; bwL ??= bw }
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderTop) {
     const parts = s.borderTop.trim().split(/\s+/)
-    const bw = parseBorderWidth(parts); if (bw != null) bwT = bw
+    const bw = px(parts[0]); if (bw != null) bwT = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderBottom) {
     const parts = s.borderBottom.trim().split(/\s+/)
-    const bw = parseBorderWidth(parts); if (bw != null) bwB = bw
+    const bw = px(parts[0]); if (bw != null) bwB = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderRight) {
     const parts = s.borderRight.trim().split(/\s+/)
-    const bw = parseBorderWidth(parts); if (bw != null) bwR = bw
+    const bw = px(parts[0]); if (bw != null) bwR = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
   if (s.borderLeft) {
     const parts = s.borderLeft.trim().split(/\s+/)
-    const bw = parseBorderWidth(parts); if (bw != null) bwL = bw
+    const bw = px(parts[0]); if (bw != null) bwL = bw
     const bc = parseBorderColor(parts); if (bc) borderCol = bc
   }
 
@@ -293,33 +276,6 @@ const HEADING_SIZE: Record<string, number> = { h1: 26, h2: 20, h3: 17, h4: 15, h
 
 function dropWS(kids: (SNode | string)[]): (SNode | string)[] {
   return kids.filter(c => typeof c !== 'string' || c.trim() !== '')
-}
-
-// ── table column-count context stack ─────────────────────────────────────
-
-const _tableCtxStack: Array<{ totalCols: number; w: number }> = []
-
-function countTableCols(tableEl: HTMLElement): number {
-  let max = 0
-  const countRow = (rowEl: HTMLElement) => {
-    let cnt = 0
-    for (const child of rowEl.childNodes) {
-      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
-      if (t === 'td' || t === 'th') {
-        cnt += parseInt((child as HTMLElement).getAttribute('colspan') ?? '1', 10) || 1
-      }
-    }
-    if (cnt > max) max = cnt
-  }
-  const walk = (el: HTMLElement) => {
-    for (const child of el.childNodes) {
-      const t = (child as HTMLElement).tagName?.toLowerCase() ?? ''
-      if (t === 'tr') countRow(child as HTMLElement)
-      else if (t === 'thead' || t === 'tbody' || t === 'tfoot') walk(child as HTMLElement)
-    }
-  }
-  walk(tableEl)
-  return max || 1
 }
 
 // ── node converter ────────────────────────────────────────────────────────
@@ -391,51 +347,9 @@ function convertNode(node: HTMLElement | TextNode): SNode | string | null {
 
   // ── table structure ───────────────────────────────────────────
   if (tag === 'table') {
-    const totalCols = countTableCols(el)
-    const tblWidth = px(s.width) ?? 794
-    _tableCtxStack.push({ totalCols, w: tblWidth })
-
-    const rows: SNode[] = []
-    const collectRows = (parent: HTMLElement) => {
-      for (const child of parent.childNodes) {
-        const ct = (child as HTMLElement).tagName?.toLowerCase() ?? ''
-        if (ct === 'tr') {
-          const row = convertNode(child as any)
-          if (row && row instanceof SNode) rows.push(row)
-        } else if (['thead', 'tbody', 'tfoot'].includes(ct)) {
-          collectRows(child as HTMLElement)
-        }
-      }
-    }
-    collectRows(el)
-    _tableCtxStack.pop()
-
-    const tbl = Table(...rows)
-    applyBox(tbl, s)
-
-    let cellBorderW: number | undefined
-    let cellBorderC: string | undefined
-    for (const cellEl of el.querySelectorAll('td, th')) {
-      const cs = parseStyle((cellEl as HTMLElement).getAttribute('style') ?? '')
-      const b = cs.border || cs.borderRight || cs.borderBottom || cs.borderLeft || cs.borderTop
-      if (b) {
-        const parts = b.trim().split(/\s+/)
-        const w = parseBorderWidth(parts)
-        if (w != null) { cellBorderW = w; cellBorderC = parseBorderColor(parts) ?? undefined; break }
-      }
-    }
-    const tblHasBorder = (tbl as any)._calls.some(
-      (c: string) => c.startsWith('.borderWidth') || c.startsWith('.borderColor')
-    )
-    if (!tblHasBorder) {
-      if (cellBorderW != null && cellBorderW > 0) {
-        tbl.borderWidth(cellBorderW)
-        if (cellBorderC) tbl.borderColor(cellBorderC)
-      } else {
-        tbl.borderColor('transparent')
-      }
-    }
-    return tbl
+    const c = Column(...dropWS(kids))
+    applyBox(c, s)
+    return c
   }
 
   if (tag === 'thead' || tag === 'tbody' || tag === 'tfoot') {
@@ -443,41 +357,40 @@ function convertNode(node: HTMLElement | TextNode): SNode | string | null {
   }
 
   if (tag === 'tr') {
-    const row = TableRow(...dropWS(kids))
-    applyBox(row, s)
-    return row
+    const c = Row(...dropWS(kids))
+    applyBox(c, s)
+    return c
   }
 
   if (tag === 'th' || tag === 'td') {
-    const wrapped = dropWS(kids).map(c => {
-      if (typeof c === 'string') return applyTextStyle(Text(c), s)
-      if (c instanceof SNode && c.type === 'span') return Text(c)
-      return c
-    })
+    const wrapped = dropWS(kids).map(c =>
+      typeof c === 'string' ? applyTextStyle(Text(c), s) : c
+    )
     const colSpan = parseInt(el.getAttribute('colspan') ?? '1', 10) || 1
-    const rowSpan = parseInt(el.getAttribute('rowspan') ?? '1', 10) || 1
-    const cell = TableCell(...wrapped).padding(7, 10)
-    if (colSpan > 1) cell.colspan(colSpan)
-    if (rowSpan > 1) cell.rowspan(rowSpan)
-    if (!s.width && !s.flex && !s.flexGrow) {
-      const ctx = _tableCtxStack[_tableCtxStack.length - 1]
-      if (ctx) {
-        cell.minWidth(colSpan / ctx.totalCols * ctx.w)
-      } else {
-        cell.grow(colSpan)
-      }
-    }
+    const cell = Column(...wrapped).flex(colSpan).padding(7, 10)
     if (tag === 'th') {
       if (s.backgroundColor) cell.bg(s.backgroundColor)
-      wrapped.forEach(c => {
-        if (c instanceof SNode) try { c.color(s.color ?? '#000').weight('bold') } catch {}
-      })
+      wrapped.forEach(c => { try { (c as SNode).color(s.color ?? '#000').weight('bold') } catch {} })
     }
     const cellStyle = { ...s }
-    delete cellStyle.border
-    delete cellStyle.borderTop; delete cellStyle.borderRight
-    delete cellStyle.borderBottom; delete cellStyle.borderLeft
-    delete cellStyle.borderWidth; delete cellStyle.borderColor
+    if (cellStyle.border) {
+      const tr = el.parentNode as HTMLElement
+      const trParent = tr?.parentNode as HTMLElement
+      const trParentTag = trParent?.tagName?.toLowerCase() ?? ''
+      const tableEl = ['tbody', 'thead', 'tfoot'].includes(trParentTag)
+        ? (trParent.parentNode as HTMLElement) : trParent
+      const trCells = tr?.childNodes.filter(
+        n => ['td', 'th'].includes((n as HTMLElement).tagName?.toLowerCase() ?? '')
+      ) ?? []
+      const isFirstCol = trCells[0] === el
+      const allRows = tableEl?.querySelectorAll('tr') ?? []
+      const isFirstRow = allRows.length > 0 && allRows[0] === tr
+      cellStyle.borderRight  = cellStyle.borderRight  ?? cellStyle.border
+      cellStyle.borderBottom = cellStyle.borderBottom ?? cellStyle.border
+      if (isFirstCol) cellStyle.borderLeft = cellStyle.borderLeft ?? cellStyle.border
+      if (isFirstRow) cellStyle.borderTop  = cellStyle.borderTop  ?? cellStyle.border
+      delete cellStyle.border
+    }
     applyBox(cell, cellStyle)
     return cell
   }
@@ -638,9 +551,6 @@ export function htmlToSoneSyntax(html: string, opts: SoneSyntaxOptions = {}): st
 
   if (!preamble) return expr
 
-  const fns = [
-    'Column', 'Row', 'Text', 'Span', 'PageBreak', 'Path',
-    'Table', 'TableRow', 'TableCell',
-  ]
+  const fns = ['Column', 'Row', 'Text', 'Span', 'PageBreak', 'Path']
   return `import { ${fns.join(', ')} } from 'sone'\n\n${expr}\n`
 }
