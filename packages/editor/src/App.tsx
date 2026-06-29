@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
+import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
 import { setupMonaco } from './monaco-setup'
 
 const SERVER = 'http://localhost:3001'
@@ -290,6 +291,15 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
 
+  const [view, setView] = useState<'preview' | 'syntax'>('preview')
+  const syntax = useMemo(() => htmlToSoneSyntax(html, { preamble: true }), [html])
+  const [copied, setCopied] = useState(false)
+  const copySyntax = () => {
+    navigator.clipboard.writeText(syntax)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
   const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null)
 
   const exportFile = async (fmt: 'pdf' | 'png') => {
@@ -540,90 +550,147 @@ export default function App() {
         {/* ── Resize handle ──────────────────────────────────────────── */}
         <PanelResizeHandle style={{ width: 4, background: '#21262d', cursor: 'col-resize' }} />
 
-        {/* Preview panel */}
+        {/* Preview / Syntax panel */}
         <Panel defaultSize={50} minSize={20}>
           <div style={{
             height: '100%',
-            background: '#090c10',
-            backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
+            background: view === 'syntax' ? '#0d1117' : '#090c10',
+            ...(view !== 'syntax' && {
+              backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }),
             display: 'flex', flexDirection: 'column',
           }}>
-            {/* Preview header */}
+
+            {/* Tab bar */}
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 16px', height: 35, flexShrink: 0,
-              background: '#090c10cc',
-              backdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'stretch', height: 35, flexShrink: 0,
+              background: '#010409',
               borderBottom: '1px solid #21262d',
             }}>
-              <span style={{ fontSize: 11, color: '#484f58', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Preview · {format.toUpperCase()}
-              </span>
-              <span style={{ fontSize: 10, color: '#30363d' }}>794px wide</span>
+              {/* View tabs */}
+              {(['preview', 'syntax'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    background: view === v ? (v === 'syntax' ? '#0d1117' : '#090c10') : 'transparent',
+                    color: view === v ? '#c9d1d9' : '#484f58',
+                    border: 'none',
+                    borderTop: view === v ? '2px solid #58a6ff' : '2px solid transparent',
+                    borderRight: '1px solid #21262d',
+                    padding: '0 16px',
+                    fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    transition: 'color 0.12s',
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+
+              <div style={{ flex: 1 }} />
+
+              {/* Right controls */}
+              {view === 'preview' && (
+                <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+                  794px wide
+                </span>
+              )}
+              {view === 'syntax' && (
+                <button
+                  onClick={copySyntax}
+                  style={{
+                    background: 'none', border: 'none',
+                    color: copied ? '#3db87a' : '#484f58',
+                    fontSize: 11, cursor: 'pointer', padding: '0 16px',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    transition: 'color 0.15s',
+                  }}
+                >
+                  {copied
+                    ? <><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5 L4 8 L9.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Copied</>
+                    : <><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="3.5" y="1" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1"/><rect x="1" y="3.5" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1" fill="#010409"/></svg> Copy</>
+                  }
+                </button>
+              )}
             </div>
 
-            {/* Preview content */}
-            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-              {/* Loading spinner (shown before first render) */}
-              {status === 'loading' && !previewUrl && pages.length === 0 && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 12, color: '#484f58', fontSize: 12, pointerEvents: 'none',
-                }}>
-                  <svg width="32" height="32" viewBox="0 0 32 32" style={{ animation: 'spin 1.2s linear infinite' }}>
-                    <circle cx="16" cy="16" r="12" stroke="#21262d" strokeWidth="3" fill="none" />
-                    <path d="M16 4 A12 12 0 0 1 28 16" stroke="#58a6ff" strokeWidth="3" fill="none" strokeLinecap="round" />
-                  </svg>
-                  rendering…
-                </div>
-              )}
-
-              {/* PNG or PDF: same Figma-like zoom/pan canvas */}
-              <ZoomPane loading={status === 'loading'} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
-                {/* Single PNG */}
-                {format === 'png' && previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt="preview"
-                    draggable={false}
-                    style={{
-                      display: 'block',
-                      boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
-                      borderRadius: 2,
-                    }}
-                  />
-                )}
-                {/* PDF pages stacked */}
-                {format === 'pdf' && pages.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    {pages.map((b64, i) => (
-                      <div key={i} style={{ position: 'relative' }}>
-                        <img
-                          src={`data:image/png;base64,${b64}`}
-                          alt={`page ${i + 1}`}
-                          draggable={false}
-                          style={{
-                            display: 'block',
-                            width: 794,   // rendered at 2× (1588px), shown at 1× CSS px → crisp
-                            boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute', bottom: -14, right: 0,
-                          fontSize: 9, color: '#3d444d',
-                          userSelect: 'none', pointerEvents: 'none',
-                        }}>
-                          {i + 1} / {pages.length}
-                        </div>
-                      </div>
-                    ))}
+            {/* Content */}
+            {view === 'preview' ? (
+              <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                {status === 'loading' && !previewUrl && pages.length === 0 && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 12, color: '#484f58', fontSize: 12, pointerEvents: 'none',
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 32 32" style={{ animation: 'spin 1.2s linear infinite' }}>
+                      <circle cx="16" cy="16" r="12" stroke="#21262d" strokeWidth="3" fill="none" />
+                      <path d="M16 4 A12 12 0 0 1 28 16" stroke="#58a6ff" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    </svg>
+                    rendering…
                   </div>
                 )}
-              </ZoomPane>
-            </div>
+                <ZoomPane loading={status === 'loading'} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
+                  {format === 'png' && previewUrl && (
+                    <img
+                      src={previewUrl}
+                      alt="preview"
+                      draggable={false}
+                      style={{ display: 'block', boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)', borderRadius: 2 }}
+                    />
+                  )}
+                  {format === 'pdf' && pages.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                      {pages.map((b64, i) => (
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img
+                            src={`data:image/png;base64,${b64}`}
+                            alt={`page ${i + 1}`}
+                            draggable={false}
+                            style={{ display: 'block', width: 794, boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)', borderRadius: 2 }}
+                          />
+                          <div style={{ position: 'absolute', bottom: -14, right: 0, fontSize: 9, color: '#3d444d', userSelect: 'none', pointerEvents: 'none' }}>
+                            {i + 1} / {pages.length}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ZoomPane>
+              </div>
+            ) : (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <Editor
+                  height="100%"
+                  language="typescript"
+                  value={syntax}
+                  theme="komnour-dark"
+                  onMount={(_, monaco) => setupMonaco(monaco)}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 20,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
+                    fontLigatures: true,
+                    wordWrap: 'off',
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    renderWhitespace: 'none',
+                    smoothScrolling: true,
+                    domReadOnly: true,
+                    cursorStyle: 'line',
+                    padding: { top: 16, bottom: 16 },
+                    scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6, useShadows: false },
+                    overviewRulerLanes: 0,
+                    renderLineHighlight: 'none',
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+            )}
           </div>
         </Panel>
 
@@ -636,15 +703,22 @@ export default function App() {
         background: '#010409', borderTop: '1px solid #21262d',
         flexShrink: 0, gap: 16,
       }}>
-        {format === 'png' && (
+        {view === 'preview' && format === 'png' && (
           <span style={{ fontSize: 10, color: '#484f58' }}>{zoomPct}%</span>
         )}
         <span style={{ fontSize: 10, color: '#30363d' }}>·</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>HTML</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>UTF-8</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>
-          {html.length.toLocaleString()} chars
-        </span>
+        {view === 'syntax' ? (
+          <>
+            <span style={{ fontSize: 10, color: '#484f58' }}>TypeScript</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>{syntax.length.toLocaleString()} chars</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 10, color: '#484f58' }}>HTML</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>UTF-8</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>{html.length.toLocaleString()} chars</span>
+          </>
+        )}
       </div>
     </div>
   )

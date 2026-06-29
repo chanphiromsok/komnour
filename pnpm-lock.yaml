@@ -48,6 +48,9 @@ importers:
 
   packages/editor:
     dependencies:
+      '@komnour/html-to-syntax':
+        specifier: workspace:*
+        version: link:../html-to-syntax
       '@monaco-editor/react':
         specifier: ^4.6.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
