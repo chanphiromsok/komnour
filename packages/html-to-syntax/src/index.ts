@@ -22,6 +22,15 @@ function px(v?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
+// Returns a number for px values or the original "N%" string for percent values
+function pxOrPct(v?: string): number | `${number}%` | undefined {
+  if (!v) return undefined
+  const t = v.trim()
+  if (/^\d+(\.\d+)?%$/.test(t)) return t as `${number}%`
+  const num = parseFloat(t)
+  return isNaN(num) ? undefined : num
+}
+
 function parseShorthand4(v?: string): [number, number, number, number] | undefined {
   if (!v) return undefined
   const parts = v.trim().split(/\s+/).map(p => p === 'auto' ? 0 : px(p))
@@ -86,44 +95,58 @@ class SNode {
     return {}
   }
 
-  bg(c: string)               { return this._m('bg', q(c)) }
-  width(w: number | string)   { return this._m('width', typeof w === 'string' ? q(w) : fmt(w)) }
-  height(h: number)           { return this._m('height', fmt(h)) }
-  minWidth(v: number)         { return this._m('minWidth', fmt(v)) }
-  maxWidth(v: number | string){ return this._m('maxWidth', typeof v === 'string' ? q(v) : fmt(v)) }
-  minHeight(v: number | string){ return this._m('minHeight', typeof v === 'string' ? q(v) : fmt(v)) }
-  maxHeight(v: number | string){ return this._m('maxHeight', typeof v === 'string' ? q(v) : fmt(v)) }
-  padding(...a: number[])     { return this._m('padding', ...a.map(fmt)) }
-  margin(...a: number[])      { return this._m('margin', ...a.map(fmt)) }
-  gap(v: number)              { return this._m('gap', fmt(v)) }
-  flex(v: number)             { return this._m('flex', fmt(v)) }
-  flexGrow(v: number)         { return this._m('flexGrow', fmt(v)) }
-  flexShrink(v: number)       { return this._m('flexShrink', fmt(v)) }
-  grow(v: number)             { return this._m('grow', fmt(v)) }
-  borderWidth(...a: number[]) { return this._m('borderWidth', ...a.map(fmt)) }
-  borderColor(c: string)      { return this._m('borderColor', q(c)) }
-  rounded(v: number)          { return this._m('rounded', fmt(v)) }
-  justifyContent(s: string)   { return this._m('justifyContent', q(s)) }
-  alignItems(s: string)       { return this._m('alignItems', q(s)) }
-  alignSelf(s: string)        { return this._m('alignSelf', q(s)) }
-  wrap(s: string)             { return this._m('wrap', q(s)) }
-  position(s: string)         { return this._m('position', q(s)) }
-  top(v: number)              { return this._m('top', fmt(v)) }
-  left(v: number)             { return this._m('left', fmt(v)) }
-  right(v: number)            { return this._m('right', fmt(v)) }
-  bottom(v: number)           { return this._m('bottom', fmt(v)) }
-  color(c: string)            { return this._m('color', q(c)) }
-  size(v: number)             { return this._m('size', fmt(v)) }
-  weight(s: string)           { return this._m('weight', q(s)) }
-  align(s: string)            { return this._m('align', q(s)) }
-  font(s: string)             { return this._m('font', q(s)) }
-  lineHeight(v: number)       { return this._m('lineHeight', fmt(v)) }
-  letterSpacing(v: number)    { return this._m('letterSpacing', fmt(v)) }
-  stroke(c: string)           { return this._m('stroke', q(c)) }
-  strokeWidth(v: number)      { return this._m('strokeWidth', fmt(v)) }
-  strokeLineCap(s: string)    { return this._m('strokeLineCap', q(s)) }
-  strokeLineJoin(s: string)   { return this._m('strokeLineJoin', q(s)) }
-  fill(c: string)             { return this._m('fill', q(c)) }
+  // layout sizing — all accept number (px) or "N%" string
+  bg(c: string)                   { return this._m('bg', q(c)) }
+  width(w: number | string)       { return this._m('width', typeof w === 'string' ? q(w) : fmt(w)) }
+  height(h: number | string)      { return this._m('height', typeof h === 'string' ? q(h) : fmt(h)) }
+  minWidth(v: number | string)    { return this._m('minWidth', typeof v === 'string' ? q(v) : fmt(v)) }
+  maxWidth(v: number | string)    { return this._m('maxWidth', typeof v === 'string' ? q(v) : fmt(v)) }
+  minHeight(v: number | string)   { return this._m('minHeight', typeof v === 'string' ? q(v) : fmt(v)) }
+  maxHeight(v: number | string)   { return this._m('maxHeight', typeof v === 'string' ? q(v) : fmt(v)) }
+  // layout
+  padding(...a: number[])         { return this._m('padding', ...a.map(fmt)) }
+  margin(...a: number[])          { return this._m('margin', ...a.map(fmt)) }
+  gap(v: number)                  { return this._m('gap', fmt(v)) }
+  rowGap(v: number)               { return this._m('rowGap', fmt(v)) }
+  columnGap(v: number)            { return this._m('columnGap', fmt(v)) }
+  flex(v: number)                 { return this._m('flex', fmt(v)) }
+  grow(v: number)                 { return this._m('grow', fmt(v)) }
+  shrink(v: number)               { return this._m('shrink', fmt(v)) }
+  basis(v: number | string)       { return this._m('basis', typeof v === 'string' ? q(v) : fmt(v)) }
+  borderWidth(...a: number[])     { return this._m('borderWidth', ...a.map(fmt)) }
+  borderColor(c: string)          { return this._m('borderColor', q(c)) }
+  rounded(v: number)              { return this._m('rounded', fmt(v)) }
+  justifyContent(s: string)       { return this._m('justifyContent', q(s)) }
+  alignContent(s: string)         { return this._m('alignContent', q(s)) }
+  alignItems(s: string)           { return this._m('alignItems', q(s)) }
+  alignSelf(s: string)            { return this._m('alignSelf', q(s)) }
+  wrap(s: string)                 { return this._m('wrap', q(s)) }
+  display(s: string)              { return this._m('display', q(s)) }
+  overflow(s: string)             { return this._m('overflow', q(s)) }
+  opacity(v: number)              { return this._m('opacity', fmt(v)) }
+  position(s: string)             { return this._m('position', q(s)) }
+  top(v: number)                  { return this._m('top', fmt(v)) }
+  left(v: number)                 { return this._m('left', fmt(v)) }
+  right(v: number)                { return this._m('right', fmt(v)) }
+  bottom(v: number)               { return this._m('bottom', fmt(v)) }
+  // text
+  color(c: string)                { return this._m('color', q(c)) }
+  size(v: number)                 { return this._m('size', fmt(v)) }
+  weight(s: string)               { return this._m('weight', q(s)) }
+  align(s: string)                { return this._m('align', q(s)) }
+  font(s: string)                 { return this._m('font', q(s)) }
+  lineHeight(v: number)           { return this._m('lineHeight', fmt(v)) }
+  letterSpacing(v: number)        { return this._m('letterSpacing', fmt(v)) }
+  underline(v = 1)                { return this._m('underline', fmt(v)) }
+  lineThrough(v = 1)              { return this._m('lineThrough', fmt(v)) }
+  textOverflow(s: string)         { return this._m('textOverflow', q(s)) }
+  maxLines(v: number)             { return this._m('maxLines', fmt(v)) }
+  // path
+  stroke(c: string)               { return this._m('stroke', q(c)) }
+  strokeWidth(v: number)          { return this._m('strokeWidth', fmt(v)) }
+  strokeLineCap(s: string)        { return this._m('strokeLineCap', q(s)) }
+  strokeLineJoin(s: string)       { return this._m('strokeLineJoin', q(s)) }
+  fill(c: string)                 { return this._m('fill', q(c)) }
 
   toString(indent = 0): string {
     const pad = '  '.repeat(indent)
@@ -209,16 +232,23 @@ export function makeConverter(b: SoneBuilderSet) {
       node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
     }
 
-    const g   = px(s.gap);        if (g   != null) node.gap(g)
-    const w   = px(s.width);      if (w   != null) node.width(w)
-    const h   = px(s.height);     if (h   != null) node.height(h)
-    const mw  = px(s.minWidth);   if (mw  != null) node.minWidth(mw)
-    const mxw = px(s.maxWidth);   if (mxw != null) { try { node.maxWidth(mxw) } catch {} }
-    const mnh = px(s.minHeight);  if (mnh != null) { try { node.minHeight(mnh) } catch {} }
-    const mxh = px(s.maxHeight);  if (mxh != null) { try { node.maxHeight(mxh) } catch {} }
-    const fl  = px(s.flex);       if (fl  != null) node.flex(fl)
-    const fg  = px(s.flexGrow);   if (fg  != null) { try { node.flexGrow(fg) } catch {} }
-    const fs  = px(s.flexShrink); if (fs  != null) { try { node.flexShrink(fs) } catch {} }
+    const g   = px(s.gap);              if (g   != null) node.gap(g)
+    const w   = pxOrPct(s.width);       if (w   != null) node.width(w)
+    const h   = pxOrPct(s.height);      if (h   != null) node.height(h)
+    const mw  = pxOrPct(s.minWidth);    if (mw  != null) node.minWidth(mw)
+    const mxw = pxOrPct(s.maxWidth);    if (mxw != null) { try { node.maxWidth(mxw) } catch {} }
+    const mnh = pxOrPct(s.minHeight);   if (mnh != null) { try { node.minHeight(mnh) } catch {} }
+    const mxh = pxOrPct(s.maxHeight);   if (mxh != null) { try { node.maxHeight(mxh) } catch {} }
+    const fl  = px(s.flex);             if (fl  != null) node.flex(fl)
+    const fg  = px(s.flexGrow);         if (fg  != null) node.grow(fg)
+    const fsh = px(s.flexShrink);       if (fsh != null) node.shrink(fsh)
+    const fb  = pxOrPct(s.flexBasis);   if (fb  != null) node.basis(fb)
+    const rg  = px(s.rowGap);           if (rg  != null) { try { node.rowGap(rg) } catch {} }
+    const cg  = px(s.columnGap);        if (cg  != null) { try { node.columnGap(cg) } catch {} }
+    if (s.display)       { try { node.display(s.display) } catch {} }
+    if (s.overflow)      { try { node.overflow(s.overflow) } catch {} }
+    const op = parseFloat(s.opacity);   if (!isNaN(op)) { try { node.opacity(op) } catch {} }
+    if (s.alignContent)  { try { node.alignContent(s.alignContent) } catch {} }
 
     const bg = s.backgroundColor || s.background
     if (bg && !bg.includes('gradient') && !bg.includes('url(')) node.bg(bg)
@@ -285,10 +315,17 @@ export function makeConverter(b: SoneBuilderSet) {
         node.lineHeight(lhPx / size)
       }
     }
+    const ls = px(s.letterSpacing); if (ls != null) node.letterSpacing(ls)
     if (s.color)      node.color(s.color)
     if (s.fontWeight) node.weight(s.fontWeight === 'bold' || parseInt(s.fontWeight) >= 600 ? 'bold' : 'normal')
     if (s.textAlign)  node.align(s.textAlign)
     if (s.fontFamily) node.font(s.fontFamily.replace(/['"]/g, '').split(',')[0].trim())
+    if (s.textDecoration) {
+      if (s.textDecoration.includes('underline'))    { try { node.underline(1) }     catch {} }
+      if (s.textDecoration.includes('line-through')) { try { node.lineThrough(1) }   catch {} }
+    }
+    if (s.textOverflow === 'ellipsis') { try { node.textOverflow('ellipsis') } catch {} }
+    const ml = px(s.WebkitLineClamp); if (ml != null && ml > 0) { try { node.maxLines(ml) } catch {} }
     return node
   }
 
