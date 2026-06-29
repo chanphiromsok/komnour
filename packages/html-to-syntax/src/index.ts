@@ -22,7 +22,7 @@ function px(v?: string): number | undefined {
   return isNaN(num) ? undefined : num
 }
 
-// Returns a number for px values or the original "N%" string for percent values
+// Returns a number for px values, "N%" for percent, or undefined
 function pxOrPct(v?: string): number | `${number}%` | undefined {
   if (!v) return undefined
   const t = v.trim()
@@ -31,15 +31,42 @@ function pxOrPct(v?: string): number | `${number}%` | undefined {
   return isNaN(num) ? undefined : num
 }
 
-function parseShorthand4(v?: string): [number, number, number, number] | undefined {
+// Returns a number, "auto", or undefined — for margin properties that support auto
+function pxOrAuto(v?: string): number | 'auto' | undefined {
   if (!v) return undefined
-  const parts = v.trim().split(/\s+/).map(p => p === 'auto' ? 0 : px(p))
+  if (v.trim() === 'auto') return 'auto'
+  return px(v)
+}
+
+type ShorthandValue = number | 'auto'
+
+function parseShorthand4(v?: string): [ShorthandValue, ShorthandValue, ShorthandValue, ShorthandValue] | undefined {
+  if (!v) return undefined
+  const parts = v.trim().split(/\s+/).map(p => p === 'auto' ? 'auto' as const : px(p))
   if (parts.some(p => p == null)) return undefined
-  const [a, b, c, d] = parts as number[]
+  const [a, b, c, d] = parts as ShorthandValue[]
   if (parts.length === 1) return [a, a, a, a]
   if (parts.length === 2) return [a, b, a, b]
   if (parts.length === 3) return [a, b, c, b]
   return [a, b, c, d]
+}
+
+// Tokenize a CSS shorthand value respecting parentheses so rgb(0, 0, 0) stays as one token
+function splitRespectingParens(v: string): string[] {
+  const tokens: string[] = []
+  let current = ''
+  let depth = 0
+  for (const ch of v.trim()) {
+    if (ch === '(') depth++
+    else if (ch === ')') depth--
+    if (ch === ' ' && depth === 0) {
+      if (current) { tokens.push(current); current = '' }
+    } else {
+      current += ch
+    }
+  }
+  if (current) tokens.push(current)
+  return tokens
 }
 
 const BORDER_STYLE_KEYWORDS = new Set([
@@ -104,8 +131,8 @@ class SNode {
   minHeight(v: number | string)   { return this._m('minHeight', typeof v === 'string' ? q(v) : fmt(v)) }
   maxHeight(v: number | string)   { return this._m('maxHeight', typeof v === 'string' ? q(v) : fmt(v)) }
   // layout
-  padding(...a: number[])         { return this._m('padding', ...a.map(fmt)) }
-  margin(...a: number[])          { return this._m('margin', ...a.map(fmt)) }
+  padding(...a: (number | 'auto')[]) { return this._m('padding', ...a.map(v => v === 'auto' ? q('auto') : fmt(v as number))) }
+  margin(...a: (number | 'auto')[])  { return this._m('margin',  ...a.map(v => v === 'auto' ? q('auto') : fmt(v as number))) }
   gap(v: number)                  { return this._m('gap', fmt(v)) }
   rowGap(v: number)               { return this._m('rowGap', fmt(v)) }
   columnGap(v: number)            { return this._m('columnGap', fmt(v)) }
@@ -113,6 +140,7 @@ class SNode {
   grow(v: number)                 { return this._m('grow', fmt(v)) }
   shrink(v: number)               { return this._m('shrink', fmt(v)) }
   basis(v: number | string)       { return this._m('basis', typeof v === 'string' ? q(v) : fmt(v)) }
+  aspectRatio(v: number)          { return this._m('aspectRatio', fmt(v)) }
   borderWidth(...a: number[])     { return this._m('borderWidth', ...a.map(fmt)) }
   borderColor(c: string)          { return this._m('borderColor', q(c)) }
   rounded(v: number)              { return this._m('rounded', fmt(v)) }
@@ -141,6 +169,8 @@ class SNode {
   lineThrough(v = 1)              { return this._m('lineThrough', fmt(v)) }
   textOverflow(s: string)         { return this._m('textOverflow', q(s)) }
   maxLines(v: number)             { return this._m('maxLines', fmt(v)) }
+  shadow(s: string)               { return this._m('shadow', q(s)) }
+  direction(s: string)            { return this._m('direction', q(s)) }
   // path
   stroke(c: string)               { return this._m('stroke', q(c)) }
   strokeWidth(v: number)          { return this._m('strokeWidth', fmt(v)) }
@@ -224,15 +254,15 @@ export function makeConverter(b: SoneBuilderSet) {
     }
 
     const baseM = parseShorthand4(s.margin)
-    const mt = px(s.marginTop)    ?? baseM?.[0]
-    const mr = px(s.marginRight)  ?? baseM?.[1]
-    const mb = px(s.marginBottom) ?? baseM?.[2]
-    const ml = px(s.marginLeft)   ?? baseM?.[3]
+    const mt = pxOrAuto(s.marginTop)    ?? baseM?.[0]
+    const mr = pxOrAuto(s.marginRight)  ?? baseM?.[1]
+    const mb = pxOrAuto(s.marginBottom) ?? baseM?.[2]
+    const ml = pxOrAuto(s.marginLeft)   ?? baseM?.[3]
     if (baseM || mt != null || mr != null || mb != null || ml != null) {
       node.margin(mt ?? 0, mr ?? 0, mb ?? 0, ml ?? 0)
     }
 
-    const g   = px(s.gap);              if (g   != null) node.gap(g)
+    const g   = px(s.gap);              if (g   != null) { try { node.gap(g) } catch {} }
     const w   = pxOrPct(s.width);       if (w   != null) node.width(w)
     const h   = pxOrPct(s.height);      if (h   != null) node.height(h)
     const mw  = pxOrPct(s.minWidth);    if (mw  != null) node.minWidth(mw)
@@ -254,10 +284,10 @@ export function makeConverter(b: SoneBuilderSet) {
     if (bg && !bg.includes('gradient') && !bg.includes('url(')) node.bg(bg)
 
     if (s.borderRadius) node.rounded(px(s.borderRadius) ?? 0)
-    if (s.justifyContent) node.justifyContent(s.justifyContent)
-    if (s.alignItems)     node.alignItems(s.alignItems)
+    if (s.justifyContent) { try { node.justifyContent(s.justifyContent) } catch {} }
+    if (s.alignItems)     { try { node.alignItems(s.alignItems) } catch {} }
     if (s.alignSelf)      { try { node.alignSelf(s.alignSelf) } catch {} }
-    if (s.flexWrap)       node.wrap(s.flexWrap)
+    if (s.flexWrap)       { try { node.wrap(s.flexWrap) } catch {} }
     if (s.position)       node.position(s.position)
     const top   = px(s.top);    if (top   != null) node.top(top)
     const left  = px(s.left);   if (left  != null) node.left(left)
@@ -273,28 +303,28 @@ export function makeConverter(b: SoneBuilderSet) {
     if (s.borderColor) borderCol = s.borderColor
 
     if (s.border) {
-      const parts = s.border.trim().split(/\s+/)
+      const parts = splitRespectingParens(s.border)
       const bw = px(parts[0])
       if (bw != null) { bwT ??= bw; bwR ??= bw; bwB ??= bw; bwL ??= bw }
       const bc = parseBorderColor(parts); if (bc) borderCol = bc
     }
     if (s.borderTop) {
-      const parts = s.borderTop.trim().split(/\s+/)
+      const parts = splitRespectingParens(s.borderTop)
       const bw = px(parts[0]); if (bw != null) bwT = bw
       const bc = parseBorderColor(parts); if (bc) borderCol = bc
     }
     if (s.borderBottom) {
-      const parts = s.borderBottom.trim().split(/\s+/)
+      const parts = splitRespectingParens(s.borderBottom)
       const bw = px(parts[0]); if (bw != null) bwB = bw
       const bc = parseBorderColor(parts); if (bc) borderCol = bc
     }
     if (s.borderRight) {
-      const parts = s.borderRight.trim().split(/\s+/)
+      const parts = splitRespectingParens(s.borderRight)
       const bw = px(parts[0]); if (bw != null) bwR = bw
       const bc = parseBorderColor(parts); if (bc) borderCol = bc
     }
     if (s.borderLeft) {
-      const parts = s.borderLeft.trim().split(/\s+/)
+      const parts = splitRespectingParens(s.borderLeft)
       const bw = px(parts[0]); if (bw != null) bwL = bw
       const bc = parseBorderColor(parts); if (bc) borderCol = bc
     }
@@ -303,22 +333,36 @@ export function makeConverter(b: SoneBuilderSet) {
       node.borderWidth(bwT ?? 0, bwR ?? 0, bwB ?? 0, bwL ?? 0)
     }
     if (borderCol) node.borderColor(borderCol)
+
+    if (s.boxShadow) { try { node.shadow(s.boxShadow) } catch {} }
+
+    if (s.aspectRatio) {
+      const slash = s.aspectRatio.indexOf('/')
+      const ar = slash >= 0
+        ? parseFloat(s.aspectRatio.slice(0, slash)) / parseFloat(s.aspectRatio.slice(slash + 1))
+        : parseFloat(s.aspectRatio)
+      if (!isNaN(ar) && ar > 0) { try { node.aspectRatio(ar) } catch {} }
+    }
+
     return node
   }
 
-  function applyTextStyle(node: any, s: Record<string, string>) {
+  function applyTextStyle(node: any, s: Record<string, string>, contextFontSize?: number) {
     const fs = px(s.fontSize); if (fs != null) node.size(fs)
     if (s.lineHeight) {
       const lhPx = px(s.lineHeight)
       if (lhPx != null && lhPx > 0) {
-        const size = fs ?? 16
+        const size = fs ?? contextFontSize ?? 16
         node.lineHeight(lhPx / size)
       }
     }
     const ls = px(s.letterSpacing); if (ls != null) node.letterSpacing(ls)
     if (s.color)      node.color(s.color)
     if (s.fontWeight) node.weight(s.fontWeight === 'bold' || parseInt(s.fontWeight) >= 600 ? 'bold' : 'normal')
-    if (s.textAlign)  node.align(s.textAlign)
+    if (s.textAlign) {
+      const align = s.textAlign === 'start' ? 'left' : s.textAlign === 'end' ? 'right' : s.textAlign
+      if (['left', 'right', 'center', 'justify'].includes(align)) node.align(align)
+    }
     if (s.fontFamily) node.font(s.fontFamily.replace(/['"]/g, '').split(',')[0].trim())
     if (s.textDecoration) {
       if (s.textDecoration.includes('underline'))    { try { node.underline(1) }     catch {} }
@@ -480,7 +524,7 @@ export function makeConverter(b: SoneBuilderSet) {
     if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'label'].includes(tag)) {
       const t = Text(...kids)
       if (HEADING_SIZE[tag]) t.size(HEADING_SIZE[tag]).weight('bold')
-      applyTextStyle(t, s)
+      applyTextStyle(t, s, HEADING_SIZE[tag])
       applyBox(t, s)
       return t
     }
@@ -502,17 +546,20 @@ export function makeConverter(b: SoneBuilderSet) {
       if (c?.type === 'span') return Text(c)
       return c
     })
-    const isRow = s.flexDirection === 'row'
+    const fd = s.flexDirection ?? ''
+    const isRow = fd === 'row' || fd === 'row-reverse'
     if (isRow) {
       const rowKids = wrapped.map((c: any) => {
         if (c?.type !== 'text') return c
         return Column(c).flex(1)
       })
       const container = Row(...rowKids)
+      if (fd === 'row-reverse') { try { container.direction('row-reverse') } catch {} }
       applyBox(container, s)
       return container
     }
     const container = Column(...wrapped)
+    if (fd === 'column-reverse') { try { container.direction('column-reverse') } catch {} }
     applyBox(container, s)
     return container
   }
