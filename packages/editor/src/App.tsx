@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
+import { Column, Row, Text, Span, PageBreak, Path, Photo, renderPages } from 'sone'
 import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
 import { setupMonaco } from './monaco-setup'
+import { browserRenderer } from './sone-renderer'
+
+// Font files served via Vite asset pipeline
+import notoKhmer400 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-400-normal.woff?url'
+import notoKhmer700 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-700-normal.woff?url'
+import inter400 from '@fontsource/inter/files/inter-all-400-normal.woff?url'
 
 const SERVER = 'http://localhost:3001'
 const LS_KEY = 'komnour:html'
@@ -35,7 +42,6 @@ type Status = 'idle' | 'loading' | 'error'
 
 const css = String.raw
 
-// Inline global styles injected once
 const GLOBAL_STYLE = css`
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Inter', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; height: 100vh; overflow: hidden; }
@@ -57,7 +63,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
   const isPanning = useRef(false)
   const spaceDown = useRef(false)
   const panStart = useRef({ mx: 0, my: 0, px: 0, py: 0 })
-  // refs mirror state so wheel handler (added via addEventListener) always reads fresh values
   const zoomRef = useRef(1)
   const panRef = useRef({ x: 40, y: 40 })
 
@@ -71,7 +76,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
 
   const resetView = useCallback(() => applyZoom(1, { x: 40, y: 40 }), [applyZoom])
 
-  // Wheel: Ctrl/Meta+scroll or trackpad pinch → zoom; plain scroll → pan
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -99,7 +103,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
     return () => el.removeEventListener('wheel', handler)
   }, [applyZoom])
 
-  // Space key → grab cursor + enable pan
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'Space') return
@@ -150,7 +153,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
       onMouseLeave={onMouseUp}
       style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', cursor }}
     >
-      {/* Canvas content */}
       <div style={{
         position: 'absolute', top: 0, left: 0,
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -162,7 +164,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
         {children}
       </div>
 
-      {/* Zoom controls (bottom-right) */}
       <div style={{
         position: 'absolute', bottom: 14, right: 14,
         display: 'flex', alignItems: 'center', gap: 1,
@@ -188,7 +189,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
         >+</button>
       </div>
 
-      {/* Hint */}
       <div style={{
         position: 'absolute', bottom: 14, left: 14,
         fontSize: 10, color: '#30363d', userSelect: 'none', pointerEvents: 'none',
@@ -213,69 +213,35 @@ export default function App() {
   injectStyle(GLOBAL_STYLE)
 
   const [html, setHtml] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_HTML)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [format, setFormat] = useState<'png' | 'pdf'>('png')
-  const [showWarnings, setShowWarnings] = useState(false)
+  const [pages, setPages] = useState<string[]>([])     // canvas data URLs, one per page
+  const [fontsReady, setFontsReady] = useState(false)
   const [zoomPct, setZoomPct] = useState(100)
-  const [pages, setPages] = useState<string[]>([])   // base64 PNGs for PDF pages
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const prevUrlRef = useRef<string | null>(null)
 
-  const render = useCallback(async (source: string, fmt: 'png' | 'pdf') => {
+  // Load fonts on mount, then trigger first render
+  useEffect(() => {
+    Promise.all([
+      browserRenderer.registerFont('Noto Sans Khmer', [notoKhmer400, notoKhmer700]),
+      browserRenderer.registerFont('Inter', [inter400]),
+    ]).then(() => setFontsReady(true)).catch(console.error)
+  }, [])
+
+  // Local render: HTML → sone syntax → eval with real builders → renderPages → data URLs
+  const renderLocal = useCallback(async (source: string) => {
     setStatus('loading')
     setError('')
     try {
-      if (fmt === 'pdf') {
-        const [sanRes, pagesRes] = await Promise.all([
-          fetch(`${SERVER}/sanitize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-          fetch(`${SERVER}/preview-pages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-        ])
-        const { warnings: w } = await sanRes.json()
-        setWarnings(w ?? [])
-        if (!pagesRes.ok) {
-          const { error: msg } = await pagesRes.json()
-          throw new Error(msg)
-        }
-        const { pages: p } = await pagesRes.json()
-        setPages(p ?? [])
-        setPreviewUrl(null)
-      } else {
-        const [sanRes, renderRes] = await Promise.all([
-          fetch(`${SERVER}/sanitize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-          fetch(`${SERVER}/render`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source, format: fmt }),
-          }),
-        ])
-        const { warnings: w } = await sanRes.json()
-        setWarnings(w ?? [])
-        if (!renderRes.ok) {
-          const { error: msg } = await renderRes.json()
-          throw new Error(msg)
-        }
-        const blob = await renderRes.blob()
-        const url = URL.createObjectURL(blob)
-        if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current)
-        prevUrlRef.current = url
-        setPreviewUrl(url)
-        setPages([])
-      }
+      const syntax = htmlToSoneSyntax(source)
+      // eslint-disable-next-line no-new-func
+      const layout = new Function(
+        'Column', 'Row', 'Text', 'Span', 'PageBreak', 'Path', 'Photo',
+        `"use strict"; return (${syntax})`
+      )(Column, Row, Text, Span, PageBreak, Path, Photo)
+
+      const canvases = await renderPages(layout, browserRenderer, { pageHeight: 1123 })
+      setPages(canvases.map(c => c.toDataURL('image/png')))
       setStatus('idle')
     } catch (e: any) {
       setError(e.message)
@@ -283,11 +249,13 @@ export default function App() {
     }
   }, [])
 
+  // Debounce render on html change (waits for fonts first)
   useEffect(() => {
+    if (!fontsReady) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => render(html, format), 600)
+    debounceRef.current = setTimeout(() => renderLocal(html), 600)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [html, format, render])
+  }, [html, fontsReady, renderLocal])
 
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
 
@@ -352,44 +320,7 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
-        {/* Format toggle */}
-        <div style={{ display: 'flex', background: '#161b22', borderRadius: 6, padding: 2, border: '1px solid #30363d' }}>
-          {(['png', 'pdf'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFormat(f)}
-              style={{
-                background: format === f ? '#21262d' : 'transparent',
-                color: format === f ? '#e6edf3' : '#7d8590',
-                border: 'none', borderRadius: 4,
-                padding: '3px 12px', fontSize: 11, fontWeight: 500,
-                cursor: 'pointer', transition: 'all 0.12s',
-                textTransform: 'uppercase', letterSpacing: '0.04em',
-              }}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
         <div style={{ flex: 1 }} />
-
-        {/* Warnings badge */}
-        {warnings.length > 0 && (
-          <button
-            onClick={() => setShowWarnings(v => !v)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: '#2d2208', border: '1px solid #5a4a00',
-              borderRadius: 6, padding: '3px 10px',
-              color: '#f2cc60', fontSize: 11, cursor: 'pointer',
-              animation: 'fadein 0.2s ease',
-            }}
-          >
-            <span style={{ fontSize: 10 }}>⚠</span>
-            {warnings.length} {warnings.length === 1 ? 'warning' : 'warnings'}
-          </button>
-        )}
 
         {/* Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 90, justifyContent: 'flex-end' }}>
@@ -400,11 +331,12 @@ export default function App() {
             </svg>
           )}
           {status === 'error' && <span style={{ fontSize: 10 }}>⛔</span>}
-          {status === 'idle' && <span style={{ fontSize: 10, color: '#3db87a' }}>●</span>}
+          {status === 'idle' && !fontsReady && <span style={{ fontSize: 10, color: '#7d8590' }}>●</span>}
+          {status === 'idle' && fontsReady && <span style={{ fontSize: 10, color: '#3db87a' }}>●</span>}
           <span style={{
-            fontSize: 11, color: status === 'error' ? '#f85149' : status === 'loading' ? '#7d8590' : '#3db87a',
+            fontSize: 11, color: status === 'error' ? '#f85149' : status === 'loading' ? '#7d8590' : fontsReady ? '#3db87a' : '#7d8590',
           }}>
-            {status === 'loading' ? 'rendering…' : status === 'error' ? error.slice(0, 40) : 'ready'}
+            {!fontsReady ? 'loading fonts…' : status === 'loading' ? 'rendering…' : status === 'error' ? error.slice(0, 40) : 'ready'}
           </span>
         </div>
 
@@ -455,34 +387,12 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Warnings panel ─────────────────────────────────────────────── */}
-      {showWarnings && warnings.length > 0 && (
-        <div style={{
-          background: '#13110a', borderBottom: '1px solid #2d2208',
-          padding: '8px 16px', flexShrink: 0,
-          animation: 'fadein 0.15s ease',
-        }}>
-          {warnings.slice(0, 5).map((w, i) => (
-            <div key={i} style={{ fontSize: 11, color: '#e6c84a', lineHeight: '20px', display: 'flex', gap: 8 }}>
-              <span style={{ color: '#5a4a00', flexShrink: 0 }}>⚠</span>
-              {w}
-            </div>
-          ))}
-          {warnings.length > 5 && (
-            <div style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>
-              …and {warnings.length - 5} more
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── Main panes ─────────────────────────────────────────────────── */}
       <PanelGroup direction="horizontal" style={{ flex: 1, overflow: 'hidden' }}>
 
         {/* Editor panel */}
         <Panel defaultSize={50} minSize={20}>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* Editor tab bar */}
             <div style={{
               display: 'flex', alignItems: 'center',
               height: 35, background: '#010409',
@@ -568,7 +478,6 @@ export default function App() {
               background: '#010409',
               borderBottom: '1px solid #21262d',
             }}>
-              {/* View tabs */}
               {(['preview', 'syntax'] as const).map(v => (
                 <button
                   key={v}
@@ -591,10 +500,9 @@ export default function App() {
 
               <div style={{ flex: 1 }} />
 
-              {/* Right controls */}
               {view === 'preview' && (
                 <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-                  794px wide
+                  794px · local
                 </span>
               )}
               {view === 'syntax' && (
@@ -619,7 +527,7 @@ export default function App() {
             {/* Content */}
             {view === 'preview' ? (
               <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                {status === 'loading' && !previewUrl && pages.length === 0 && (
+                {status === 'loading' && pages.length === 0 && (
                   <div style={{
                     position: 'absolute', inset: 0,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -633,27 +541,21 @@ export default function App() {
                   </div>
                 )}
                 <ZoomPane loading={status === 'loading'} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
-                  {format === 'png' && previewUrl && (
-                    <img
-                      src={previewUrl}
-                      alt="preview"
-                      draggable={false}
-                      style={{ display: 'block', boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)', borderRadius: 2 }}
-                    />
-                  )}
-                  {format === 'pdf' && pages.length > 0 && (
+                  {pages.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                      {pages.map((b64, i) => (
+                      {pages.map((url, i) => (
                         <div key={i} style={{ position: 'relative' }}>
                           <img
-                            src={`data:image/png;base64,${b64}`}
+                            src={url}
                             alt={`page ${i + 1}`}
                             draggable={false}
                             style={{ display: 'block', width: 794, boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)', borderRadius: 2 }}
                           />
-                          <div style={{ position: 'absolute', bottom: -14, right: 0, fontSize: 9, color: '#3d444d', userSelect: 'none', pointerEvents: 'none' }}>
-                            {i + 1} / {pages.length}
-                          </div>
+                          {pages.length > 1 && (
+                            <div style={{ position: 'absolute', bottom: -14, right: 0, fontSize: 9, color: '#3d444d', userSelect: 'none', pointerEvents: 'none' }}>
+                              {i + 1} / {pages.length}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -703,7 +605,7 @@ export default function App() {
         background: '#010409', borderTop: '1px solid #21262d',
         flexShrink: 0, gap: 16,
       }}>
-        {view === 'preview' && format === 'png' && (
+        {view === 'preview' && (
           <span style={{ fontSize: 10, color: '#484f58' }}>{zoomPct}%</span>
         )}
         <span style={{ fontSize: 10, color: '#30363d' }}>·</span>
