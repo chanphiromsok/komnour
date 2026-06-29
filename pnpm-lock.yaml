@@ -98,6 +98,12 @@ importers:
         specifier: ^4.8.69
         version: 4.10.38
 
+  packages/html-to-syntax:
+    dependencies:
+      node-html-parser:
+        specifier: ^8.0.3
+        version: 8.0.3
+
   packages/server:
     dependencies:
       '@fastify/cors':
