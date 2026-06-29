@@ -20,6 +20,9 @@ importers:
       '@fontsource/noto-sans-khmer':
         specifier: ^4.5.11
         version: 4.5.11
+      '@komnour/html-to-syntax':
+        specifier: workspace:*
+        version: link:../html-to-syntax
       node-html-parser:
         specifier: ^8.0.3
         version: 8.0.3
