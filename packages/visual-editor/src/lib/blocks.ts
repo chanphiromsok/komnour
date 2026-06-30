@@ -82,6 +82,63 @@ export function setRootStyle(doc: ParsedDoc, prop: string, value: string): Parse
   return { ...doc, openTag: newOpenTag }
 }
 
+// ── SVG shape helpers ─────────────────────────────────────────────────────
+
+export function getSvgShape(block: Block): 'line' | 'rect' | 'circle' | null {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const svg = doc.body.firstElementChild
+  if (svg?.tagName.toLowerCase() !== 'svg') return null
+  const tag = svg.firstElementChild?.tagName.toLowerCase() ?? ''
+  if (tag === 'line' || tag === 'rect' || tag === 'circle') return tag as 'line' | 'rect' | 'circle'
+  return null
+}
+
+export function getSvgAttr(block: Block, attr: string): string {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  return doc.body.querySelector('svg > *')?.getAttribute(attr) ?? ''
+}
+
+export function getSvgRootAttr(block: Block, attr: string): string {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  return doc.body.firstElementChild?.getAttribute(attr) ?? ''
+}
+
+export function setSvgAttr(block: Block, attr: string, value: string): Block {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const shape = doc.body.querySelector('svg > *')
+  if (!shape) return block
+  if (value === '') shape.removeAttribute(attr)
+  else shape.setAttribute(attr, value)
+  return { ...block, html: (doc.body.firstElementChild as HTMLElement)?.outerHTML ?? block.html }
+}
+
+export function setSvgDimension(block: Block, dim: 'width' | 'height', px: number): Block {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const svg = doc.body.firstElementChild
+  if (!svg) return block
+  svg.setAttribute(dim, String(px))
+  const shape = svg.firstElementChild
+  if (shape) {
+    const tag = shape.tagName.toLowerCase()
+    if (tag === 'rect') {
+      shape.setAttribute(dim, String(px - 1))
+    } else if (tag === 'line') {
+      if (dim === 'height') shape.setAttribute('y2', String(px))
+      // hline x2 stays "100%", don't touch
+    }
+  }
+  return { ...block, html: (svg as HTMLElement).outerHTML }
+}
+
+// ── Layout helpers ────────────────────────────────────────────────────────
+
+export function makeFlexRow(left: Block, right: Block): Block {
+  const html = `<div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;"><div style="flex:1">${left.html}</div><div style="flex:1">${right.html}</div></div>`
+  return { id: uid(), html, tagName: 'div' }
+}
+
+// ── Block operations ──────────────────────────────────────────────────────
+
 export function deleteBlock(blocks: Block[], id: string): Block[] {
   return blocks.filter(b => b.id !== id)
 }
@@ -102,16 +159,17 @@ export function reorderBlocks(blocks: Block[], fromIdx: number, toIdx: number): 
 
 export function addBlock(blocks: Block[], tagName: string, afterId: string | null): Block[] {
   const templates: Record<string, string> = {
-    p: '<p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">New paragraph</p>',
-    h1: '<h1 style="font-size: 28px; font-weight: bold; margin-bottom: 12px; color: #0d1117;">Heading 1</h1>',
-    h2: '<h2 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #0d1117;">Heading 2</h2>',
-    div: '<div style="margin-bottom: 16px;">New section</div>',
-    'page-break': '<page-break></page-break>',
-    hr: '<hr style="border: none; border-top: 1px solid #e1e4e8; margin: 24px 0;" />',
-    rect: '<div style="width: 160px; height: 80px; background: #e8edf3; border: 1px solid #c0c8d4; border-radius: 4px; margin-bottom: 16px;"></div>',
-    vline: '<div data-shape="vline" style="width: 0; height: 80px; border-left: 2px solid #e1e4e8; margin: 0 auto 16px;"></div>',
-    img: '<img src="" alt="" style="width: 100%; height: auto; display: block; margin-bottom: 16px;" />',
-    ul: '<ul style="font-size: 13px; line-height: 22px; padding-left: 20px; margin-bottom: 16px;"><li>Item 1</li><li>Item 2</li></ul>',
+    p:          '<p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">New paragraph</p>',
+    h1:         '<h1 style="font-size: 28px; font-weight: bold; margin-bottom: 12px; color: #0d1117;">Heading 1</h1>',
+    h2:         '<h2 style="font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #0d1117;">Heading 2</h2>',
+    div:        '<div style="margin-bottom: 16px;">New section</div>',
+    'page-break':'<page-break></page-break>',
+    // Legacy CSS hr — kept so old saved blocks still render; new h-line uses SVG
+    hr:         '<svg data-shape="hline" width="100%" height="12" style="display:block;overflow:visible;margin:24px 0;"><line x1="0" y1="6" x2="100%" y2="6" stroke="#e1e4e8" stroke-width="1"/></svg>',
+    rect:       '<svg data-shape="rect" width="160" height="80" style="display:block;overflow:visible;margin-bottom:16px;"><rect x="0.5" y="0.5" width="159" height="79" fill="#e8edf3" stroke="#c0c8d4" stroke-width="1" rx="4"/></svg>',
+    vline:      '<svg data-shape="vline" width="20" height="80" style="display:block;overflow:visible;margin:0 auto 16px;"><line x1="10" y1="0" x2="10" y2="80" stroke="#e1e4e8" stroke-width="2"/></svg>',
+    img:        '<img src="" alt="" style="width: 100%; height: auto; display: block; margin-bottom: 16px;" />',
+    ul:         '<ul style="font-size: 13px; line-height: 22px; padding-left: 20px; margin-bottom: 16px;"><li>Item 1</li><li>Item 2</li></ul>',
   }
   const html = templates[tagName] ?? `<${tagName}>New ${tagName}</${tagName}>`
   const parsedTag = new DOMParser().parseFromString(html, 'text/html')
@@ -121,4 +179,3 @@ export function addBlock(blocks: Block[], tagName: string, afterId: string | nul
   const idx = blocks.findIndex(b => b.id === afterId)
   return [...blocks.slice(0, idx + 1), newBlock, ...blocks.slice(idx + 1)]
 }
-

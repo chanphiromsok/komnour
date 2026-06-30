@@ -1,8 +1,26 @@
 import { type Block, type ParsedDoc } from '../types'
-import { getBlockStyles, setBlockStyle, getBlockAttr, setBlockAttr, getRootStyles, setRootStyle } from '../lib/blocks'
+import {
+  getBlockStyles, setBlockStyle, getBlockAttr, setBlockAttr,
+  getRootStyles, setRootStyle,
+  getSvgAttr, getSvgRootAttr, setSvgAttr, setSvgDimension,
+} from '../lib/blocks'
 import { toHexColor, getSide } from '../lib/style-utils'
 
 const FONT_FAMILIES = ['Noto Sans Khmer', 'Inter', 'KhmerOSsiemreap', 'Kh-Siemreap', 'Khmer-OS-Muol-Light', 'Calibri', 'KhmerBursa', 'Arial', 'Times New Roman']
+
+function svgDashToPreset(d: string): string {
+  if (!d || d === 'none') return 'solid'
+  if (d === '8 4') return 'dashed'
+  if (d === '2 4') return 'dotted'
+  if (d === '8 4 2 4') return 'dash-dot'
+  return 'custom'
+}
+function presetToSvgDash(p: string): string {
+  if (p === 'dashed') return '8 4'
+  if (p === 'dotted') return '2 4'
+  if (p === 'dash-dot') return '8 4 2 4'
+  return ''
+}
 
 // ── PropertyPanel (block selected) ───────────────────────────────────────────
 
@@ -29,11 +47,34 @@ export default function PropertyPanel({ block, onChange }: Props) {
   const set = (prop: string, value: string) => onChange(setBlockStyle(block, prop, value))
   const setAttr = (attr: string, value: string) => onChange(setBlockAttr(block, attr, value))
 
-  const isHr     = block.tagName === 'hr'
-  const isVLine  = getBlockAttr(block, 'data-shape') === 'vline'
-  const isImg    = block.tagName === 'img'
+  const dataShape   = getBlockAttr(block, 'data-shape')
+  const isSvg       = block.tagName === 'svg'
+  const isSvgHline  = isSvg && dataShape === 'hline'
+  const isSvgVline  = isSvg && dataShape === 'vline'
+  const isSvgRect   = isSvg && dataShape === 'rect'
+  const isSvgShape  = isSvgHline || isSvgVline || isSvgRect
+  const isSvgLine   = isSvgHline || isSvgVline
+
+  const isLegacyHr    = block.tagName === 'hr'
+  const isLegacyVLine = !isSvg && dataShape === 'vline'
+  const isLegacyLine  = isLegacyHr || isLegacyVLine
+
+  const isImg       = block.tagName === 'img'
   const isPageBreak = block.tagName === 'page-break'
-  const isLine   = isHr || isVLine
+  const isAnyLine   = isLegacyLine || isSvgLine
+
+  const svgStroke    = getSvgAttr(block, 'stroke')
+  const svgStrokeW   = getSvgAttr(block, 'stroke-width')
+  const svgDash      = getSvgAttr(block, 'stroke-dasharray')
+  const svgFill      = getSvgAttr(block, 'fill')
+  const svgRx        = getSvgAttr(block, 'rx')
+  const svgW         = getSvgRootAttr(block, 'width')
+  const svgH         = getSvgRootAttr(block, 'height')
+
+  const setSvgSize = (dim: 'width' | 'height', val: string) => {
+    const px = parseFloat(val)
+    if (!isNaN(px)) onChange(setSvgDimension(block, dim, px))
+  }
 
   return (
     <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
@@ -45,33 +86,105 @@ export default function PropertyPanel({ block, onChange }: Props) {
             background: '#161b22', border: '1px solid #30363d', borderRadius: 4,
             padding: '3px 8px', fontFamily: 'monospace', fontSize: 11, color: '#7d8590',
           }}>
-            &lt;{block.tagName}&gt;
+            &lt;{block.tagName}{dataShape ? ` · ${dataShape}` : ''}&gt;
           </div>
         </Row>
       </Section>
 
-      {/* Size — always shown except page-break */}
+      {/* SIZE */}
       {!isPageBreak && (
         <Section title="SIZE">
-          <Row label="Width">
-            <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
+          {isSvgShape ? (
+            <>
+              <Row label="Width">
+                <input
+                  type="number"
+                  value={parseFloat(svgW) || 0}
+                  onChange={e => setSvgSize('width', e.target.value)}
+                  style={numInputStyle}
+                />
+              </Row>
+              {!isSvgHline && (
+                <Row label="Height">
+                  <input
+                    type="number"
+                    value={parseFloat(svgH) || 0}
+                    onChange={e => setSvgSize('height', e.target.value)}
+                    style={numInputStyle}
+                  />
+                </Row>
+              )}
+            </>
+          ) : (
+            <>
+              <Row label="Width">
+                <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
+              </Row>
+              <Row label="Height">
+                <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
+              </Row>
+              {!isLegacyHr && (
+                <Row label="Display">
+                  <Select
+                    value={styles['display'] ?? ''}
+                    onChange={v => set('display', v)}
+                    options={[
+                      { value: '', label: 'default' },
+                      { value: 'block', label: 'block' },
+                      { value: 'flex', label: 'flex' },
+                      { value: 'inline-block', label: 'inline-block' },
+                    ]}
+                  />
+                </Row>
+              )}
+            </>
+          )}
+        </Section>
+      )}
+
+      {/* SVG SHAPE properties */}
+      {isSvgShape && (
+        <Section title="SHAPE">
+          <Row label="Stroke">
+            <ColorPicker value={svgStroke || '#e1e4e8'} onChange={v => onChange(setSvgAttr(block, 'stroke', v))} />
           </Row>
-          <Row label="Height">
-            <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
+          <Row label="Thick">
+            <input
+              type="number"
+              value={parseFloat(svgStrokeW) || 1}
+              min={0.5}
+              step={0.5}
+              onChange={e => onChange(setSvgAttr(block, 'stroke-width', e.target.value))}
+              style={numInputStyle}
+            />
           </Row>
-          {!isHr && (
-            <Row label="Display">
-              <Select
-                value={styles['display'] ?? ''}
-                onChange={v => set('display', v)}
-                options={[
-                  { value: '', label: 'default' },
-                  { value: 'block', label: 'block' },
-                  { value: 'flex', label: 'flex' },
-                  { value: 'inline-block', label: 'inline-block' },
-                ]}
-              />
-            </Row>
+          <Row label="Dash">
+            <Select
+              value={svgDashToPreset(svgDash)}
+              onChange={v => onChange(setSvgAttr(block, 'stroke-dasharray', presetToSvgDash(v)))}
+              options={[
+                { value: 'solid',    label: 'solid' },
+                { value: 'dashed',   label: 'dashed' },
+                { value: 'dotted',   label: 'dotted' },
+                { value: 'dash-dot', label: 'dash-dot' },
+              ]}
+            />
+          </Row>
+          {isSvgRect && (
+            <>
+              <Row label="Fill">
+                <ColorPicker value={svgFill || '#e8edf3'} onChange={v => onChange(setSvgAttr(block, 'fill', v))} />
+              </Row>
+              <Row label="Radius">
+                <input
+                  type="number"
+                  value={parseFloat(svgRx) || 0}
+                  min={0}
+                  onChange={e => onChange(setSvgAttr(block, 'rx', e.target.value))}
+                  style={numInputStyle}
+                />
+              </Row>
+            </>
           )}
         </Section>
       )}
@@ -112,37 +225,37 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Section>
       )}
 
-      {/* H-Line / V-Line properties */}
-      {isLine && (
+      {/* Legacy CSS H-Line / V-Line properties */}
+      {isLegacyLine && (
         <Section title="LINE">
           <Row label="Color">
             <ColorPicker
               value={
-                isVLine
+                isLegacyVLine
                   ? (styles['border-left-color'] ?? '#e1e4e8')
                   : (styles['border-top-color'] ?? styles['border-color'] ?? '#e1e4e8')
               }
-              onChange={v => set(isVLine ? 'border-left-color' : 'border-top-color', v)}
+              onChange={v => set(isLegacyVLine ? 'border-left-color' : 'border-top-color', v)}
             />
           </Row>
           <Row label="Thick">
             <NumUnit
               value={
-                isVLine
+                isLegacyVLine
                   ? (styles['border-left-width'] ?? '2px')
                   : (styles['border-top-width'] ?? styles['border-width'] ?? '1px')
               }
-              onChange={v => set(isVLine ? 'border-left-width' : 'border-top-width', v)}
+              onChange={v => set(isLegacyVLine ? 'border-left-width' : 'border-top-width', v)}
             />
           </Row>
           <Row label="Style">
             <Select
               value={
-                isVLine
+                isLegacyVLine
                   ? (styles['border-left-style'] ?? 'solid')
                   : (styles['border-top-style'] ?? styles['border-style'] ?? 'solid')
               }
-              onChange={v => set(isVLine ? 'border-left-style' : 'border-top-style', v)}
+              onChange={v => set(isLegacyVLine ? 'border-left-style' : 'border-top-style', v)}
               options={[
                 { value: 'solid',  label: 'solid' },
                 { value: 'dashed', label: 'dashed' },
@@ -154,8 +267,8 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Section>
       )}
 
-      {/* Typography — hidden for lines, img, page-break */}
-      {!isLine && !isImg && !isPageBreak && (
+      {/* Typography — hidden for lines, svg, img, page-break */}
+      {!isAnyLine && !isSvgShape && !isImg && !isPageBreak && (
         <Section title="TYPOGRAPHY">
           <Row label="Family">
             <Select
@@ -203,13 +316,15 @@ export default function PropertyPanel({ block, onChange }: Props) {
       )}
 
       {/* Spacing */}
-      <Section title="SPACING">
-        <SpacingGroup label="Padding" prop="padding" styles={styles} set={set} />
-        <SpacingGroup label="Margin"  prop="margin"  styles={styles} set={set} />
-      </Section>
+      {!isSvgShape && !isPageBreak && (
+        <Section title="SPACING">
+          <SpacingGroup label="Padding" prop="padding" styles={styles} set={set} />
+          <SpacingGroup label="Margin"  prop="margin"  styles={styles} set={set} />
+        </Section>
+      )}
 
       {/* Fill */}
-      {!isLine && !isPageBreak && (
+      {!isAnyLine && !isSvgShape && !isPageBreak && (
         <Section title="FILL">
           <Row label="Background">
             <ColorPicker
@@ -221,7 +336,7 @@ export default function PropertyPanel({ block, onChange }: Props) {
       )}
 
       {/* Border */}
-      {!isLine && !isPageBreak && (
+      {!isAnyLine && !isSvgShape && !isPageBreak && (
         <Section title="BORDER">
           <Row label="Radius">
             <NumUnit value={styles['border-radius'] ?? ''} onChange={v => set('border-radius', v)} />
@@ -306,6 +421,11 @@ const inputStyle: React.CSSProperties = {
   width: '100%', background: '#161b22', border: '1px solid #30363d',
   borderRadius: 4, color: '#c9d1d9', fontSize: 11, padding: '3px 6px', outline: 'none',
   fontFamily: 'monospace', boxSizing: 'border-box',
+}
+
+const numInputStyle: React.CSSProperties = {
+  width: 72, background: '#161b22', border: '1px solid #30363d',
+  borderRadius: 4, color: '#c9d1d9', fontSize: 11, padding: '3px 6px', outline: 'none',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

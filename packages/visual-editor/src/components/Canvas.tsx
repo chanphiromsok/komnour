@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import type { Block, ParsedDoc } from '../types'
-import { reorderBlocks, getRootStyles } from '../lib/blocks'
+import { reorderBlocks, getRootStyles, makeFlexRow } from '../lib/blocks'
 
 interface Props {
   doc: ParsedDoc
@@ -14,12 +14,14 @@ interface Props {
 
 const EDITABLE_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'ul', 'ol', 'label'])
 
+type DropEdge = { idx: number; side: 'top' | 'bottom' | 'left' | 'right' }
+
 export default function Canvas({
   doc, blocks, selectedId, onSelect, onBlocksChange, onBlockChange, paperWidth = 794,
 }: Props) {
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
-  const [overIdx, setOverIdx] = useState<number | null>(null)
+  const [dropEdge, setDropEdge] = useState<DropEdge | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const rootStyles = getRootStyles(doc.openTag)
@@ -30,10 +32,21 @@ export default function Canvas({
   }
 
   const handleDrop = (toIdx: number) => {
-    if (dragIdx === null || dragIdx === toIdx) return
-    onBlocksChange(reorderBlocks(blocks, dragIdx, toIdx))
+    if (dragIdx === null || !dropEdge) return
+    const { side } = dropEdge
+    if (side === 'left' || side === 'right') {
+      const leftBlock  = side === 'left'  ? blocks[toIdx] : blocks[dragIdx]
+      const rightBlock = side === 'left'  ? blocks[dragIdx] : blocks[toIdx]
+      const row = makeFlexRow(leftBlock, rightBlock)
+      const insertAt = Math.min(dragIdx, toIdx)
+      const next = blocks.filter((_, i) => i !== dragIdx && i !== toIdx)
+      next.splice(insertAt, 0, row)
+      onBlocksChange(next)
+    } else {
+      if (dragIdx !== toIdx) onBlocksChange(reorderBlocks(blocks, dragIdx, toIdx))
+    }
     setDragIdx(null)
-    setOverIdx(null)
+    setDropEdge(null)
   }
 
   const stopEditing = () => setEditingId(null)
@@ -58,7 +71,9 @@ export default function Canvas({
         {blocks.map((block, i) => {
           const isSelected = block.id === selectedId
           const isEditing = block.id === editingId
-          const isOver = overIdx === i && dragIdx !== i
+          const edge = dropEdge?.idx === i && dragIdx !== i ? dropEdge.side : null
+          const isOverV = edge === 'top' || edge === 'bottom'
+          const isOverH = edge === 'left' || edge === 'right'
           return (
             <div
               key={block.id}
@@ -70,13 +85,20 @@ export default function Canvas({
               onDragOver={e => {
                 e.preventDefault()
                 e.dataTransfer.dropEffect = 'move'
-                setOverIdx(i)
+                const rect = e.currentTarget.getBoundingClientRect()
+                const relX = (e.clientX - rect.left) / rect.width
+                const relY = (e.clientY - rect.top) / rect.height
+                let side: DropEdge['side']
+                if (relX < 0.25) side = 'left'
+                else if (relX > 0.75) side = 'right'
+                else side = relY < 0.5 ? 'top' : 'bottom'
+                setDropEdge({ idx: i, side })
               }}
               onDragLeave={e => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverIdx(null)
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropEdge(null)
               }}
               onDrop={() => handleDrop(i)}
-              onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+              onDragEnd={() => { setDragIdx(null); setDropEdge(null) }}
               onMouseEnter={() => setHoverId(block.id)}
               onMouseLeave={() => setHoverId(null)}
               onClick={e => { e.stopPropagation(); if (!isEditing) onSelect(block.id) }}
@@ -92,7 +114,7 @@ export default function Canvas({
                 opacity: dragIdx === i ? 0.25 : 1,
                 outline: isSelected
                   ? '2px solid #58a6ff'
-                  : isOver
+                  : (isOverV || isOverH)
                   ? '2px solid #58a6ff'
                   : hoverId === block.id && !isSelected
                   ? '1px dashed #484f58'
@@ -102,10 +124,24 @@ export default function Canvas({
                 cursor: isEditing ? 'text' : 'default',
               }}
             >
-              {/* Drop indicator */}
-              {isOver && (
+              {/* Drop indicator — horizontal line (top/bottom) */}
+              {isOverV && (
                 <div style={{
-                  position: 'absolute', top: -2, left: -8, right: -8, height: 2,
+                  position: 'absolute',
+                  top: edge === 'top' ? -2 : undefined,
+                  bottom: edge === 'bottom' ? -2 : undefined,
+                  left: -8, right: -8, height: 2,
+                  background: '#58a6ff', borderRadius: 1, zIndex: 20, pointerEvents: 'none',
+                }} />
+              )}
+
+              {/* Drop indicator — vertical line (left/right) */}
+              {isOverH && (
+                <div style={{
+                  position: 'absolute',
+                  left: edge === 'left' ? -2 : undefined,
+                  right: edge === 'right' ? -2 : undefined,
+                  top: -8, bottom: -8, width: 2,
                   background: '#58a6ff', borderRadius: 1, zIndex: 20, pointerEvents: 'none',
                 }} />
               )}
