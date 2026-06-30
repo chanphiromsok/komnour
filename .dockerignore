@@ -1,0 +1,14 @@
+# Never copy host node_modules — pnpm install must run inside the container
+# so skia-canvas downloads the correct linux-x64-musl binary for Alpine.
+node_modules
+**/node_modules
+
+# Editor build output (not needed on server)
+packages/editor/dist
+packages/editor/.vite
+
+# Dev/tooling
+.git
+.gitignore
+*.md
+.env*
