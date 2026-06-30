@@ -11,6 +11,20 @@ import notoKhmer400 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-
 import notoKhmer700 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-700-normal.woff?url'
 import inter400 from '@fontsource/inter/files/inter-all-400-normal.woff?url'
 
+// Glyph/specialty fonts (same set as server loads at runtime)
+import urlKhmerOSSiemreap   from '../../glyphs/fonts/KhmerOsSiemreab/KhmerOSsiemreap.ttf?url'
+import urlKhSiemreap        from '../../glyphs/fonts/KhSiemreap/Kh-Siemreap.ttf?url'
+import urlKhmerOSMuolLight  from '../../glyphs/fonts/KhmerOSMuolLight/Khmer-OS-Muol-Light.ttf?url'
+import urlWingdings2        from '../../glyphs/fonts/KhmerWing2/wingdings2.ttf?url'
+import urlWingding          from '../../glyphs/fonts/KhmerWing/wingding.ttf?url'
+import urlCalibriR          from '../../glyphs/fonts/Calibri/calibri.ttf?url'
+import urlCalibriB          from '../../glyphs/fonts/Calibri/calibrib.ttf?url'
+import urlCalibriI          from '../../glyphs/fonts/Calibri/calibrii.ttf?url'
+import urlCalibriL          from '../../glyphs/fonts/Calibri/calibril.ttf?url'
+import urlCalibriBI         from '../../glyphs/fonts/Calibri/calibriz.ttf?url'
+import urlKhmerBursaR       from '../../glyphs/fonts/KhmerBursa/Mo5V56.ttf?url'
+import urlKhmerBursaB       from '../../glyphs/fonts/KhmerBursa/Mo8V56.ttf?url'
+
 const SERVER = 'http://localhost:3001'
 const LS_KEY = 'komnour:html'
 
@@ -526,11 +540,20 @@ export default function App() {
   const [serverUrlDraft, setServerUrlDraft] = useState(serverUrl)
   const [routing, setRouting] = useState(false)
 
-  // Load fonts on mount, then trigger first render
+  // Load fonts on mount — registers into document.fonts so both canvas and DOM preview have them
   useEffect(() => {
     Promise.all([
+      // Text fonts
       browserRenderer.registerFont('Noto Sans Khmer', [notoKhmer400, notoKhmer700]),
       browserRenderer.registerFont('Inter', [inter400]),
+      // Glyph / specialty fonts (mirrors what the server loads)
+      browserRenderer.registerFont('KhmerOSsiemreap',    [urlKhmerOSSiemreap]),
+      browserRenderer.registerFont('Kh-Siemreap',        [urlKhSiemreap]),
+      browserRenderer.registerFont('Khmer-OS-Muol-Light',[urlKhmerOSMuolLight]),
+      browserRenderer.registerFont('Wingdings2',         [urlWingdings2]),
+      browserRenderer.registerFont('Wingding',           [urlWingding]),
+      browserRenderer.registerFont('Calibri', [urlCalibriR, urlCalibriB, urlCalibriI, urlCalibriL, urlCalibriBI]),
+      browserRenderer.registerFont('KhmerBursa', [urlKhmerBursaR, urlKhmerBursaB]),
     ]).then(() => setFontsReady(true)).catch(console.error)
   }, [])
 
