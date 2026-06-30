@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type WheelEvent } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Block, ParsedDoc } from '../types'
-import { parseDoc, serializeDoc, addBlock, setBlockStyle } from '../lib/blocks'
+import { parseDoc, serializeDoc, addBlock } from '../lib/blocks'
 import { loadFonts } from '../lib/fonts'
+import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
 import Canvas from './Canvas'
-import PropertyPanel from './PropertyPanel'
+import PropertyPanel, { PagePanel } from './PropertyPanel'
 
 // ── Font asset imports ─────────────────────────────────────────────────────
 import notoKhmer400 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-400-normal.woff?url'
@@ -47,13 +48,21 @@ const DEFAULT_HTML = `<div style="padding: 48px; font-family: 'Noto Sans Khmer';
 </div>`
 
 const LS_KEY = 'komnour:ve:html'
+const LS_WIDTH_KEY = 'komnour:ve:paperWidth'
 
-// ── Add-block menu items ───────────────────────────────────────────────────
+const PAPER_SIZES = [
+  { value: 794,  label: 'A4' },
+  { value: 816,  label: 'Letter' },
+  { value: 559,  label: 'A5' },
+  { value: 1122, label: 'A3' },
+]
+
 const ADD_ITEMS = [
   { tag: 'p',          label: 'Paragraph' },
   { tag: 'h1',         label: 'Heading 1' },
   { tag: 'h2',         label: 'Heading 2' },
   { tag: 'div',        label: 'Section' },
+  { tag: 'img',        label: 'Image' },
   { tag: 'ul',         label: 'List' },
   { tag: 'hr',         label: 'Divider' },
   { tag: 'page-break', label: 'Page Break' },
@@ -128,7 +137,6 @@ function ZoomPane({ children }: { children: React.ReactNode }) {
         {children}
       </div>
 
-      {/* Zoom controls */}
       <div style={{
         position: 'absolute', bottom: 14, right: 14,
         display: 'flex', alignItems: 'center', gap: 1,
@@ -167,8 +175,11 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [fontsReady, setFontsReady] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
+  const [paperWidth, setPaperWidth] = useState<number>(
+    () => Number(localStorage.getItem(LS_WIDTH_KEY)) || 794
+  )
 
-  // History stack for undo
   const history = useRef<Block[][]>([])
   const push = (next: Block[]) => {
     history.current = [...history.current.slice(-49), blocks]
@@ -187,17 +198,43 @@ export default function App() {
     localStorage.setItem(LS_KEY, html)
   }
 
+  const handleDocChange = (updated: ParsedDoc) => {
+    setDoc(updated)
+    const html = serializeDoc(updated, blocks)
+    setRawHtml(html)
+    localStorage.setItem(LS_KEY, html)
+  }
+
+  const handlePaperWidth = (w: number) => {
+    setPaperWidth(w)
+    localStorage.setItem(LS_WIDTH_KEY, String(w))
+  }
+
   useEffect(() => {
     loadFonts(FONT_MAP).then(() => setFontsReady(true)).catch(console.error)
   }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.isContentEditable) return
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo() }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   })
+
+  const handleCopySone = async () => {
+    if (!doc) return
+    try {
+      const blocksHtml = blocks.map(b => b.html).join('\n')
+      const code = htmlToSoneSyntax(blocksHtml, { width: paperWidth, preamble: true })
+      await navigator.clipboard.writeText(code)
+      setCopyState('copied')
+      setTimeout(() => setCopyState('idle'), 2000)
+    } catch (err) {
+      console.error('Copy failed:', err)
+    }
+  }
 
   const selectedBlock = blocks.find(b => b.id === selectedId) ?? null
 
@@ -241,6 +278,22 @@ export default function App() {
 
           <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
+          {/* Paper size */}
+          <select
+            value={String(paperWidth)}
+            onChange={e => handlePaperWidth(Number(e.target.value))}
+            style={{
+              background: '#161b22', border: '1px solid #30363d', borderRadius: 6,
+              color: '#7d8590', fontSize: 11, padding: '4px 8px', cursor: 'pointer', outline: 'none',
+            }}
+          >
+            {PAPER_SIZES.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+
+          <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
+
           {/* Add block */}
           <div style={{ position: 'relative' }}>
             <button
@@ -258,11 +311,12 @@ export default function App() {
               Add Block
             </button>
             {showAddMenu && (
-              <div style={{
-                position: 'absolute', top: 36, left: 0, zIndex: 100,
-                background: '#161b22', border: '1px solid #30363d', borderRadius: 8,
-                padding: '4px', minWidth: 140, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-              }}
+              <div
+                style={{
+                  position: 'absolute', top: 36, left: 0, zIndex: 100,
+                  background: '#161b22', border: '1px solid #30363d', borderRadius: 8,
+                  padding: '4px', minWidth: 140, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                }}
                 onMouseLeave={() => setShowAddMenu(false)}
               >
                 {ADD_ITEMS.map(item => (
@@ -304,6 +358,37 @@ export default function App() {
             </svg>
           </button>
 
+          {/* Copy Sone */}
+          <button
+            onClick={handleCopySone}
+            title="Copy sone layout code to clipboard"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: copyState === 'copied' ? '#1a3c2a' : 'transparent',
+              color: copyState === 'copied' ? '#3db87a' : '#484f58',
+              border: '1px solid ' + (copyState === 'copied' ? '#2ea04326' : '#30363d'),
+              borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {copyState === 'copied' ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                  <path d="M1.5 5.5l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                  <rect x="3.5" y="1" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1"/>
+                  <rect x="1" y="3.5" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1" fill="#010409"/>
+                </svg>
+                Copy Sone
+              </>
+            )}
+          </button>
+
           <div style={{ flex: 1 }} />
 
           {/* Font status */}
@@ -329,11 +414,13 @@ export default function App() {
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 onBlocksChange={next => push(next)}
+                onBlockChange={handleBlockChange}
+                paperWidth={paperWidth}
               />
             </ZoomPane>
           </div>
 
-          {/* Property panel */}
+          {/* Right panel */}
           <div style={{
             width: 260, flexShrink: 0,
             background: '#0d1117',
@@ -343,15 +430,21 @@ export default function App() {
             <div style={{
               height: 35, display: 'flex', alignItems: 'center', padding: '0 14px',
               borderBottom: '1px solid #21262d', fontSize: 11,
-              color: selectedBlock ? '#c9d1d9' : '#484f58', letterSpacing: '0.04em',
+              color: selectedBlock ? '#c9d1d9' : '#7d8590', letterSpacing: '0.04em',
             }}>
-              {selectedBlock ? `Properties · <${selectedBlock.tagName}>` : 'Properties'}
+              {selectedBlock ? `Properties · <${selectedBlock.tagName}>` : 'Page'}
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <PropertyPanel
-                block={selectedBlock}
-                onChange={handleBlockChange}
-              />
+              {selectedBlock ? (
+                <PropertyPanel block={selectedBlock} onChange={handleBlockChange} />
+              ) : (
+                <PagePanel
+                  doc={doc}
+                  onDocChange={handleDocChange}
+                  paperWidth={paperWidth}
+                  onPaperWidthChange={handlePaperWidth}
+                />
+              )}
             </div>
           </div>
         </div>

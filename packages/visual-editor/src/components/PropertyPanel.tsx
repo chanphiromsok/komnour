@@ -1,8 +1,10 @@
-import { type Block } from '../types'
-import { getBlockStyles, setBlockStyle } from '../lib/blocks'
+import { type Block, type ParsedDoc } from '../types'
+import { getBlockStyles, setBlockStyle, getBlockAttr, setBlockAttr, getRootStyles, setRootStyle } from '../lib/blocks'
 import { toHexColor, getSide } from '../lib/style-utils'
 
 const FONT_FAMILIES = ['Noto Sans Khmer', 'Inter', 'KhmerOSsiemreap', 'Kh-Siemreap', 'Khmer-OS-Muol-Light', 'Calibri', 'KhmerBursa', 'Arial', 'Times New Roman']
+
+// ── PropertyPanel (block selected) ───────────────────────────────────────────
 
 interface Props {
   block: Block | null
@@ -25,6 +27,11 @@ export default function PropertyPanel({ block, onChange }: Props) {
 
   const styles = getBlockStyles(block)
   const set = (prop: string, value: string) => onChange(setBlockStyle(block, prop, value))
+  const setAttr = (attr: string, value: string) => onChange(setBlockAttr(block, attr, value))
+
+  const isHr  = block.tagName === 'hr'
+  const isImg = block.tagName === 'img'
+  const isPageBreak = block.tagName === 'page-break'
 
   return (
     <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
@@ -41,57 +48,125 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Row>
       </Section>
 
-      {/* Typography */}
-      <Section title="TYPOGRAPHY">
-        <Row label="Family">
-          <Select
-            value={styles['font-family']?.replace(/['"]/g, '') ?? ''}
-            onChange={v => set('font-family', v ? `'${v}'` : '')}
-            options={[{ value: '', label: '—' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
-          />
-        </Row>
-        <Row label="Size">
-          <NumUnit
-            value={styles['font-size'] ?? ''}
-            onChange={v => set('font-size', v)}
-          />
-        </Row>
-        <Row label="Weight">
-          <div style={{ display: 'flex', gap: 2 }}>
-            {(['400', '600', '700', '900'] as const).map(w => (
-              <ToggleBtn
-                key={w}
-                active={styles['font-weight'] === w}
-                onClick={() => set('font-weight', styles['font-weight'] === w ? '' : w)}
-              >
-                {w === '400' ? 'Reg' : w === '600' ? 'Sem' : w === '700' ? 'Bld' : '900'}
-              </ToggleBtn>
-            ))}
-          </div>
-        </Row>
-        <Row label="Color">
-          <ColorPicker
-            value={styles['color'] ?? ''}
-            onChange={v => set('color', v)}
-          />
-        </Row>
-        <Row label="Align">
-          <div style={{ display: 'flex', gap: 2 }}>
-            {(['left', 'center', 'right', 'justify'] as const).map(a => (
-              <ToggleBtn
-                key={a}
-                active={styles['text-align'] === a}
-                onClick={() => set('text-align', styles['text-align'] === a ? '' : a)}
-              >
-                <AlignIcon align={a} />
-              </ToggleBtn>
-            ))}
-          </div>
-        </Row>
-        <Row label="Line-h">
-          <NumUnit value={styles['line-height'] ?? ''} onChange={v => set('line-height', v)} defaultUnit="" />
-        </Row>
-      </Section>
+      {/* Image properties */}
+      {isImg && (
+        <Section title="IMAGE">
+          <Row label="Src">
+            <input
+              type="text"
+              value={getBlockAttr(block, 'src')}
+              onChange={e => setAttr('src', e.target.value)}
+              placeholder="https://…"
+              style={inputStyle}
+            />
+          </Row>
+          <Row label="Alt">
+            <input
+              type="text"
+              value={getBlockAttr(block, 'alt')}
+              onChange={e => setAttr('alt', e.target.value)}
+              placeholder="Description"
+              style={inputStyle}
+            />
+          </Row>
+          <Row label="Fit">
+            <Select
+              value={styles['object-fit'] ?? ''}
+              onChange={v => set('object-fit', v)}
+              options={[
+                { value: '', label: 'default' },
+                { value: 'contain', label: 'contain' },
+                { value: 'cover', label: 'cover' },
+                { value: 'fill', label: 'fill' },
+              ]}
+            />
+          </Row>
+          <Row label="Width">
+            <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
+          </Row>
+          <Row label="Height">
+            <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
+          </Row>
+        </Section>
+      )}
+
+      {/* HR / Line properties */}
+      {isHr && (
+        <Section title="LINE">
+          <Row label="Color">
+            <ColorPicker
+              value={styles['border-top-color'] ?? styles['border-color'] ?? '#e1e4e8'}
+              onChange={v => set('border-top-color', v)}
+            />
+          </Row>
+          <Row label="Thick">
+            <NumUnit
+              value={styles['border-top-width'] ?? styles['border-width'] ?? '1px'}
+              onChange={v => set('border-top-width', v)}
+            />
+          </Row>
+          <Row label="Style">
+            <Select
+              value={styles['border-top-style'] ?? styles['border-style'] ?? 'solid'}
+              onChange={v => set('border-top-style', v)}
+              options={[
+                { value: 'solid',  label: 'solid' },
+                { value: 'dashed', label: 'dashed' },
+                { value: 'dotted', label: 'dotted' },
+                { value: 'double', label: 'double' },
+              ]}
+            />
+          </Row>
+        </Section>
+      )}
+
+      {/* Typography — hidden for hr, img, page-break */}
+      {!isHr && !isImg && !isPageBreak && (
+        <Section title="TYPOGRAPHY">
+          <Row label="Family">
+            <Select
+              value={styles['font-family']?.replace(/['"]/g, '') ?? ''}
+              onChange={v => set('font-family', v ? `'${v}'` : '')}
+              options={[{ value: '', label: '—' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
+            />
+          </Row>
+          <Row label="Size">
+            <NumUnit value={styles['font-size'] ?? ''} onChange={v => set('font-size', v)} />
+          </Row>
+          <Row label="Weight">
+            <div style={{ display: 'flex', gap: 2 }}>
+              {(['400', '600', '700', '900'] as const).map(w => (
+                <ToggleBtn
+                  key={w}
+                  active={styles['font-weight'] === w}
+                  onClick={() => set('font-weight', styles['font-weight'] === w ? '' : w)}
+                >
+                  {w === '400' ? 'Reg' : w === '600' ? 'Sem' : w === '700' ? 'Bld' : '900'}
+                </ToggleBtn>
+              ))}
+            </div>
+          </Row>
+          <Row label="Color">
+            <ColorPicker value={styles['color'] ?? ''} onChange={v => set('color', v)} />
+          </Row>
+          <Row label="Align">
+            <div style={{ display: 'flex', gap: 2 }}>
+              {(['left', 'center', 'right', 'justify'] as const).map(a => (
+                <ToggleBtn
+                  key={a}
+                  active={styles['text-align'] === a}
+                  onClick={() => set('text-align', styles['text-align'] === a ? '' : a)}
+                >
+                  <AlignIcon align={a} />
+                </ToggleBtn>
+              ))}
+            </div>
+          </Row>
+          <Row label="Line-h">
+            <NumUnit value={styles['line-height'] ?? ''} onChange={v => set('line-height', v)} defaultUnit="" />
+          </Row>
+        </Section>
+      )}
 
       {/* Spacing */}
       <Section title="SPACING">
@@ -100,48 +175,104 @@ export default function PropertyPanel({ block, onChange }: Props) {
       </Section>
 
       {/* Fill */}
-      <Section title="FILL">
-        <Row label="Background">
-          <ColorPicker
-            value={styles['background-color'] ?? styles['background'] ?? ''}
-            onChange={v => set('background-color', v)}
-          />
-        </Row>
-      </Section>
+      {!isHr && !isPageBreak && (
+        <Section title="FILL">
+          <Row label="Background">
+            <ColorPicker
+              value={styles['background-color'] ?? styles['background'] ?? ''}
+              onChange={v => set('background-color', v)}
+            />
+          </Row>
+        </Section>
+      )}
 
       {/* Border */}
-      <Section title="BORDER">
-        <Row label="Radius">
-          <NumUnit value={styles['border-radius'] ?? ''} onChange={v => set('border-radius', v)} />
-        </Row>
-        <Row label="Width">
-          <NumUnit value={styles['border-width'] ?? ''} onChange={v => set('border-width', v)} />
-        </Row>
-        <Row label="Color">
-          <ColorPicker
-            value={styles['border-color'] ?? ''}
-            onChange={v => set('border-color', v)}
-          />
-        </Row>
-        <Row label="Style">
-          <Select
-            value={styles['border-style'] ?? ''}
-            onChange={v => set('border-style', v)}
-            options={[
-              { value: '', label: 'none' },
-              { value: 'solid', label: 'solid' },
-              { value: 'dashed', label: 'dashed' },
-              { value: 'dotted', label: 'dotted' },
-            ]}
-          />
-        </Row>
-      </Section>
+      {!isHr && !isPageBreak && (
+        <Section title="BORDER">
+          <Row label="Radius">
+            <NumUnit value={styles['border-radius'] ?? ''} onChange={v => set('border-radius', v)} />
+          </Row>
+          <Row label="Width">
+            <NumUnit value={styles['border-width'] ?? ''} onChange={v => set('border-width', v)} />
+          </Row>
+          <Row label="Color">
+            <ColorPicker value={styles['border-color'] ?? ''} onChange={v => set('border-color', v)} />
+          </Row>
+          <Row label="Style">
+            <Select
+              value={styles['border-style'] ?? ''}
+              onChange={v => set('border-style', v)}
+              options={[
+                { value: '', label: 'none' },
+                { value: 'solid', label: 'solid' },
+                { value: 'dashed', label: 'dashed' },
+                { value: 'dotted', label: 'dotted' },
+              ]}
+            />
+          </Row>
+        </Section>
+      )}
 
     </div>
   )
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+// ── PagePanel (no block selected) ─────────────────────────────────────────────
+
+interface PagePanelProps {
+  doc: ParsedDoc
+  onDocChange: (doc: ParsedDoc) => void
+  paperWidth: number
+  onPaperWidthChange: (w: number) => void
+}
+
+export function PagePanel({ doc, onDocChange, paperWidth, onPaperWidthChange }: PagePanelProps) {
+  const styles = getRootStyles(doc.openTag)
+  const set = (prop: string, value: string) => onDocChange(setRootStyle(doc, prop, value))
+
+  return (
+    <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
+      <Section title="PAGE">
+        <Row label="Size">
+          <Select
+            value={String(paperWidth)}
+            onChange={v => onPaperWidthChange(Number(v))}
+            options={[
+              { value: '794',  label: 'A4 (794px)' },
+              { value: '816',  label: 'Letter (816px)' },
+              { value: '559',  label: 'A5 (559px)' },
+              { value: '1122', label: 'A3 (1122px)' },
+            ]}
+          />
+        </Row>
+        <Row label="Bg">
+          <ColorPicker
+            value={styles['background-color'] ?? styles['background'] ?? '#ffffff'}
+            onChange={v => set('background-color', v)}
+          />
+        </Row>
+        <Row label="Font">
+          <Select
+            value={styles['font-family']?.replace(/['"]/g, '') ?? ''}
+            onChange={v => set('font-family', v ? `'${v}'` : '')}
+            options={[{ value: '', label: '—' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
+          />
+        </Row>
+      </Section>
+      <Section title="SPACING">
+        <SpacingGroup label="Padding" prop="padding" styles={styles} set={set} />
+      </Section>
+    </div>
+  )
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', background: '#161b22', border: '1px solid #30363d',
+  borderRadius: 4, color: '#c9d1d9', fontSize: 11, padding: '3px 6px', outline: 'none',
+  fontFamily: 'monospace', boxSizing: 'border-box',
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -289,7 +420,7 @@ function AlignIcon({ align }: { align: 'left' | 'center' | 'right' | 'justify' }
 
 function SpacingGroup({ label, prop, styles, set }: {
   label: string
-  prop: string   // "padding" | "margin"
+  prop: string
   styles: Record<string, string>
   set: (prop: string, value: string) => void
 }) {
@@ -325,4 +456,3 @@ function SpacingGroup({ label, prop, styles, set }: {
     </div>
   )
 }
-

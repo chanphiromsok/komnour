@@ -10,6 +10,7 @@
   "dependencies": {
     "@fontsource/inter": "^4.0.0",
     "@fontsource/noto-sans-khmer": "^4.5.0",
+    "@komnour/html-to-syntax": "workspace:*",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
