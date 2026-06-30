@@ -157,6 +157,113 @@ function serializeHTMLBlocks({ openTag, closeTag }: ParsedHTML, blocks: Block[])
   return [openTag, ...blocks.map(b => '  ' + b.html), closeTag].join('\n')
 }
 
+function parseInlineStyle(openTag: string): React.CSSProperties {
+  const m = openTag.match(/style="([^"]*)"/)
+  if (!m) return {}
+  const out: Record<string, string> = {}
+  for (const decl of m[1].split(';')) {
+    const colon = decl.indexOf(':')
+    if (colon === -1) continue
+    const prop = decl.slice(0, colon).trim()
+    const val = decl.slice(colon + 1).trim()
+    if (prop && val) out[prop.replace(/-([a-z])/g, (_, l) => l.toUpperCase())] = val
+  }
+  return out as React.CSSProperties
+}
+
+// ── Interactive design canvas: drag blocks on the live DOM preview ──────────
+function DesignCanvas({ html, onChange }: { html: string; onChange: (html: string) => void }) {
+  const parsed = useMemo(() => parseHTMLBlocks(html), [html])
+  const rootStyle = useMemo(() => parsed ? parseInlineStyle(parsed.openTag) : {}, [parsed])
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
+  if (!parsed) return (
+    <div style={{ padding: 40, textAlign: 'center', color: '#484f58', fontSize: 12 }}>
+      Wrap content in a root &lt;div&gt; to enable design mode.
+    </div>
+  )
+
+  const handleDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) return
+    const next = [...parsed.blocks]
+    const [moved] = next.splice(dragIdx, 1)
+    next.splice(toIdx, 0, moved)
+    onChange(serializeHTMLBlocks(parsed, next))
+    setDragIdx(null)
+    setOverIdx(null)
+  }
+
+  return (
+    <div style={{ position: 'relative', marginLeft: 32 }}>
+      <div style={{
+        width: 794,
+        background: 'white',
+        boxSizing: 'border-box',
+        boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
+        borderRadius: 2,
+        ...rootStyle,
+      }}>
+        {parsed.blocks.map((block, i) => (
+          <div
+            key={i}
+            draggable
+            onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setDragIdx(i) }}
+            onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setOverIdx(i) }}
+            onDragLeave={e => {
+              // only clear if leaving to a non-child element
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverIdx(null)
+            }}
+            onDrop={() => handleDrop(i)}
+            onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx(null)}
+            style={{
+              position: 'relative',
+              opacity: dragIdx === i ? 0.25 : 1,
+              transition: 'opacity 0.1s',
+              outline: overIdx === i && dragIdx !== i ? '2px solid #58a6ff' : hoverIdx === i ? '1px dashed #30363d' : 'none',
+              outlineOffset: 2,
+              cursor: 'default',
+            }}
+          >
+            {/* Blue insertion line at top when dragging over */}
+            {overIdx === i && dragIdx !== i && (
+              <div style={{
+                position: 'absolute', top: -2, left: -8, right: -8, height: 2,
+                background: '#58a6ff', borderRadius: 1, zIndex: 20, pointerEvents: 'none',
+              }} />
+            )}
+
+            {/* Drag handle in the left gutter — appears on hover */}
+            {(hoverIdx === i || dragIdx === i) && (
+              <div
+                title="Drag to reorder"
+                style={{
+                  position: 'absolute', left: -28, top: '50%', transform: 'translateY(-50%)',
+                  width: 20, height: 20,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'grab', color: '#484f58', userSelect: 'none',
+                  background: '#161b22', border: '1px solid #30363d', borderRadius: 4,
+                }}
+              >
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
+                  <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+                  <circle cx="2" cy="7" r="1.5"/><circle cx="6" cy="7" r="1.5"/>
+                  <circle cx="2" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/>
+                </svg>
+              </div>
+            )}
+
+            <div dangerouslySetInnerHTML={{ __html: block.html }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const BLOCK_ICONS: Record<string, string> = {
   p: 'P', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4',
   div: '▭', ul: '≡', ol: '≡', table: '⊞', 'page-break': '╌', img: '▨',
@@ -459,7 +566,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
 
   const [leftView, setLeftView] = useState<'code' | 'blocks'>('code')
-  const [view, setView] = useState<'preview' | 'syntax'>('preview')
+  const [view, setView] = useState<'preview' | 'design' | 'syntax'>('preview')
   const syntax = useMemo(() => htmlToSoneSyntax(html, { preamble: true }), [html])
   const [copied, setCopied] = useState(false)
   const copySyntax = () => {
@@ -833,7 +940,7 @@ export default function App() {
               backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
               backgroundSize: '24px 24px',
             }),
-            display: 'flex', flexDirection: 'column',
+            display: 'flex', flexDirection: 'column', position: 'relative',
           }}>
 
             {/* Tab bar */}
@@ -842,7 +949,7 @@ export default function App() {
               background: '#010409',
               borderBottom: '1px solid #21262d',
             }}>
-              {(['preview', 'syntax'] as const).map(v => (
+              {(['preview', 'design', 'syntax'] as const).map(v => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -866,7 +973,12 @@ export default function App() {
 
               {view === 'preview' && (
                 <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-                  794px · local
+                  794px · canvas
+                </span>
+              )}
+              {view === 'design' && (
+                <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+                  794px · drag to reorder
                 </span>
               )}
               {view === 'syntax' && (
@@ -889,7 +1001,14 @@ export default function App() {
             </div>
 
             {/* Content */}
-            {view === 'preview' ? (
+            {view === 'design' && (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ZoomPane loading={false} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
+                  <DesignCanvas html={html} onChange={setHtml} />
+                </ZoomPane>
+              </div>
+            )}
+            {view === 'preview' && (
               <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
                 {status === 'loading' && pages.length === 0 && (
                   <div style={{
@@ -926,7 +1045,8 @@ export default function App() {
                   )}
                 </ZoomPane>
               </div>
-            ) : (
+            )}
+            {view === 'syntax' && (
               <div style={{ flex: 1, minHeight: 0 }}>
                 <Editor
                   height="100%"
@@ -969,7 +1089,7 @@ export default function App() {
         background: '#010409', borderTop: '1px solid #21262d',
         flexShrink: 0, gap: 16,
       }}>
-        {view === 'preview' && (
+        {(view === 'preview' || view === 'design') && (
           <span style={{ fontSize: 10, color: '#484f58' }}>{zoomPct}%</span>
         )}
         <span style={{ fontSize: 10, color: '#30363d' }}>·</span>
