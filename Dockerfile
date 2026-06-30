@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
-# skia-canvas needs fontconfig for system font fallback detection
-# python3/make/g++ are needed if skia-canvas ever falls back to building from source
+# fontconfig: runtime font discovery (freetype is statically linked into the musl binary)
+# python3/make/g++: only needed if skia-canvas postinstall falls back to building from source
 RUN apk add --no-cache fontconfig python3 make g++
 
 # Install pnpm
