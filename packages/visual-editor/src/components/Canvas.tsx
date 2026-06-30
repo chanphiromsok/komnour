@@ -1,6 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
 import type { Block, ParsedDoc } from '../types'
-import { reorderBlocks, getRootStyles, makeFlexRow } from '../lib/blocks'
+import {
+  reorderBlocks, getRootStyles, makeFlexRow,
+  isFlexRow, getFlexColumns, setFlexColumns, getBlockStyles,
+} from '../lib/blocks'
 
 interface Props {
   doc: ParsedDoc
@@ -71,6 +74,7 @@ export default function Canvas({
         {blocks.map((block, i) => {
           const isSelected = block.id === selectedId
           const isEditing = block.id === editingId
+          const flexRow = isFlexRow(block)
           const edge = dropEdge?.idx === i && dragIdx !== i ? dropEdge.side : null
           const isOverV = edge === 'top' || edge === 'bottom'
           const isOverH = edge === 'left' || edge === 'right'
@@ -104,7 +108,7 @@ export default function Canvas({
               onClick={e => { e.stopPropagation(); if (!isEditing) onSelect(block.id) }}
               onDoubleClick={e => {
                 e.stopPropagation()
-                if (EDITABLE_TAGS.has(block.tagName)) {
+                if (!flexRow && EDITABLE_TAGS.has(block.tagName)) {
                   onSelect(block.id)
                   setEditingId(block.id)
                 }
@@ -124,7 +128,7 @@ export default function Canvas({
                 cursor: isEditing ? 'text' : 'default',
               }}
             >
-              {/* Drop indicator — horizontal line (top/bottom) */}
+              {/* Drop indicator — horizontal (top/bottom reorder) */}
               {isOverV && (
                 <div style={{
                   position: 'absolute',
@@ -135,7 +139,7 @@ export default function Canvas({
                 }} />
               )}
 
-              {/* Drop indicator — vertical line (left/right) */}
+              {/* Drop indicator — vertical (left/right merge) */}
               {isOverH && (
                 <div style={{
                   position: 'absolute',
@@ -180,7 +184,7 @@ export default function Canvas({
               {/* Selected toolbar */}
               {isSelected && !isEditing && (
                 <BlockToolbar
-                  canEdit={EDITABLE_TAGS.has(block.tagName)}
+                  canEdit={!flexRow && EDITABLE_TAGS.has(block.tagName)}
                   onEdit={() => setEditingId(block.id)}
                   onDelete={() => {
                     onBlocksChange(blocks.filter(b => b.id !== block.id))
@@ -196,12 +200,19 @@ export default function Canvas({
                 />
               )}
 
-              <EditableBlock
-                block={block}
-                isEditing={isEditing}
-                onStopEdit={stopEditing}
-                onBlockChange={onBlockChange ?? (() => {})}
-              />
+              {flexRow ? (
+                <FlexRowContent
+                  block={block}
+                  onBlockChange={onBlockChange ?? (() => {})}
+                />
+              ) : (
+                <EditableBlock
+                  block={block}
+                  isEditing={isEditing}
+                  onStopEdit={stopEditing}
+                  onBlockChange={onBlockChange ?? (() => {})}
+                />
+              )}
             </div>
           )
         })}
@@ -212,6 +223,188 @@ export default function Canvas({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── FlexRowContent ─────────────────────────────────────────────────────────────
+
+function FlexRowContent({ block, onBlockChange }: {
+  block: Block
+  onBlockChange: (updated: Block) => void
+}) {
+  const [dragCol, setDragCol] = useState<number | null>(null)
+  const [overCol, setOverCol] = useState<number | null>(null)
+  const [editingCol, setEditingCol] = useState<number | null>(null)
+
+  const columns = getFlexColumns(block)
+
+  const blockStyles = getBlockStyles(block)
+  const outerStyle: React.CSSProperties = { display: 'flex', gap: 16, alignItems: 'flex-start' }
+  if (blockStyles['margin-bottom']) outerStyle.marginBottom = blockStyles['margin-bottom']
+  if (blockStyles['margin-top'])    outerStyle.marginTop    = blockStyles['margin-top']
+
+  const reorder = (from: number, to: number) => {
+    if (from === to) return
+    const htmls = columns.map(c => c.html)
+    const [moved] = htmls.splice(from, 1)
+    htmls.splice(to, 0, moved)
+    onBlockChange(setFlexColumns(block, htmls))
+  }
+
+  const saveCol = (idx: number, html: string) => {
+    const htmls = columns.map((c, i) => i === idx ? html : c.html)
+    onBlockChange(setFlexColumns(block, htmls))
+    setEditingCol(null)
+  }
+
+  return (
+    <div style={outerStyle}>
+      {columns.map((col, i) => (
+        <ColSlot
+          key={i}
+          idx={i}
+          colHtml={col.html}
+          isDragging={dragCol === i}
+          isOver={overCol === i && dragCol !== i}
+          isEditing={editingCol === i}
+          onDragStart={e => { e.stopPropagation(); setDragCol(i) }}
+          onDragOver={e => { e.preventDefault(); e.stopPropagation(); setOverCol(i) }}
+          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null) }}
+          onDrop={e => { e.stopPropagation(); if (dragCol !== null) reorder(dragCol, i); setDragCol(null); setOverCol(null) }}
+          onDragEnd={() => { setDragCol(null); setOverCol(null) }}
+          onDoubleClick={e => { e.stopPropagation(); setEditingCol(i) }}
+          onSaveEdit={html => saveCol(i, html)}
+          onCancelEdit={() => setEditingCol(null)}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── ColSlot ────────────────────────────────────────────────────────────────────
+
+function ColSlot({
+  idx, colHtml, isDragging, isOver, isEditing,
+  onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
+  onDoubleClick, onSaveEdit, onCancelEdit,
+}: {
+  idx: number
+  colHtml: string
+  isDragging: boolean
+  isOver: boolean
+  isEditing: boolean
+  onDragStart: (e: React.DragEvent) => void
+  onDragOver: (e: React.DragEvent) => void
+  onDragLeave: (e: React.DragEvent) => void
+  onDrop: (e: React.DragEvent) => void
+  onDragEnd: () => void
+  onDoubleClick: (e: React.MouseEvent) => void
+  onSaveEdit: (html: string) => void
+  onCancelEdit: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  const divRef = useRef<HTMLDivElement>(null)
+  const htmlRef = useRef(colHtml)
+  htmlRef.current = colHtml
+
+  useEffect(() => {
+    if (!isEditing || !divRef.current) return
+    const tmpDoc = new DOMParser().parseFromString(htmlRef.current, 'text/html')
+    const inner = tmpDoc.body.firstElementChild as HTMLElement | null
+    if (!inner) return
+    inner.contentEditable = 'true'
+    inner.style.outline = 'none'
+    divRef.current.innerHTML = ''
+    divRef.current.appendChild(inner)
+    inner.focus()
+    try {
+      const range = document.createRange()
+      range.selectNodeContents(inner)
+      range.collapse(false)
+      window.getSelection()?.removeAllRanges()
+      window.getSelection()?.addRange(range)
+    } catch {}
+  }, [isEditing]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div
+      style={{
+        flex: 1, position: 'relative',
+        opacity: isDragging ? 0.25 : 1,
+        outline: isOver ? '2px dashed #58a6ff' : isEditing ? '2px solid #1f6feb' : 'none',
+        outlineOffset: 2,
+        cursor: isEditing ? 'text' : 'default',
+      }}
+      draggable={!isEditing}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onDoubleClick={onDoubleClick}
+    >
+      {/* Column drop indicator */}
+      {isOver && (
+        <div style={{
+          position: 'absolute', left: -2, top: 0, bottom: 0, width: 2,
+          background: '#58a6ff', zIndex: 20, pointerEvents: 'none',
+        }} />
+      )}
+
+      {/* Column drag handle */}
+      {!isEditing && hovered && (
+        <div
+          title={`Column ${idx + 1} — drag to reorder`}
+          style={{
+            position: 'absolute', top: 2, right: 2, zIndex: 15,
+            width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#161b22', border: '1px solid #30363d', borderRadius: 3,
+            cursor: 'grab', color: '#58a6ff', pointerEvents: 'none',
+          }}
+        >
+          <svg width="6" height="8" viewBox="0 0 6 8" fill="currentColor">
+            <circle cx="1.5" cy="1.5" r="1"/><circle cx="4.5" cy="1.5" r="1"/>
+            <circle cx="1.5" cy="4"   r="1"/><circle cx="4.5" cy="4"   r="1"/>
+            <circle cx="1.5" cy="6.5" r="1"/><circle cx="4.5" cy="6.5" r="1"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Editing hint */}
+      {isEditing && (
+        <div style={{
+          position: 'absolute', top: -20, left: 0, zIndex: 30,
+          background: '#1f6feb', borderRadius: 4, padding: '1px 6px',
+          fontSize: 9, color: '#fff', pointerEvents: 'none', whiteSpace: 'nowrap',
+        }}>
+          Esc to save
+        </div>
+      )}
+
+      {isEditing ? (
+        <div
+          ref={divRef}
+          onBlur={e => {
+            if (divRef.current?.contains(e.relatedTarget as Node)) return
+            const inner = divRef.current?.firstElementChild as HTMLElement | null
+            if (inner) {
+              inner.removeAttribute('contenteditable')
+              inner.style.removeProperty('outline')
+              onSaveEdit(inner.outerHTML)
+            } else {
+              onCancelEdit()
+            }
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Escape') { e.preventDefault(); onCancelEdit() }
+          }}
+        />
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: colHtml }} />
+      )}
     </div>
   )
 }

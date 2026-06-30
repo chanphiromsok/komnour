@@ -137,6 +137,38 @@ export function makeFlexRow(left: Block, right: Block): Block {
   return { id: uid(), html, tagName: 'div' }
 }
 
+export function isFlexRow(block: Block): boolean {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const el = doc.body.firstElementChild as HTMLElement | null
+  if (!el || el.style.display !== 'flex') return false
+  const cols = Array.from(el.children)
+  return cols.length >= 2 && cols.every(c => (c as HTMLElement).style.flex === '1')
+}
+
+export function getFlexColumns(block: Block): Array<{ html: string; tagName: string }> {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const el = doc.body.firstElementChild
+  if (!el) return []
+  return Array.from(el.children).map(wrapper => ({
+    html: wrapper.innerHTML,
+    tagName: (wrapper.firstElementChild?.tagName ?? 'div').toLowerCase(),
+  }))
+}
+
+export function setFlexColumns(block: Block, columnHtmls: string[]): Block {
+  const doc = new DOMParser().parseFromString(block.html, 'text/html')
+  const el = doc.body.firstElementChild
+  if (!el) return block
+  while (el.lastChild) el.removeChild(el.lastChild)
+  for (const html of columnHtmls) {
+    const wrapper = doc.createElement('div')
+    wrapper.style.flex = '1'
+    wrapper.innerHTML = html
+    el.appendChild(wrapper)
+  }
+  return { ...block, html: (el as HTMLElement).outerHTML }
+}
+
 // ── Block operations ──────────────────────────────────────────────────────
 
 export function deleteBlock(blocks: Block[], id: string): Block[] {
