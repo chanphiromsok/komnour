@@ -64,7 +64,9 @@ const ADD_ITEMS = [
   { tag: 'div',        label: 'Section' },
   { tag: 'img',        label: 'Image' },
   { tag: 'ul',         label: 'List' },
-  { tag: 'hr',         label: 'Divider' },
+  { tag: 'hr',         label: 'H-Line' },
+  { tag: 'rect',       label: 'Rectangle' },
+  { tag: 'vline',      label: 'V-Line' },
   { tag: 'page-break', label: 'Page Break' },
 ]
 

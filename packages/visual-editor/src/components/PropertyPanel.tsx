@@ -48,6 +48,32 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Row>
       </Section>
 
+      {/* Size — always shown except page-break */}
+      {!isPageBreak && (
+        <Section title="SIZE">
+          <Row label="Width">
+            <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
+          </Row>
+          <Row label="Height">
+            <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
+          </Row>
+          {!isHr && (
+            <Row label="Display">
+              <Select
+                value={styles['display'] ?? ''}
+                onChange={v => set('display', v)}
+                options={[
+                  { value: '', label: 'default' },
+                  { value: 'block', label: 'block' },
+                  { value: 'flex', label: 'flex' },
+                  { value: 'inline-block', label: 'inline-block' },
+                ]}
+              />
+            </Row>
+          )}
+        </Section>
+      )}
+
       {/* Image properties */}
       {isImg && (
         <Section title="IMAGE">
@@ -80,12 +106,6 @@ export default function PropertyPanel({ block, onChange }: Props) {
                 { value: 'fill', label: 'fill' },
               ]}
             />
-          </Row>
-          <Row label="Width">
-            <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
-          </Row>
-          <Row label="Height">
-            <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
           </Row>
         </Section>
       )}
