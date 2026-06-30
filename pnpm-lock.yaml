@@ -138,6 +138,25 @@ importers:
         specifier: ^4.0.0
         version: 4.22.4
 
+  packages/shaper:
+    dependencies:
+      '@pdf-lib/fontkit':
+        specifier: ^1.1.1
+        version: 1.1.1
+      harfbuzzjs:
+        specifier: ^1.4.0
+        version: 1.4.0
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
+    devDependencies:
+      '@types/node':
+        specifier: ^18.0.0
+        version: 18.19.130
+      tsx:
+        specifier: ^4.0.0
+        version: 4.22.4
+
 packages:
 
   '@babel/code-frame@7.29.7':
@@ -853,6 +872,9 @@ packages:
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
 
+  '@types/node@18.19.130':
+    resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
+
   '@types/node@20.19.43':
     resolution: {integrity: sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==}
 
@@ -1100,6 +1122,9 @@ packages:
   gradient-parser@1.2.0:
     resolution: {integrity: sha512-6ABGa9CR7WR/0pAJicBy5SJkiikbFM6kf/JjykwX7x+t+s8ORWVnlbi6FkHeFFb36yWsjUpHqSYrygd7ofEUqA==}
     engines: {node: '>=0.10.0'}
+
+  harfbuzzjs@1.4.0:
+    resolution: {integrity: sha512-3KrygnLb4ESsntxvxZA7RhJy2Ci47GdXWC8fl9HwPHNEOUDXUNv5M+x/TiBkXKjUz6jz/CRJOL2Ksgq8V3UdKw==}
 
   hast-util-to-html@9.0.5:
     resolution: {integrity: sha512-OguPdidb+fbHQSU4Q4ZiLKnzWo8Wwsf5bZfbvu7//a9oTYoqD/fWpe96NuHkoS9h0ccGOTe0C4NGXdtS0iObOw==}
@@ -1499,6 +1524,9 @@ packages:
 
   underscore@1.13.8:
     resolution: {integrity: sha512-DXtD3ZtEQzc7M8m4cXotyHR+FAS18C64asBYY5vqZexfYryNNnDc02W4hKg3rdQuqOYas1jkseX0+nZXjTXnvQ==}
+
+  undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
@@ -2123,6 +2151,10 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
+  '@types/node@18.19.130':
+    dependencies:
+      undici-types: 5.26.5
+
   '@types/node@20.19.43':
     dependencies:
       undici-types: 6.21.0
@@ -2410,6 +2442,8 @@ snapshots:
   gensync@1.0.0-beta.2: {}
 
   gradient-parser@1.2.0: {}
+
+  harfbuzzjs@1.4.0: {}
 
   hast-util-to-html@9.0.5:
     dependencies:
@@ -2858,6 +2892,8 @@ snapshots:
   typescript@5.9.3: {}
 
   underscore@1.13.8: {}
+
+  undici-types@5.26.5: {}
 
   undici-types@6.21.0: {}
 
