@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import { Column, Row, Text, Span, PageBreak, Path, Photo, renderPages } from 'sone'
@@ -129,6 +129,125 @@ const GLOBAL_STYLE = css`
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 `
+
+// ── Block drag-and-drop outline ────────────────────────────────────────────
+type Block = { html: string; tagName: string; label: string }
+type ParsedHTML = { openTag: string; closeTag: string; blocks: Block[] }
+
+function parseHTMLBlocks(rawHtml: string): ParsedHTML | null {
+  try {
+    const doc = new DOMParser().parseFromString(rawHtml, 'text/html')
+    const root = doc.body.firstElementChild
+    if (!root) return null
+    const shell = (root.cloneNode(false) as Element).outerHTML
+    const openTag = shell.slice(0, shell.indexOf('>') + 1)
+    const closeTag = `</${root.tagName.toLowerCase()}>`
+    const blocks: Block[] = Array.from(root.children).map(el => ({
+      html: el.outerHTML,
+      tagName: el.tagName.toLowerCase(),
+      label: el.tagName.toLowerCase() === 'page-break'
+        ? '─── Page Break ───'
+        : (el.textContent?.trim().replace(/\s+/g, ' ').slice(0, 72) || `<${el.tagName.toLowerCase()}>`),
+    }))
+    return { openTag, closeTag, blocks }
+  } catch { return null }
+}
+
+function serializeHTMLBlocks({ openTag, closeTag }: ParsedHTML, blocks: Block[]): string {
+  return [openTag, ...blocks.map(b => '  ' + b.html), closeTag].join('\n')
+}
+
+const BLOCK_ICONS: Record<string, string> = {
+  p: 'P', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4',
+  div: '▭', ul: '≡', ol: '≡', table: '⊞', 'page-break': '╌', img: '▨',
+}
+
+function BlockOutline({ html, onChange }: { html: string; onChange: (html: string) => void }) {
+  const parsed = useMemo(() => parseHTMLBlocks(html), [html])
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+
+  if (!parsed) return (
+    <div style={{ padding: 24, color: '#484f58', fontSize: 12, textAlign: 'center', lineHeight: '20px' }}>
+      Wrap content in a root &lt;div&gt; to enable block editing.
+    </div>
+  )
+  if (!parsed.blocks.length) return (
+    <div style={{ padding: 24, color: '#484f58', fontSize: 12, textAlign: 'center' }}>No blocks found</div>
+  )
+
+  const handleDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) return
+    const next = [...parsed.blocks]
+    const [moved] = next.splice(dragIdx, 1)
+    next.splice(toIdx, 0, moved)
+    onChange(serializeHTMLBlocks(parsed, next))
+    setDragIdx(null)
+    setOverIdx(null)
+  }
+
+  const onDragStart = (e: DragEvent, i: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    setDragIdx(i)
+  }
+  const onDragOver = (e: DragEvent, i: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setOverIdx(i)
+  }
+
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', padding: '10px 8px' }}>
+      <div style={{ fontSize: 10, color: '#3d444d', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 8px 8px' }}>
+        {parsed.blocks.length} blocks · drag to reorder
+      </div>
+      {parsed.blocks.map((block, i) => (
+        <div
+          key={i}
+          draggable
+          onDragStart={e => onDragStart(e, i)}
+          onDragOver={e => onDragOver(e, i)}
+          onDragLeave={() => setOverIdx(null)}
+          onDrop={() => handleDrop(i)}
+          onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+          style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            padding: '7px 10px', marginBottom: 4,
+            background: dragIdx === i ? '#161b22' : '#0d1117',
+            border: '1px solid',
+            borderColor: overIdx === i && dragIdx !== i ? '#58a6ff' : dragIdx === i ? '#30363d' : '#21262d',
+            borderRadius: 6, cursor: 'grab',
+            opacity: dragIdx === i ? 0.35 : 1,
+            transition: 'border-color 0.1s, opacity 0.12s',
+            userSelect: 'none',
+          }}
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="#30363d" style={{ flexShrink: 0, marginTop: 2 }}>
+            <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+            <circle cx="2" cy="7" r="1.5"/><circle cx="6" cy="7" r="1.5"/>
+            <circle cx="2" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/>
+          </svg>
+          <div style={{
+            flexShrink: 0, padding: '0 5px', minWidth: 24, height: 18,
+            background: '#161b22', border: '1px solid #30363d', borderRadius: 3,
+            fontSize: 9, fontWeight: 700, color: block.tagName === 'page-break' ? '#484f58' : '#7d8590',
+            fontFamily: 'monospace', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {BLOCK_ICONS[block.tagName] || block.tagName.slice(0, 3).toUpperCase()}
+          </div>
+          <div style={{
+            flex: 1, minWidth: 0, fontSize: 12, lineHeight: '18px',
+            color: block.tagName === 'page-break' ? '#3d444d' : '#7d8590',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontStyle: block.tagName === 'page-break' ? 'italic' : 'normal',
+          }}>
+            {block.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 // ── Figma-like zoom/pan canvas ─────────────────────────────────────────────
 function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNode; loading: boolean; onZoomChange?: (z: number) => void }) {
@@ -339,6 +458,7 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
 
+  const [leftView, setLeftView] = useState<'code' | 'blocks'>('code')
   const [view, setView] = useState<'preview' | 'syntax'>('preview')
   const syntax = useMemo(() => htmlToSoneSyntax(html, { preamble: true }), [html])
   const [copied, setCopied] = useState(false)
@@ -615,67 +735,89 @@ export default function App() {
         {/* Editor panel */}
         <Panel defaultSize={50} minSize={20}>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+            {/* Left panel tab bar */}
             <div style={{
-              display: 'flex', alignItems: 'center',
-              height: 35, background: '#010409',
-              borderBottom: '1px solid #21262d',
-              flexShrink: 0, paddingLeft: 12,
+              display: 'flex', alignItems: 'stretch', height: 35, flexShrink: 0,
+              background: '#010409', borderBottom: '1px solid #21262d',
             }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '0 12px', height: '100%',
-                borderRight: '1px solid #21262d',
-                color: '#c9d1d9', fontSize: 12,
-                background: '#0d1117',
-                borderTop: '2px solid #58a6ff',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}>
-                  <rect x="1" y="1" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="7" y="1" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="1" y="7" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="7" y="7" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                </svg>
-                document.html
-              </div>
+              {(['code', 'blocks'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setLeftView(v)}
+                  style={{
+                    background: leftView === v ? '#0d1117' : 'transparent',
+                    color: leftView === v ? '#c9d1d9' : '#484f58',
+                    border: 'none',
+                    borderTop: leftView === v ? '2px solid #58a6ff' : '2px solid transparent',
+                    borderRight: '1px solid #21262d',
+                    padding: '0 16px',
+                    fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    transition: 'color 0.12s', display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  {v === 'code' ? (
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ opacity: 0.7 }}>
+                      <polyline points="1,3 4,5.5 1,8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <line x1="5.5" y1="8" x2="10" y2="8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ opacity: 0.7 }}>
+                      <rect x="1" y="1" width="9" height="2.5" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                      <rect x="1" y="4.5" width="9" height="2.5" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                      <rect x="1" y="8" width="9" height="2" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                    </svg>
+                  )}
+                  {v}
+                </button>
+              ))}
             </div>
 
-            <Editor
-              height="calc(100% - 35px)"
-              defaultLanguage="html"
-              value={html}
-              onChange={v => setHtml(v ?? '')}
-              theme="komnour-dark"
-              onMount={handleMonacoMount}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                lineHeight: 22,
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
-                fontLigatures: true,
-                wordWrap: 'on',
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                tabSize: 2,
-                insertSpaces: true,
-                renderWhitespace: 'none',
-                smoothScrolling: true,
-                cursorBlinking: 'smooth',
-                cursorSmoothCaretAnimation: 'on',
-                bracketPairColorization: { enabled: true },
-                guides: { bracketPairs: true, indentation: true },
-                padding: { top: 16, bottom: 16 },
-                scrollbar: {
-                  verticalScrollbarSize: 6,
-                  horizontalScrollbarSize: 6,
-                  useShadows: false,
-                },
-                suggest: { showKeywords: false, preview: true },
-                overviewRulerLanes: 0,
-                hideCursorInOverviewRuler: true,
-                renderLineHighlight: 'gutter',
-                automaticLayout: true,
-              }}
-            />
+            {/* Left panel content */}
+            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+              {/* Monaco always rendered (but hidden when blocks view) to preserve editor state */}
+              <div style={{ position: 'absolute', inset: 0, display: leftView === 'code' ? 'block' : 'none' }}>
+                <Editor
+                  height="100%"
+                  defaultLanguage="html"
+                  value={html}
+                  onChange={v => setHtml(v ?? '')}
+                  theme="komnour-dark"
+                  onMount={handleMonacoMount}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                    lineHeight: 22,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
+                    fontLigatures: true,
+                    wordWrap: 'on',
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    tabSize: 2,
+                    insertSpaces: true,
+                    renderWhitespace: 'none',
+                    smoothScrolling: true,
+                    cursorBlinking: 'smooth',
+                    cursorSmoothCaretAnimation: 'on',
+                    bracketPairColorization: { enabled: true },
+                    guides: { bracketPairs: true, indentation: true },
+                    padding: { top: 16, bottom: 16 },
+                    scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6, useShadows: false },
+                    suggest: { showKeywords: false, preview: true },
+                    overviewRulerLanes: 0,
+                    hideCursorInOverviewRuler: true,
+                    renderLineHighlight: 'gutter',
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+              {leftView === 'blocks' && (
+                <div style={{ position: 'absolute', inset: 0, background: '#0d1117' }}>
+                  <BlockOutline html={html} onChange={setHtml} />
+                </div>
+              )}
+            </div>
           </div>
         </Panel>
 
