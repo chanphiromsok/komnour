@@ -109,7 +109,7 @@ export function addBlock(blocks: Block[], tagName: string, afterId: string | nul
     'page-break': '<page-break></page-break>',
     hr: '<hr style="border: none; border-top: 1px solid #e1e4e8; margin: 24px 0;" />',
     rect: '<div style="width: 160px; height: 80px; background: #e8edf3; border: 1px solid #c0c8d4; border-radius: 4px; margin-bottom: 16px;"></div>',
-    vline: '<div style="width: 1px; height: 80px; background: #e1e4e8; margin: 0 auto 16px;"></div>',
+    vline: '<div data-shape="vline" style="width: 0; height: 80px; border-left: 2px solid #e1e4e8; margin: 0 auto 16px;"></div>',
     img: '<img src="" alt="" style="width: 100%; height: auto; display: block; margin-bottom: 16px;" />',
     ul: '<ul style="font-size: 13px; line-height: 22px; padding-left: 20px; margin-bottom: 16px;"><li>Item 1</li><li>Item 2</li></ul>',
   }

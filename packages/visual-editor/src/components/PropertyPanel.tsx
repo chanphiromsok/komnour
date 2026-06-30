@@ -29,9 +29,11 @@ export default function PropertyPanel({ block, onChange }: Props) {
   const set = (prop: string, value: string) => onChange(setBlockStyle(block, prop, value))
   const setAttr = (attr: string, value: string) => onChange(setBlockAttr(block, attr, value))
 
-  const isHr  = block.tagName === 'hr'
-  const isImg = block.tagName === 'img'
+  const isHr     = block.tagName === 'hr'
+  const isVLine  = getBlockAttr(block, 'data-shape') === 'vline'
+  const isImg    = block.tagName === 'img'
   const isPageBreak = block.tagName === 'page-break'
+  const isLine   = isHr || isVLine
 
   return (
     <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
@@ -110,25 +112,37 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Section>
       )}
 
-      {/* HR / Line properties */}
-      {isHr && (
+      {/* H-Line / V-Line properties */}
+      {isLine && (
         <Section title="LINE">
           <Row label="Color">
             <ColorPicker
-              value={styles['border-top-color'] ?? styles['border-color'] ?? '#e1e4e8'}
-              onChange={v => set('border-top-color', v)}
+              value={
+                isVLine
+                  ? (styles['border-left-color'] ?? '#e1e4e8')
+                  : (styles['border-top-color'] ?? styles['border-color'] ?? '#e1e4e8')
+              }
+              onChange={v => set(isVLine ? 'border-left-color' : 'border-top-color', v)}
             />
           </Row>
           <Row label="Thick">
             <NumUnit
-              value={styles['border-top-width'] ?? styles['border-width'] ?? '1px'}
-              onChange={v => set('border-top-width', v)}
+              value={
+                isVLine
+                  ? (styles['border-left-width'] ?? '2px')
+                  : (styles['border-top-width'] ?? styles['border-width'] ?? '1px')
+              }
+              onChange={v => set(isVLine ? 'border-left-width' : 'border-top-width', v)}
             />
           </Row>
           <Row label="Style">
             <Select
-              value={styles['border-top-style'] ?? styles['border-style'] ?? 'solid'}
-              onChange={v => set('border-top-style', v)}
+              value={
+                isVLine
+                  ? (styles['border-left-style'] ?? 'solid')
+                  : (styles['border-top-style'] ?? styles['border-style'] ?? 'solid')
+              }
+              onChange={v => set(isVLine ? 'border-left-style' : 'border-top-style', v)}
               options={[
                 { value: 'solid',  label: 'solid' },
                 { value: 'dashed', label: 'dashed' },
@@ -140,8 +154,8 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Section>
       )}
 
-      {/* Typography — hidden for hr, img, page-break */}
-      {!isHr && !isImg && !isPageBreak && (
+      {/* Typography — hidden for lines, img, page-break */}
+      {!isLine && !isImg && !isPageBreak && (
         <Section title="TYPOGRAPHY">
           <Row label="Family">
             <Select
@@ -195,7 +209,7 @@ export default function PropertyPanel({ block, onChange }: Props) {
       </Section>
 
       {/* Fill */}
-      {!isHr && !isPageBreak && (
+      {!isLine && !isPageBreak && (
         <Section title="FILL">
           <Row label="Background">
             <ColorPicker
@@ -207,7 +221,7 @@ export default function PropertyPanel({ block, onChange }: Props) {
       )}
 
       {/* Border */}
-      {!isHr && !isPageBreak && (
+      {!isLine && !isPageBreak && (
         <Section title="BORDER">
           <Row label="Radius">
             <NumUnit value={styles['border-radius'] ?? ''} onChange={v => set('border-radius', v)} />
