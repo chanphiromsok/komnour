@@ -14,29 +14,105 @@ import inter400 from '@fontsource/inter/files/inter-all-400-normal.woff?url'
 const SERVER = 'http://localhost:3001'
 const LS_KEY = 'komnour:html'
 
-const DEFAULT_HTML = `<div style="padding: 48px; font-family: 'Noto Sans Khmer';">
+const TEMPLATES: { label: string; html: string }[] = [
+  {
+    label: 'Loan Agreement',
+    html: `<div style="padding: 48px; font-family: 'Noto Sans Khmer';">
   <div style="text-align: center; margin-bottom: 32px;">
     <div style="font-size: 22px; font-weight: bold; color: #1a1a2e;">
       កិច្ចសន្យាខ្ចីប្រាក់
     </div>
     <div style="font-size: 13px; color: #555; margin-top: 4px;">LOAN AGREEMENT CONTRACT</div>
   </div>
-
   <p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">
-    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong> —
-    អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
+    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong> — អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
   </p>
-
   <ul style="margin-bottom: 24px; padding-left: 20px;">
     <li style="font-size: 13px; line-height: 22px; margin-bottom: 6px;">ត្រូវមានអត្តសញ្ញាណប័ណ្ណ</li>
     <li style="font-size: 13px; line-height: 22px; margin-bottom: 6px;">ត្រូវមានទ្រព្យជំហររ</li>
     <li style="font-size: 13px; line-height: 22px; color: #c0392b;">ការទូទាត់មុនថ្ងៃទី 1</li>
   </ul>
-
   <page-break></page-break>
-
   <p style="font-size: 13px; line-height: 22px; color: #333;">Page 2 content after break.</p>
-</div>`
+</div>`,
+  },
+  {
+    label: 'Invoice',
+    html: `<div style="padding: 48px; font-family: 'Inter', sans-serif;">
+  <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+    <div>
+      <div style="font-size: 24px; font-weight: bold; color: #0d1117;">INVOICE</div>
+      <div style="font-size: 12px; color: #666; margin-top: 4px;">#INV-2024-001</div>
+    </div>
+    <div style="text-align: right; font-size: 12px; color: #444;">
+      <div>Issued: Jan 1, 2024</div>
+      <div>Due: Jan 31, 2024</div>
+    </div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-bottom: 32px; font-size: 13px;">
+    <div>
+      <div style="font-weight: bold; margin-bottom: 4px;">From</div>
+      <div>Acme Corp</div>
+      <div style="color: #666;">123 Main St, City</div>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-weight: bold; margin-bottom: 4px;">Bill To</div>
+      <div>Client Name</div>
+      <div style="color: #666;">456 Other Ave, Town</div>
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+    <tr style="background: #f6f8fa; font-weight: bold;">
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Description</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Qty</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Unit Price</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Total</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Design Services</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">10</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$50.00</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$500.00</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Development</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">20</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$80.00</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$1,600.00</td>
+    </tr>
+  </table>
+  <div style="text-align: right; font-size: 14px; font-weight: bold; color: #0d1117;">
+    Total: $2,100.00
+  </div>
+</div>`,
+  },
+  {
+    label: 'Report',
+    html: `<div style="padding: 48px; font-family: 'Inter', sans-serif; color: #24292f;">
+  <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 8px; color: #0d1117;">Monthly Report</h1>
+  <div style="font-size: 12px; color: #57606a; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #e1e4e8;">
+    January 2024 · Prepared by Finance Team
+  </div>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Executive Summary</h2>
+  <p style="font-size: 13px; line-height: 22px; margin-bottom: 24px; color: #444;">
+    This month saw a <strong>12% increase</strong> in revenue compared to the previous period,
+    driven primarily by new client acquisitions and expansion of existing accounts.
+  </p>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Key Metrics</h2>
+  <ul style="font-size: 13px; line-height: 24px; margin-bottom: 24px; padding-left: 20px;">
+    <li>Revenue: <strong>$84,500</strong> (+12%)</li>
+    <li>New Clients: <strong>8</strong></li>
+    <li>Retention Rate: <strong>94%</strong></li>
+    <li>Avg. Deal Size: <strong>$10,562</strong></li>
+  </ul>
+  <page-break></page-break>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Appendix</h2>
+  <p style="font-size: 13px; line-height: 22px; color: #444;">Detailed breakdown available on request.</p>
+</div>`,
+  },
+]
+
+const DEFAULT_HTML = TEMPLATES[0].html
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -219,6 +295,10 @@ export default function App() {
   const [fontsReady, setFontsReady] = useState(false)
   const [zoomPct, setZoomPct] = useState(100)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [serverUrl, setServerUrl] = useState(() => localStorage.getItem('komnour:server') ?? SERVER)
+  const [showServerConfig, setShowServerConfig] = useState(false)
+  const [serverUrlDraft, setServerUrlDraft] = useState(serverUrl)
+  const [routing, setRouting] = useState(false)
 
   // Load fonts on mount, then trigger first render
   useEffect(() => {
@@ -273,7 +353,7 @@ export default function App() {
   const exportFile = async (fmt: 'pdf' | 'png') => {
     setExporting(fmt)
     try {
-      const res = await fetch(`${SERVER}/render`, {
+      const res = await fetch(`${serverUrl}/render`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html, format: fmt }),
@@ -287,6 +367,26 @@ export default function App() {
     } finally {
       setExporting(null)
     }
+  }
+
+  const routeToServer = async () => {
+    setRouting(true)
+    try {
+      await fetch(`${serverUrl}/document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html }),
+      })
+    } finally {
+      setRouting(false)
+    }
+  }
+
+  const saveServerUrl = () => {
+    const url = serverUrlDraft.trim().replace(/\/$/, '')
+    setServerUrl(url)
+    localStorage.setItem('komnour:server', url)
+    setShowServerConfig(false)
   }
 
   const handleMonacoMount = (_: unknown, monaco: Monaco) => {
@@ -320,6 +420,30 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
+        {/* Template selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ color: '#484f58', flexShrink: 0 }}>
+            <rect x="0.5" y="0.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="6.5" y="0.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="0.5" y="6.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="6.5" y="6.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+          </svg>
+          <select
+            value=""
+            onChange={e => { if (e.target.value) setHtml(e.target.value); e.target.value = '' }}
+            style={{
+              background: 'transparent', color: '#7d8590',
+              border: 'none', fontSize: 12, cursor: 'pointer',
+              outline: 'none', padding: '2px 0',
+            }}
+          >
+            <option value="" disabled>Templates</option>
+            {TEMPLATES.map(t => (
+              <option key={t.label} value={t.html}>{t.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ flex: 1 }} />
 
         {/* Status */}
@@ -342,11 +466,12 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
-        {/* Export buttons */}
+        {/* Export + Route buttons */}
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={() => exportFile('png')}
             disabled={exporting !== null}
+            title="Export PNG (requires server)"
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               background: 'transparent', color: '#7d8590',
@@ -367,6 +492,7 @@ export default function App() {
           <button
             onClick={() => exportFile('pdf')}
             disabled={exporting !== null}
+            title="Export PDF (requires server)"
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               background: '#1f6feb', color: '#ffffff',
@@ -384,8 +510,104 @@ export default function App() {
             }
             PDF
           </button>
+
+          <div style={{ width: 1, height: 20, background: '#21262d', alignSelf: 'center' }} />
+
+          {/* Route to server — placeholder */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={routeToServer}
+              disabled={routing}
+              title={`Send to ${serverUrl}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                background: 'transparent', color: '#7d8590',
+                border: '1px solid #30363d',
+                borderRadius: 6, padding: '5px 12px',
+                fontSize: 12, fontWeight: 500, cursor: routing ? 'wait' : 'pointer',
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => { if (!routing) { e.currentTarget.style.color = '#e6edf3'; e.currentTarget.style.borderColor = '#484f58' } }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#7d8590'; e.currentTarget.style.borderColor = '#30363d' }}
+            >
+              {routing
+                ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 1s linear infinite' }}><circle cx="6" cy="6" r="4.5" stroke="#30363d" strokeWidth="1.5" fill="none" /><path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="#7d8590" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+                : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              }
+              Route
+            </button>
+          </div>
+
+          {/* Server config button */}
+          <button
+            onClick={() => { setServerUrlDraft(serverUrl); setShowServerConfig(v => !v) }}
+            title="Configure server URL"
+            style={{
+              display: 'flex', alignItems: 'center',
+              background: 'transparent', color: showServerConfig ? '#58a6ff' : '#484f58',
+              border: '1px solid ' + (showServerConfig ? '#388bfd40' : '#30363d'),
+              borderRadius: 6, padding: '5px 8px',
+              fontSize: 12, cursor: 'pointer',
+              transition: 'all 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#e6edf3' }}
+            onMouseLeave={e => { e.currentTarget.style.color = showServerConfig ? '#58a6ff' : '#484f58' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="2" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M6 1v1M6 10v1M1 6h1M10 6h1M2.5 2.5l.7.7M8.8 8.8l.7.7M9.5 2.5l-.7.7M3.2 8.8l-.7.7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* ── Server config popover ─────────────────────────────────────────── */}
+      {showServerConfig && (
+        <div style={{
+          position: 'fixed', top: 52, right: 16, zIndex: 100,
+          background: '#161b22', border: '1px solid #30363d',
+          borderRadius: 8, padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          minWidth: 280,
+          animation: 'fadein 0.1s ease',
+        }}>
+          <div style={{ fontSize: 11, color: '#7d8590', marginBottom: 2 }}>Server URL</div>
+          <input
+            autoFocus
+            value={serverUrlDraft}
+            onChange={e => setServerUrlDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveServerUrl(); if (e.key === 'Escape') setShowServerConfig(false) }}
+            placeholder="http://localhost:3001"
+            style={{
+              background: '#0d1117', border: '1px solid #30363d',
+              borderRadius: 6, padding: '6px 10px',
+              color: '#c9d1d9', fontSize: 12, outline: 'none',
+              fontFamily: "'JetBrains Mono', monospace",
+            }}
+          />
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setShowServerConfig(false)}
+              style={{
+                background: 'none', border: '1px solid #30363d', borderRadius: 5,
+                color: '#7d8590', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveServerUrl}
+              style={{
+                background: '#1f6feb', border: 'none', borderRadius: 5,
+                color: '#fff', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Main panes ─────────────────────────────────────────────────── */}
       <PanelGroup direction="horizontal" style={{ flex: 1, overflow: 'hidden' }}>
