@@ -1,0 +1,362 @@
+import { useCallback, useEffect, useRef, useState, type WheelEvent } from 'react'
+import type { Block, ParsedDoc } from '../types'
+import { parseDoc, serializeDoc, addBlock, setBlockStyle } from '../lib/blocks'
+import { loadFonts } from '../lib/fonts'
+import Canvas from './Canvas'
+import PropertyPanel from './PropertyPanel'
+
+// ── Font asset imports ─────────────────────────────────────────────────────
+import notoKhmer400 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-400-normal.woff?url'
+import notoKhmer700 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-700-normal.woff?url'
+import inter400 from '@fontsource/inter/files/inter-all-400-normal.woff?url'
+import urlKhmerOSSiemreap  from '../../../glyphs/fonts/KhmerOsSiemreab/KhmerOSsiemreap.ttf?url'
+import urlKhSiemreap       from '../../../glyphs/fonts/KhSiemreap/Kh-Siemreap.ttf?url'
+import urlKhmerOSMuolLight from '../../../glyphs/fonts/KhmerOSMuolLight/Khmer-OS-Muol-Light.ttf?url'
+import urlWingdings2       from '../../../glyphs/fonts/KhmerWing2/wingdings2.ttf?url'
+import urlCalibriR         from '../../../glyphs/fonts/Calibri/calibri.ttf?url'
+import urlCalibriB         from '../../../glyphs/fonts/Calibri/calibrib.ttf?url'
+import urlCalibriI         from '../../../glyphs/fonts/Calibri/calibrii.ttf?url'
+import urlCalibriL         from '../../../glyphs/fonts/Calibri/calibril.ttf?url'
+import urlCalibriBI        from '../../../glyphs/fonts/Calibri/calibriz.ttf?url'
+import urlKhmerBursaR      from '../../../glyphs/fonts/KhmerBursa/Mo5V56.ttf?url'
+import urlKhmerBursaB      from '../../../glyphs/fonts/KhmerBursa/Mo8V56.ttf?url'
+
+const FONT_MAP: Record<string, string[]> = {
+  'Noto Sans Khmer':    [notoKhmer400, notoKhmer700],
+  'Inter':              [inter400],
+  'KhmerOSsiemreap':   [urlKhmerOSSiemreap],
+  'Kh-Siemreap':       [urlKhSiemreap],
+  'Khmer-OS-Muol-Light':[urlKhmerOSMuolLight],
+  'Wingdings2':         [urlWingdings2],
+  'Calibri':            [urlCalibriR, urlCalibriB, urlCalibriI, urlCalibriL, urlCalibriBI],
+  'KhmerBursa':         [urlKhmerBursaR, urlKhmerBursaB],
+}
+
+// ── Default document ───────────────────────────────────────────────────────
+const DEFAULT_HTML = `<div style="padding: 48px; font-family: 'Noto Sans Khmer'; background: white;">
+  <div style="text-align: center; margin-bottom: 32px;">
+    <div style="font-size: 22px; font-weight: bold; color: #1a1a2e;">កិច្ចសន្យាខ្ចីប្រាក់</div>
+    <div style="font-size: 13px; color: #555; margin-top: 4px;">LOAN AGREEMENT CONTRACT</div>
+  </div>
+  <p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">
+    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong>
+  </p>
+  <p style="font-size: 13px; line-height: 22px; color: #333;">
+    អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
+  </p>
+</div>`
+
+const LS_KEY = 'komnour:ve:html'
+
+// ── Add-block menu items ───────────────────────────────────────────────────
+const ADD_ITEMS = [
+  { tag: 'p',          label: 'Paragraph' },
+  { tag: 'h1',         label: 'Heading 1' },
+  { tag: 'h2',         label: 'Heading 2' },
+  { tag: 'div',        label: 'Section' },
+  { tag: 'ul',         label: 'List' },
+  { tag: 'hr',         label: 'Divider' },
+  { tag: 'page-break', label: 'Page Break' },
+]
+
+// ── ZoomPane ───────────────────────────────────────────────────────────────
+function ZoomPane({ children }: { children: React.ReactNode }) {
+  const [zoom, setZoom] = useState(0.9)
+  const [pan, setPan] = useState({ x: 60, y: 40 })
+  const zoomRef = useRef(0.9)
+  const panRef = useRef({ x: 60, y: 40 })
+  const isPanning = useRef(false)
+  const spaceDown = useRef(false)
+  const panStart = useRef({ mx: 0, my: 0, px: 0, py: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [cursor, setCursor] = useState('default')
+
+  const apply = useCallback((z: number, p: { x: number; y: number }) => {
+    zoomRef.current = z; panRef.current = p; setZoom(z); setPan(p)
+  }, [])
+
+  useEffect(() => {
+    const el = containerRef.current; if (!el) return
+    const handler = (e: globalThis.WheelEvent) => {
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top
+      const z = zoomRef.current, p = panRef.current
+      if (e.ctrlKey || e.metaKey) {
+        const nz = Math.min(4, Math.max(0.1, z * Math.pow(0.998, e.deltaY)))
+        apply(nz, { x: mx - (mx - p.x) * (nz / z), y: my - (my - p.y) * (nz / z) })
+      } else {
+        const np = { x: p.x - e.deltaX, y: p.y - e.deltaY }
+        panRef.current = np; setPan(np)
+      }
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [apply])
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { if (e.code === 'Space' && !spaceDown.current) { spaceDown.current = true; setCursor('grab') } }
+    const up   = (e: KeyboardEvent) => { if (e.code === 'Space') { spaceDown.current = false; if (!isPanning.current) setCursor('default') } }
+    window.addEventListener('keydown', down); window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
+  }, [])
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', cursor }}
+      onMouseDown={e => {
+        if (e.button === 1 || (e.button === 0 && spaceDown.current)) {
+          e.preventDefault(); isPanning.current = true
+          panStart.current = { mx: e.clientX, my: e.clientY, px: panRef.current.x, py: panRef.current.y }
+          setCursor('grabbing')
+        }
+      }}
+      onMouseMove={e => {
+        if (!isPanning.current) return
+        const np = { x: panStart.current.px + e.clientX - panStart.current.mx, y: panStart.current.py + e.clientY - panStart.current.my }
+        panRef.current = np; setPan(np)
+      }}
+      onMouseUp={() => { if (isPanning.current) { isPanning.current = false; setCursor(spaceDown.current ? 'grab' : 'default') } }}
+      onMouseLeave={() => { if (isPanning.current) { isPanning.current = false; setCursor('default') } }}
+    >
+      <div style={{
+        position: 'absolute', top: 0, left: 0, willChange: 'transform',
+        transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`,
+        transformOrigin: '0 0',
+      }}>
+        {children}
+      </div>
+
+      {/* Zoom controls */}
+      <div style={{
+        position: 'absolute', bottom: 14, right: 14,
+        display: 'flex', alignItems: 'center', gap: 1,
+        background: '#161b22', border: '1px solid #30363d', borderRadius: 7, overflow: 'hidden',
+        fontSize: 11, color: '#7d8590', userSelect: 'none', zIndex: 10,
+      }}>
+        <ZBtn onClick={() => apply(Math.max(0.1, zoomRef.current / 1.25), panRef.current)}>−</ZBtn>
+        <span onClick={() => apply(0.9, { x: 60, y: 40 })}
+          style={{ padding: '5px 8px', minWidth: 44, textAlign: 'center', cursor: 'pointer',
+            borderLeft: '1px solid #21262d', borderRight: '1px solid #21262d' }}>
+          {Math.round(zoom * 100)}%
+        </span>
+        <ZBtn onClick={() => apply(Math.min(4, zoomRef.current * 1.25), panRef.current)}>+</ZBtn>
+      </div>
+      <div style={{ position: 'absolute', bottom: 14, left: 14, fontSize: 10, color: '#30363d', userSelect: 'none', pointerEvents: 'none' }}>
+        Ctrl+scroll to zoom · Space+drag to pan
+      </div>
+    </div>
+  )
+}
+
+function ZBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{
+      background: 'none', border: 'none', color: '#7d8590', cursor: 'pointer',
+      padding: '5px 10px', fontSize: 15, lineHeight: 1,
+    }}>{children}</button>
+  )
+}
+
+// ── App ────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [rawHtml, setRawHtml] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_HTML)
+  const [doc, setDoc] = useState<ParsedDoc | null>(() => parseDoc(rawHtml))
+  const [blocks, setBlocks] = useState<Block[]>(() => parseDoc(rawHtml)?.blocks ?? [])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [fontsReady, setFontsReady] = useState(false)
+  const [showAddMenu, setShowAddMenu] = useState(false)
+
+  // History stack for undo
+  const history = useRef<Block[][]>([])
+  const push = (next: Block[]) => {
+    history.current = [...history.current.slice(-49), blocks]
+    commit(next)
+  }
+  const undo = () => {
+    const prev = history.current.pop()
+    if (prev) commit(prev)
+  }
+
+  const commit = (next: Block[]) => {
+    setBlocks(next)
+    if (!doc) return
+    const html = serializeDoc(doc, next)
+    setRawHtml(html)
+    localStorage.setItem(LS_KEY, html)
+  }
+
+  useEffect(() => {
+    loadFonts(FONT_MAP).then(() => setFontsReady(true)).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo() }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  })
+
+  const selectedBlock = blocks.find(b => b.id === selectedId) ?? null
+
+  const handleBlockChange = (updated: Block) => {
+    push(blocks.map(b => b.id === updated.id ? updated : b))
+  }
+
+  const injectStyle = `
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Inter', sans-serif; background: #090c10; color: #c9d1d9; height: 100vh; overflow: hidden; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    select, button, input { font-family: inherit; }
+  `
+
+  if (!doc) return <div style={{ color: '#f85149', padding: 40 }}>Could not parse HTML. Wrap content in a root &lt;div&gt;.</div>
+
+  return (
+    <>
+      <style>{injectStyle}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#090c10' }}>
+
+        {/* ── Toolbar ─────────────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          height: 44, padding: '0 16px', flexShrink: 0,
+          background: '#010409', borderBottom: '1px solid #21262d',
+          userSelect: 'none',
+        }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginRight: 8 }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <polygon points="9,1 17,5 17,13 9,17 1,13 1,5" fill="none" stroke="#58a6ff" strokeWidth="1.5"/>
+              <polygon points="9,4 14,7 14,11 9,14 4,11 4,7" fill="#58a6ff" opacity="0.2"/>
+              <circle cx="9" cy="9" r="2" fill="#58a6ff"/>
+            </svg>
+            <span style={{ fontWeight: 600, fontSize: 13, color: '#e6edf3', letterSpacing: '0.02em' }}>
+              Visual Editor
+            </span>
+          </div>
+
+          <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
+
+          {/* Add block */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowAddMenu(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                background: 'transparent', color: '#7d8590',
+                border: '1px solid #30363d', borderRadius: 6,
+                padding: '5px 12px', fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              Add Block
+            </button>
+            {showAddMenu && (
+              <div style={{
+                position: 'absolute', top: 36, left: 0, zIndex: 100,
+                background: '#161b22', border: '1px solid #30363d', borderRadius: 8,
+                padding: '4px', minWidth: 140, boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              }}
+                onMouseLeave={() => setShowAddMenu(false)}
+              >
+                {ADD_ITEMS.map(item => (
+                  <button
+                    key={item.tag}
+                    onClick={() => {
+                      push(addBlock(blocks, item.tag, selectedId))
+                      setShowAddMenu(false)
+                    }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left',
+                      background: 'none', border: 'none', borderRadius: 5,
+                      color: '#c9d1d9', fontSize: 12, padding: '6px 10px', cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#21262d')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Undo */}
+          <button
+            onClick={undo}
+            title="Undo (Cmd/Ctrl+Z)"
+            style={{
+              display: 'flex', alignItems: 'center',
+              background: 'transparent', color: '#484f58',
+              border: '1px solid #30363d', borderRadius: 6,
+              padding: '5px 8px', fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 5H7.5C9.43 5 11 6.57 11 8.5S9.43 12 7.5 12H4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M4.5 2.5L2 5l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Font status */}
+          <span style={{ fontSize: 10, color: fontsReady ? '#3db87a' : '#484f58' }}>
+            {fontsReady ? '● fonts ready' : '● loading fonts…'}
+          </span>
+        </div>
+
+        {/* ── Main area ─────────────────────────────────────────────── */}
+        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+
+          {/* Canvas */}
+          <div style={{
+            flex: 1, minWidth: 0,
+            background: '#090c10',
+            backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}>
+            <ZoomPane>
+              <Canvas
+                doc={doc}
+                blocks={blocks}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                onBlocksChange={next => push(next)}
+              />
+            </ZoomPane>
+          </div>
+
+          {/* Property panel */}
+          <div style={{
+            width: 260, flexShrink: 0,
+            background: '#0d1117',
+            borderLeft: '1px solid #21262d',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{
+              height: 35, display: 'flex', alignItems: 'center', padding: '0 14px',
+              borderBottom: '1px solid #21262d', fontSize: 11,
+              color: selectedBlock ? '#c9d1d9' : '#484f58', letterSpacing: '0.04em',
+            }}>
+              {selectedBlock ? `Properties · <${selectedBlock.tagName}>` : 'Properties'}
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <PropertyPanel
+                block={selectedBlock}
+                onChange={handleBlockChange}
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </>
+  )
+}
