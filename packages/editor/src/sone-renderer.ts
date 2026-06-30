@@ -31,9 +31,14 @@ const sharedMethods: Omit<SoneRenderer, 'dpr'> = {
 
   async registerFont(name: string, source: string | string[]) {
     const srcs = Array.isArray(source) ? source : [source]
-    const face = new FontFace(name, srcs.map(s => `url(${s})`).join(', '))
-    await face.load()
-    document.fonts.add(face)
+    await Promise.all(srcs.map(async src => {
+      // Extract weight from @fontsource filenames: "inter-all-400-normal.woff" → "400"
+      const m = src.match(/-(\d{3})-(?:normal|italic)/)
+      const descriptors: FontFaceDescriptors = m ? { weight: m[1] } : {}
+      const face = new FontFace(name, `url(${src})`, descriptors)
+      await face.load()
+      document.fonts.add(face)
+    }))
     registeredFonts.add(name)
   },
 
