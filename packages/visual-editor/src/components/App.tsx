@@ -121,12 +121,12 @@ function blockToSoneExpr(block: Block): string | null {
     return `${base}${pos}${imgW > 0 ? `.width(${imgW})` : ''}${imgH > 0 ? `.height(${imgH})` : ''}`
   }
 
-  // Text / content blocks
+  // Text / content blocks — apply position directly to avoid double Column wrapping
   const innerExpr = htmlElemToSoneExpr(html)
   const wPart = bw > 0 ? `.width(${bw})` : ''
   const hPart = bh > 0 ? `.height(${bh})` : ''
   if (!innerExpr) return `Column()${pos}${wPart}${hPart}`
-  return `Column(${innerExpr})${pos}${wPart}${hPart}`
+  return `${innerExpr}${pos}${wPart}${hPart}`
 }
 
 // ── ZoomPane ───────────────────────────────────────────────────────────────
@@ -296,21 +296,28 @@ export default function App() {
       const rootBg = rootStyles['background-color'] ?? rootStyles['background'] ?? 'white'
       const rootFont = rootStyles['font-family']?.replace(/['"]/g, '').split(',')[0].trim()
 
-      const blockExprs = blocks.map(b => blockToSoneExpr(b)).filter(Boolean)
-      const children = blockExprs.join(',\n  ')
+      const blockExprs = blocks.map(b => blockToSoneExpr(b)).filter(Boolean) as string[]
+
+      // Column doesn't support .font() — use TextDefault to cascade font to all children
+      const inner = rootFont
+        ? `TextDefault(\n    ${blockExprs.join(',\n    ')}\n  ).font(${JSON.stringify(rootFont)})`
+        : blockExprs.join(',\n  ')
 
       const containerCalls = [
         `.width(${paperWidth})`,
         `.height(${paperHeight})`,
         `.bg(${JSON.stringify(rootBg)})`,
-        rootFont ? `.font(${JSON.stringify(rootFont)})` : '',
         `.position("relative")`,
-      ].filter(Boolean).join('')
+      ].join('')
+
+      const imports = rootFont
+        ? `import { Column, Row, Text, Span, PageBreak, Path, Photo, TextDefault } from 'sone'`
+        : `import { Column, Row, Text, Span, PageBreak, Path, Photo } from 'sone'`
 
       const code = [
-        `import { Column, Row, Text, Span, PageBreak, Path, Photo } from 'sone'`,
+        imports,
         ``,
-        `Column(\n  ${children}\n)${containerCalls}`,
+        `Column(\n  ${inner}\n)${containerCalls}`,
         ``,
       ].join('\n')
 
