@@ -650,6 +650,12 @@ function hoistPageBreaks(nodes: (SNode | string)[]): (SNode | string)[] {
 export interface SoneSyntaxOptions {
   /** Page width in px (default 794) */
   width?: number
+  /** Page height in px. When set, emits .height() instead of .minHeight(1) on the root Column */
+  height?: number
+  /** Background color for the root Column (default 'white') */
+  background?: string
+  /** CSS position value for the root Column, e.g. 'relative' for absolute-positioned layouts */
+  containerPosition?: string
   /** Whether to include sone import statement at the top (default false) */
   preamble?: boolean
 }
@@ -671,8 +677,11 @@ export function htmlToSoneSyntax(html: string, opts: SoneSyntaxOptions = {}): st
     return k
   })
 
-  const layout = snodeBuilders.Column(...hoistPageBreaks(normalized))
-    .width(width).minHeight(1).bg('white')
+  const layout = snodeBuilders.Column(...hoistPageBreaks(normalized)).width(width)
+  if (opts.height != null) layout.height(opts.height)
+  else layout.minHeight(1)
+  layout.bg(opts.background ?? 'white')
+  if (opts.containerPosition) layout.position(opts.containerPosition)
   const expr = layout.toString(0)
 
   if (!preamble) return expr

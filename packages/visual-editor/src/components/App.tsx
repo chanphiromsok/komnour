@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Block, ParsedDoc } from '../types'
-import { parseDoc, serializeDoc, addBlock } from '../lib/blocks'
+import { parseDoc, serializeDoc, addBlock, getRootStyles } from '../lib/blocks'
 import { loadFonts } from '../lib/fonts'
 import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
 import Canvas from './Canvas'
@@ -228,8 +228,26 @@ export default function App() {
   const handleCopySone = async () => {
     if (!doc) return
     try {
-      const blocksHtml = blocks.map(b => b.html).join('\n')
-      const code = htmlToSoneSyntax(blocksHtml, { width: paperWidth, preamble: true })
+      const rootStyles = getRootStyles(doc.openTag)
+      const rootBg = rootStyles['background-color'] ?? rootStyles['background'] ?? 'white'
+      // Wrap each block in a positioned div so sone output preserves x/y/w/h
+      const wrappedHtml = blocks.map(b => {
+        const s = [
+          'position:absolute',
+          `left:${b.x}px`,
+          `top:${b.y}px`,
+          b.w ? `width:${b.w}px`  : '',
+          b.h ? `height:${b.h}px` : '',
+        ].filter(Boolean).join(';')
+        return `<div style="${s}">${b.html}</div>`
+      }).join('\n')
+      const code = htmlToSoneSyntax(wrappedHtml, {
+        width: paperWidth,
+        height: paperHeight,
+        background: rootBg,
+        containerPosition: 'relative',
+        preamble: true,
+      })
       await navigator.clipboard.writeText(code)
       setCopyState('copied')
       setTimeout(() => setCopyState('idle'), 2000)
