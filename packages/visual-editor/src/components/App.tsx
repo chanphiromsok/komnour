@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Block, ParsedDoc } from '../types'
 import { parseDoc, serializeDoc, addBlock, getRootStyles } from '../lib/blocks'
 import { loadFonts } from '../lib/fonts'
-import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
+import { htmlToSoneSyntax, htmlElemToSoneExpr } from '@komnour/html-to-syntax'
 import Canvas from './Canvas'
 import PropertyPanel, { PagePanel } from './PropertyPanel'
 
@@ -64,6 +64,70 @@ const ADD_ITEMS = [
   { tag: 'vline',      label: 'V-Line' },
   { tag: 'page-break', label: 'Page Break' },
 ]
+
+// ── Block → sone expression ───────────────────────────────────────────────
+function blockToSoneExpr(block: Block): string | null {
+  const { x, y, w, h, html, tagName } = block
+
+  if (tagName === 'page-break') return 'PageBreak()'
+
+  const px = Math.round(x), py = Math.round(y)
+  const bw = Math.round(w), bh = Math.round(h)
+  const pos = `.position("absolute").left(${px}).top(${py})`
+
+  const tmpDoc = new DOMParser().parseFromString(html, 'text/html')
+  const el = tmpDoc.body.firstElementChild as HTMLElement | null
+
+  if (tagName === 'svg') {
+    const shape = el?.getAttribute('data-shape')
+    const inner = el?.firstElementChild
+
+    if (shape === 'hline') {
+      const stroke = inner?.getAttribute('stroke') ?? '#e1e4e8'
+      const sw = Math.max(1, Math.round(parseFloat(inner?.getAttribute('stroke-width') ?? '1')))
+      const lineW = bw > 0 ? bw : 754
+      return `Column()${pos}.width(${lineW}).height(${sw}).bg(${JSON.stringify(stroke)})`
+    }
+
+    if (shape === 'vline') {
+      const stroke = inner?.getAttribute('stroke') ?? '#e1e4e8'
+      const sw = Math.max(1, Math.round(parseFloat(inner?.getAttribute('stroke-width') ?? '1')))
+      const lineH = bh > 0 ? bh : 80
+      return `Column()${pos}.width(${sw}).height(${lineH}).bg(${JSON.stringify(stroke)})`
+    }
+
+    if (shape === 'rect') {
+      const fill   = inner?.getAttribute('fill')   ?? 'transparent'
+      const stroke = inner?.getAttribute('stroke') ?? 'transparent'
+      const sw     = parseFloat(inner?.getAttribute('stroke-width') ?? '0')
+      const rx     = parseFloat(inner?.getAttribute('rx') ?? '0')
+      const rw = bw > 0 ? bw : Math.round(parseFloat(el?.getAttribute('width') ?? '160'))
+      const rh = bh > 0 ? bh : Math.round(parseFloat(el?.getAttribute('height') ?? '80'))
+      let c = `Column()${pos}.width(${rw}).height(${rh})`
+      if (fill && fill !== 'none') c += `.bg(${JSON.stringify(fill)})`
+      if (sw > 0) c += `.borderWidth(${sw}).borderColor(${JSON.stringify(stroke)})`
+      if (rx > 0) c += `.rounded(${rx})`
+      return c
+    }
+
+    return null
+  }
+
+  if (tagName === 'img') {
+    const src = el?.getAttribute('src') ?? ''
+    const imgW = bw > 0 ? bw : (Math.round(parseFloat(el?.style.width ?? '')) || 200)
+    const imgH = bh > 0 ? bh : 0
+    const base = src ? `Photo(${JSON.stringify(src)})` : `Column().bg("#e8e8e8")`
+    return `${base}${pos}${imgW > 0 ? `.width(${imgW})` : ''}${imgH > 0 ? `.height(${imgH})` : ''}`
+  }
+
+  // Text / content blocks
+  const innerExpr = htmlElemToSoneExpr(html)
+  const wPart = bw > 0 ? `.width(${bw})` : ''
+  const hPart = bh > 0 ? `.height(${bh})` : ''
+  if (!innerExpr) return `Column()${pos}${wPart}${hPart}`
+  return `Column(${innerExpr})${pos}${wPart}${hPart}`
+}
 
 // ── ZoomPane ───────────────────────────────────────────────────────────────
 function ZoomPane({ children }: { children: React.ReactNode }) {
@@ -230,24 +294,26 @@ export default function App() {
     try {
       const rootStyles = getRootStyles(doc.openTag)
       const rootBg = rootStyles['background-color'] ?? rootStyles['background'] ?? 'white'
-      // Wrap each block in a positioned div so sone output preserves x/y/w/h
-      const wrappedHtml = blocks.map(b => {
-        const s = [
-          'position:absolute',
-          `left:${b.x}px`,
-          `top:${b.y}px`,
-          b.w ? `width:${b.w}px`  : '',
-          b.h ? `height:${b.h}px` : '',
-        ].filter(Boolean).join(';')
-        return `<div style="${s}">${b.html}</div>`
-      }).join('\n')
-      const code = htmlToSoneSyntax(wrappedHtml, {
-        width: paperWidth,
-        height: paperHeight,
-        background: rootBg,
-        containerPosition: 'relative',
-        preamble: true,
-      })
+      const rootFont = rootStyles['font-family']?.replace(/['"]/g, '').split(',')[0].trim()
+
+      const blockExprs = blocks.map(b => blockToSoneExpr(b)).filter(Boolean)
+      const children = blockExprs.join(',\n  ')
+
+      const containerCalls = [
+        `.width(${paperWidth})`,
+        `.height(${paperHeight})`,
+        `.bg(${JSON.stringify(rootBg)})`,
+        rootFont ? `.font(${JSON.stringify(rootFont)})` : '',
+        `.position("relative")`,
+      ].filter(Boolean).join('')
+
+      const code = [
+        `import { Column, Row, Text, Span, PageBreak, Path, Photo } from 'sone'`,
+        ``,
+        `Column(\n  ${children}\n)${containerCalls}`,
+        ``,
+      ].join('\n')
+
       await navigator.clipboard.writeText(code)
       setCopyState('copied')
       setTimeout(() => setCopyState('idle'), 2000)

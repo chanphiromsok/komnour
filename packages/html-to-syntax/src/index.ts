@@ -662,6 +662,22 @@ export interface SoneSyntaxOptions {
 
 const _syntaxConverter = makeConverter(snodeBuilders)
 
+/**
+ * Convert a single HTML element string to its bare sone expression (no outer Column wrapper).
+ * Used by block-level direct mapping so callers can add position/size themselves.
+ * Returns null if the HTML produces no renderable node.
+ */
+export function htmlElemToSoneExpr(html: string): string | null {
+  const root = parse(html)
+  const el = root.childNodes.find(n => !(n instanceof TextNode) || n.text.trim()) as any
+  if (!el) return null
+  const node = _syntaxConverter(el)
+  if (node == null) return null
+  if (typeof node === 'string') return node.trim() ? JSON.stringify(node) : null
+  const nd = node instanceof SNode && node.type === 'span' ? snodeBuilders.Text(node) : node
+  return nd.toString(0)
+}
+
 export function htmlToSoneSyntax(html: string, opts: SoneSyntaxOptions = {}): string {
   const { width = 794, preamble = false } = opts
 
