@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@komnour/html-to-syntax": "workspace:*",
     "@fontsource/inter": "^4.0.0",
     "@fontsource/noto-sans-khmer": "^4.5.11",
     "node-html-parser": "^8.0.3",

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Font Glyphmap Demo</title>
+    <style>
+      @font-face {
+        font-family: "DemoFont";
+        src: url("./fonts/KhmerWing2/wingdings2.ttf") format("truetype");
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Arial, sans-serif;
+        color: #111827;
+        background: #f9fafb;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+
+      .hint {
+        margin: 0 0 20px;
+        color: #6b7280;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      input,
+      select {
+        min-width: 240px;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        padding: 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+
+      .icon {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-family: "DemoFont";
+        font-size: 42px;
+        line-height: 1;
+      }
+
+      .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .code {
+        margin-top: 4px;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .empty,
+      .error {
+        padding: 18px;
+        border-radius: 12px;
+        background: white;
+      }
+
+      .error {
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Font Glyphmap Demo</h1>
+    <p class="hint">
+      Loads <code>glyphmap.json</code> and renders each glyph using
+      <code>fonts/KhmerWing2/wingdings2.ttf</code>.
+    </p>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Search glyph name, e.g. file, floppy..." />
+      <select id="fontSelect">
+        <option value="./fonts/KhmerWing2/wingdings2.ttf">Wingdings 2</option>
+        <option value="./fonts/KhmerWing/wingding.ttf">Wingdings</option>
+      </select>
+    </div>
+
+    <div id="status"></div>
+    <div id="grid" class="grid"></div>
+
+    <script>
+      const grid = document.getElementById("grid");
+      const statusEl = document.getElementById("status");
+      const searchEl = document.getElementById("search");
+      const fontSelect = document.getElementById("fontSelect");
+
+      let glyphMap = {};
+
+      function toHex(codePoint) {
+        return `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
+      }
+
+      function glyphChar(codePoint) {
+        return String.fromCodePoint(codePoint);
+      }
+
+      function setDemoFont(url) {
+        const oldStyle = document.getElementById("dynamic-demo-font");
+        oldStyle?.remove();
+
+        const style = document.createElement("style");
+        style.id = "dynamic-demo-font";
+        style.textContent = `
+          @font-face {
+            font-family: "DemoFont";
+            src: url("${url}") format("truetype");
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      function render() {
+        const query = searchEl.value.trim().toLowerCase();
+        const entries = Object.entries(glyphMap).filter(([name]) =>
+          name.toLowerCase().includes(query)
+        );
+
+        statusEl.className = entries.length ? "" : "empty";
+        statusEl.textContent = entries.length
+          ? `Showing ${entries.length} glyphs`
+          : "No glyphs found";
+
+        grid.innerHTML = entries
+          .map(([name, codePoint]) => {
+            return `
+              <div class="card" title="${name}">
+                <div class="icon">${glyphChar(codePoint)}</div>
+                <div class="name">${name}</div>
+                <div class="code">${codePoint} / ${toHex(codePoint)}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function init() {
+        try {
+          setDemoFont(fontSelect.value);
+
+          const response = await fetch("./glyphmap.json", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`Cannot load glyphmap.json: ${response.status}`);
+          }
+
+          glyphMap = await response.json();
+          render();
+        } catch (error) {
+          statusEl.className = "error";
+          statusEl.textContent = error.message;
+        }
+      }
+
+      searchEl.addEventListener("input", render);
+      fontSelect.addEventListener("change", () => {
+        setDemoFont(fontSelect.value);
+        render();
+      });
+
+      init();
+    </script>
+  </body>
+</html>
