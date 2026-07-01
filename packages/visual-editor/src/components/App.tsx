@@ -325,7 +325,9 @@ export default function App() {
                   <button
                     key={item.tag}
                     onClick={() => {
-                      push(addBlock(blocks, item.tag, selectedId))
+                      const next = addBlock(blocks, item.tag, selectedId)
+                      push(next)
+                      setSelectedId(next[next.length - 1].id)
                       setShowAddMenu(false)
                     }}
                     style={{

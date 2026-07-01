@@ -26,6 +26,7 @@ interface Op {
   origY: number
   origW: number
   origH: number
+  scale: number  // CSS zoom factor so screen-px delta converts to artboard-px correctly
 }
 
 export default function Canvas({
@@ -67,8 +68,8 @@ export default function Canvas({
       if (!o) return
       const el = wrapperRefs.current.get(o.blockId)
       if (!el) return
-      const dx = e.clientX - o.startMx
-      const dy = e.clientY - o.startMy
+      const dx = (e.clientX - o.startMx) / o.scale
+      const dy = (e.clientY - o.startMy) / o.scale
 
       if (o.kind === 'move') {
         el.style.left = `${Math.max(0, o.origX + dx)}px`
@@ -107,6 +108,11 @@ export default function Canvas({
     }
   }, [!!op]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const getScale = (el: HTMLElement) => {
+    if (el.offsetWidth === 0) return 1
+    return el.getBoundingClientRect().width / el.offsetWidth
+  }
+
   const startMove = (e: React.MouseEvent, block: Block) => {
     if (e.button !== 0) return
     e.stopPropagation()
@@ -117,6 +123,7 @@ export default function Canvas({
       startMx: e.clientX, startMy: e.clientY,
       origX: block.x, origY: block.y,
       origW: el.offsetWidth, origH: el.offsetHeight,
+      scale: getScale(el),
     }
     opRef.current = o
     setOp(o)
@@ -132,6 +139,7 @@ export default function Canvas({
       startMx: e.clientX, startMy: e.clientY,
       origX: block.x, origY: block.y,
       origW: el.offsetWidth, origH: el.offsetHeight,
+      scale: getScale(el),
     }
     opRef.current = o
     setOp(o)
