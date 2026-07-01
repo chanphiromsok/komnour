@@ -34,27 +34,22 @@ const FONT_MAP: Record<string, string[]> = {
 }
 
 // ── Default document ───────────────────────────────────────────────────────
-const DEFAULT_HTML = `<div style="padding: 48px; font-family: 'Noto Sans Khmer'; background: white;">
-  <div style="text-align: center; margin-bottom: 32px;">
-    <div style="font-size: 22px; font-weight: bold; color: #1a1a2e;">កិច្ចសន្យាខ្ចីប្រាក់</div>
-    <div style="font-size: 13px; color: #555; margin-top: 4px;">LOAN AGREEMENT CONTRACT</div>
-  </div>
-  <p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">
-    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong>
-  </p>
-  <p style="font-size: 13px; line-height: 22px; color: #333;">
-    អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
-  </p>
+const DEFAULT_HTML = `<div style="font-family: 'Noto Sans Khmer'; background: white; width: 794px; height: 1123px; position: relative;">
+  <div data-block style="position:absolute;left:20px;top:20px;width:754px;"><div style="text-align: center;"><span style="font-size: 22px; font-weight: bold; color: #1a1a2e;">កិច្ចសន្យាខ្ចីប្រាក់</span></div></div>
+  <div data-block style="position:absolute;left:20px;top:80px;width:754px;"><div style="text-align: center;"><span style="font-size: 13px; color: #555;">LOAN AGREEMENT CONTRACT</span></div></div>
+  <div data-block style="position:absolute;left:20px;top:130px;width:754px;"><p style="font-size: 13px; line-height: 22px; color: #333;">ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong></p></div>
+  <div data-block style="position:absolute;left:20px;top:180px;width:754px;"><p style="font-size: 13px; line-height: 22px; color: #333;">អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span></p></div>
 </div>`
 
 const LS_KEY = 'komnour:ve:html'
 const LS_WIDTH_KEY = 'komnour:ve:paperWidth'
+const LS_HEIGHT_KEY = 'komnour:ve:paperHeight'
 
 const PAPER_SIZES = [
-  { value: 794,  label: 'A4' },
-  { value: 816,  label: 'Letter' },
-  { value: 559,  label: 'A5' },
-  { value: 1122, label: 'A3' },
+  { value: 794,  h: 1123, label: 'A4' },
+  { value: 816,  h: 1056, label: 'Letter' },
+  { value: 559,  h: 794,  label: 'A5' },
+  { value: 1122, h: 1587, label: 'A3' },
 ]
 
 const ADD_ITEMS = [
@@ -181,6 +176,9 @@ export default function App() {
   const [paperWidth, setPaperWidth] = useState<number>(
     () => Number(localStorage.getItem(LS_WIDTH_KEY)) || 794
   )
+  const [paperHeight, setPaperHeight] = useState<number>(
+    () => Number(localStorage.getItem(LS_HEIGHT_KEY)) || 1123
+  )
 
   const history = useRef<Block[][]>([])
   const push = (next: Block[]) => {
@@ -208,7 +206,9 @@ export default function App() {
   }
 
   const handlePaperWidth = (w: number) => {
+    const size = PAPER_SIZES.find(s => s.value === w)
     setPaperWidth(w)
+    if (size) { setPaperHeight(size.h); localStorage.setItem(LS_HEIGHT_KEY, String(size.h)) }
     localStorage.setItem(LS_WIDTH_KEY, String(w))
   }
 
@@ -418,6 +418,7 @@ export default function App() {
                 onBlocksChange={next => push(next)}
                 onBlockChange={handleBlockChange}
                 paperWidth={paperWidth}
+                paperHeight={paperHeight}
               />
             </ZoomPane>
           </div>

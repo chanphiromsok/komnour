@@ -91,6 +91,29 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </Row>
       </Section>
 
+      {/* TRANSFORM */}
+      <Section title="TRANSFORM">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          {[
+            { lbl: 'X', val: Math.round(block.x), onChg: (v: number) => onChange({ ...block, x: v }), ph: undefined },
+            { lbl: 'Y', val: Math.round(block.y), onChg: (v: number) => onChange({ ...block, y: v }), ph: undefined },
+            { lbl: 'W', val: block.w || undefined, onChg: (v: number) => onChange({ ...block, w: v }), ph: 'auto' },
+            { lbl: 'H', val: block.h || undefined, onChg: (v: number) => onChange({ ...block, h: v }), ph: 'auto' },
+          ].map(({ lbl, val, onChg, ph }) => (
+            <div key={lbl}>
+              <div style={{ fontSize: 9, color: '#484f58', textAlign: 'center', marginBottom: 2 }}>{lbl}</div>
+              <input
+                type="number"
+                value={val ?? ''}
+                placeholder={ph}
+                onChange={e => onChg(Number(e.target.value) || 0)}
+                style={{ ...numInputStyle, width: '100%', textAlign: 'center', boxSizing: 'border-box' }}
+              />
+            </div>
+          ))}
+        </div>
+      </Section>
+
       {/* SIZE */}
       {!isPageBreak && (
         <Section title="SIZE">
