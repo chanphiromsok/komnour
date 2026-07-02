@@ -180,6 +180,7 @@ class SNode {
   // path
   stroke(c: string)               { return this._m('stroke', q(c)) }
   strokeWidth(v: number)          { return this._m('strokeWidth', fmt(v)) }
+  strokeDashArray(...v: number[]) { return this._m('strokeDashArray', ...v.map(fmt)) }
   strokeLineCap(s: string)        { return this._m('strokeLineCap', q(s)) }
   strokeLineJoin(s: string)       { return this._m('strokeLineJoin', q(s)) }
   fill(c: string)                 { return this._m('fill', q(c)) }
@@ -212,6 +213,17 @@ const snodeBuilders = {
   PageBreak: ():                  SNode  => new SNode('pageBreak', 'PageBreak', []),
   Path:   (d: string):            SNode  => new SNode('path',      'Path',      [d]),
   Photo:  (src: string):          SNode  => new SNode('photo',     'Photo',     [src]),
+}
+
+// String-building builder set — same shape as real sone builders; each node's
+// toString() emits the equivalent sone source code.
+export const stringBuilders = snodeBuilders
+
+/** Render a builder-set node produced by stringBuilders to sone source code. */
+export function nodeToCode(node: unknown, indent = 0): string {
+  if (node instanceof SNode) return node.toString(indent)
+  if (typeof node === 'string') return JSON.stringify(node)
+  return String(node)
 }
 
 // ── Shared builder interface ───────────────────────────────────────────────

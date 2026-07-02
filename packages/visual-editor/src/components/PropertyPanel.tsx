@@ -1,101 +1,37 @@
-import { type Block, type ParsedDoc } from '../types'
-import {
-  getBlockStyles, setBlockStyle, getBlockAttr, setBlockAttr,
-  getRootStyles, setRootStyle,
-  getSvgAttr, getSvgRootAttr, setSvgAttr, setSvgDimension,
-} from '../lib/blocks'
-import { toHexColor, getSide } from '../lib/style-utils'
+import type { SoneBlock, VeDoc, TextProps, RectProps, LineProps, PhotoProps, ListProps } from '../types'
+import { toHexColor } from '../lib/style-utils'
 
-const FONT_FAMILIES = ['Noto Sans Khmer', 'Inter', 'KhmerOSsiemreap', 'Kh-Siemreap', 'Khmer-OS-Muol-Light', 'Calibri', 'KhmerBursa', 'Arial', 'Times New Roman']
-
-function svgDashToPreset(d: string): string {
-  if (!d || d === 'none') return 'solid'
-  if (d === '8 4') return 'dashed'
-  if (d === '2 4') return 'dotted'
-  if (d === '8 4 2 4') return 'dash-dot'
-  return 'custom'
-}
-function presetToSvgDash(p: string): string {
-  if (p === 'dashed') return '8 4'
-  if (p === 'dotted') return '2 4'
-  if (p === 'dash-dot') return '8 4 2 4'
-  return ''
-}
+const FONT_FAMILIES = ['Noto Sans Khmer', 'Inter', 'KhmerOSsiemreap', 'Kh-Siemreap', 'Khmer-OS-Muol-Light', 'Calibri', 'KhmerBursa']
 
 // ── PropertyPanel (block selected) ───────────────────────────────────────────
 
 interface Props {
-  block: Block | null
-  onChange: (updated: Block) => void
+  block: SoneBlock
+  onChange: (updated: SoneBlock) => void
 }
 
 export default function PropertyPanel({ block, onChange }: Props) {
-  if (!block) {
-    return (
-      <div style={{ padding: 24, color: '#484f58', fontSize: 12, textAlign: 'center', lineHeight: '20px' }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.3, marginBottom: 8 }}>
-          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.5"/>
-        </svg>
-        <br />
-        Click an element<br />to edit its properties
-      </div>
-    )
-  }
-
-  const styles = getBlockStyles(block)
-  const set = (prop: string, value: string) => onChange(setBlockStyle(block, prop, value))
-  const setAttr = (attr: string, value: string) => onChange(setBlockAttr(block, attr, value))
-
-  const dataShape   = getBlockAttr(block, 'data-shape')
-  const isSvg       = block.tagName === 'svg'
-  const isSvgHline  = isSvg && dataShape === 'hline'
-  const isSvgVline  = isSvg && dataShape === 'vline'
-  const isSvgRect   = isSvg && dataShape === 'rect'
-  const isSvgShape  = isSvgHline || isSvgVline || isSvgRect
-  const isSvgLine   = isSvgHline || isSvgVline
-
-  const isLegacyHr    = block.tagName === 'hr'
-  const isLegacyVLine = !isSvg && dataShape === 'vline'
-  const isLegacyLine  = isLegacyHr || isLegacyVLine
-
-  const isImg       = block.tagName === 'img'
-  const isPageBreak = block.tagName === 'page-break'
-  const isAnyLine   = isLegacyLine || isSvgLine
-
-  const svgStroke    = getSvgAttr(block, 'stroke')
-  const svgStrokeW   = getSvgAttr(block, 'stroke-width')
-  const svgDash      = getSvgAttr(block, 'stroke-dasharray')
-  const svgFill      = getSvgAttr(block, 'fill')
-  const svgRx        = getSvgAttr(block, 'rx')
-  const svgW         = getSvgRootAttr(block, 'width')
-  const svgH         = getSvgRootAttr(block, 'height')
-
-  const setSvgSize = (dim: 'width' | 'height', val: string) => {
-    const px = parseFloat(val)
-    if (!isNaN(px)) onChange(setSvgDimension(block, dim, px))
-  }
+  const setProp = (patch: Record<string, unknown>) =>
+    onChange({ ...block, props: { ...block.props, ...patch } as SoneBlock['props'] })
 
   return (
     <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
 
-      {/* Element info */}
       <Section title="ELEMENT">
-        <Row label="Tag">
+        <Row label="Type">
           <div style={{
             background: '#161b22', border: '1px solid #30363d', borderRadius: 4,
             padding: '3px 8px', fontFamily: 'monospace', fontSize: 11, color: '#7d8590',
           }}>
-            &lt;{block.tagName}{dataShape ? ` · ${dataShape}` : ''}&gt;
+            {block.type}
           </div>
         </Row>
       </Section>
 
-      {/* TRANSFORM */}
       <Section title="TRANSFORM">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
           {[
-            { lbl: 'X', val: Math.round(block.x), onChg: (v: number) => onChange({ ...block, x: v }), ph: undefined },
+            { lbl: 'X', val: Math.round(block.x), onChg: (v: number) => onChange({ ...block, x: v }), ph: undefined as string | undefined },
             { lbl: 'Y', val: Math.round(block.y), onChg: (v: number) => onChange({ ...block, y: v }), ph: undefined },
             { lbl: 'W', val: block.w || undefined, onChg: (v: number) => onChange({ ...block, w: v }), ph: 'auto' },
             { lbl: 'H', val: block.h || undefined, onChg: (v: number) => onChange({ ...block, h: v }), ph: 'auto' },
@@ -114,325 +50,215 @@ export default function PropertyPanel({ block, onChange }: Props) {
         </div>
       </Section>
 
-      {/* SIZE */}
-      {!isPageBreak && (
-        <Section title="SIZE">
-          {isSvgShape ? (
-            <>
-              <Row label="Width">
-                <input
-                  type="number"
-                  value={parseFloat(svgW) || 0}
-                  onChange={e => setSvgSize('width', e.target.value)}
-                  style={numInputStyle}
-                />
-              </Row>
-              {!isSvgHline && (
-                <Row label="Height">
-                  <input
-                    type="number"
-                    value={parseFloat(svgH) || 0}
-                    onChange={e => setSvgSize('height', e.target.value)}
-                    style={numInputStyle}
-                  />
-                </Row>
-              )}
-            </>
-          ) : (
-            <>
-              <Row label="Width">
-                <NumUnit value={styles['width'] ?? ''} onChange={v => set('width', v)} />
-              </Row>
-              <Row label="Height">
-                <NumUnit value={styles['height'] ?? ''} onChange={v => set('height', v)} />
-              </Row>
-              {!isLegacyHr && (
-                <Row label="Display">
-                  <Select
-                    value={styles['display'] ?? ''}
-                    onChange={v => set('display', v)}
-                    options={[
-                      { value: '', label: 'default' },
-                      { value: 'block', label: 'block' },
-                      { value: 'flex', label: 'flex' },
-                      { value: 'inline-block', label: 'inline-block' },
-                    ]}
-                  />
-                </Row>
-              )}
-            </>
-          )}
-        </Section>
+      {block.type === 'text' && <TextPanel p={block.props as TextProps} set={setProp} />}
+      {block.type === 'rect' && <RectPanel p={block.props as RectProps} set={setProp} />}
+      {(block.type === 'hline' || block.type === 'vline') && (
+        <LinePanel p={block.props as LineProps} set={setProp} />
       )}
-
-      {/* SVG SHAPE properties */}
-      {isSvgShape && (
-        <Section title="SHAPE">
-          <Row label="Stroke">
-            <ColorPicker value={svgStroke || '#e1e4e8'} onChange={v => onChange(setSvgAttr(block, 'stroke', v))} />
-          </Row>
-          <Row label="Thick">
-            <input
-              type="number"
-              value={parseFloat(svgStrokeW) || 1}
-              min={0.5}
-              step={0.5}
-              onChange={e => onChange(setSvgAttr(block, 'stroke-width', e.target.value))}
-              style={numInputStyle}
-            />
-          </Row>
-          <Row label="Dash">
-            <Select
-              value={svgDashToPreset(svgDash)}
-              onChange={v => onChange(setSvgAttr(block, 'stroke-dasharray', presetToSvgDash(v)))}
-              options={[
-                { value: 'solid',    label: 'solid' },
-                { value: 'dashed',   label: 'dashed' },
-                { value: 'dotted',   label: 'dotted' },
-                { value: 'dash-dot', label: 'dash-dot' },
-              ]}
-            />
-          </Row>
-          {isSvgRect && (
-            <>
-              <Row label="Fill">
-                <ColorPicker value={svgFill || '#e8edf3'} onChange={v => onChange(setSvgAttr(block, 'fill', v))} />
-              </Row>
-              <Row label="Radius">
-                <input
-                  type="number"
-                  value={parseFloat(svgRx) || 0}
-                  min={0}
-                  onChange={e => onChange(setSvgAttr(block, 'rx', e.target.value))}
-                  style={numInputStyle}
-                />
-              </Row>
-            </>
-          )}
-        </Section>
-      )}
-
-      {/* Image properties */}
-      {isImg && (
-        <Section title="IMAGE">
-          <Row label="Src">
-            <input
-              type="text"
-              value={getBlockAttr(block, 'src')}
-              onChange={e => setAttr('src', e.target.value)}
-              placeholder="https://…"
-              style={inputStyle}
-            />
-          </Row>
-          <Row label="Alt">
-            <input
-              type="text"
-              value={getBlockAttr(block, 'alt')}
-              onChange={e => setAttr('alt', e.target.value)}
-              placeholder="Description"
-              style={inputStyle}
-            />
-          </Row>
-          <Row label="Fit">
-            <Select
-              value={styles['object-fit'] ?? ''}
-              onChange={v => set('object-fit', v)}
-              options={[
-                { value: '', label: 'default' },
-                { value: 'contain', label: 'contain' },
-                { value: 'cover', label: 'cover' },
-                { value: 'fill', label: 'fill' },
-              ]}
-            />
-          </Row>
-        </Section>
-      )}
-
-      {/* Legacy CSS H-Line / V-Line properties */}
-      {isLegacyLine && (
-        <Section title="LINE">
-          <Row label="Color">
-            <ColorPicker
-              value={
-                isLegacyVLine
-                  ? (styles['border-left-color'] ?? '#e1e4e8')
-                  : (styles['border-top-color'] ?? styles['border-color'] ?? '#e1e4e8')
-              }
-              onChange={v => set(isLegacyVLine ? 'border-left-color' : 'border-top-color', v)}
-            />
-          </Row>
-          <Row label="Thick">
-            <NumUnit
-              value={
-                isLegacyVLine
-                  ? (styles['border-left-width'] ?? '2px')
-                  : (styles['border-top-width'] ?? styles['border-width'] ?? '1px')
-              }
-              onChange={v => set(isLegacyVLine ? 'border-left-width' : 'border-top-width', v)}
-            />
-          </Row>
-          <Row label="Style">
-            <Select
-              value={
-                isLegacyVLine
-                  ? (styles['border-left-style'] ?? 'solid')
-                  : (styles['border-top-style'] ?? styles['border-style'] ?? 'solid')
-              }
-              onChange={v => set(isLegacyVLine ? 'border-left-style' : 'border-top-style', v)}
-              options={[
-                { value: 'solid',  label: 'solid' },
-                { value: 'dashed', label: 'dashed' },
-                { value: 'dotted', label: 'dotted' },
-                { value: 'double', label: 'double' },
-              ]}
-            />
-          </Row>
-        </Section>
-      )}
-
-      {/* Typography — hidden for lines, svg, img, page-break */}
-      {!isAnyLine && !isSvgShape && !isImg && !isPageBreak && (
-        <Section title="TYPOGRAPHY">
-          <Row label="Family">
-            <Select
-              value={styles['font-family']?.replace(/['"]/g, '') ?? ''}
-              onChange={v => set('font-family', v ? `'${v}'` : '')}
-              options={[{ value: '', label: '—' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
-            />
-          </Row>
-          <Row label="Size">
-            <NumUnit value={styles['font-size'] ?? ''} onChange={v => set('font-size', v)} />
-          </Row>
-          <Row label="Weight">
-            <div style={{ display: 'flex', gap: 2 }}>
-              {(['400', '600', '700', '900'] as const).map(w => (
-                <ToggleBtn
-                  key={w}
-                  active={styles['font-weight'] === w}
-                  onClick={() => set('font-weight', styles['font-weight'] === w ? '' : w)}
-                >
-                  {w === '400' ? 'Reg' : w === '600' ? 'Sem' : w === '700' ? 'Bld' : '900'}
-                </ToggleBtn>
-              ))}
-            </div>
-          </Row>
-          <Row label="Color">
-            <ColorPicker value={styles['color'] ?? ''} onChange={v => set('color', v)} />
-          </Row>
-          <Row label="Align">
-            <div style={{ display: 'flex', gap: 2 }}>
-              {(['left', 'center', 'right', 'justify'] as const).map(a => (
-                <ToggleBtn
-                  key={a}
-                  active={styles['text-align'] === a}
-                  onClick={() => set('text-align', styles['text-align'] === a ? '' : a)}
-                >
-                  <AlignIcon align={a} />
-                </ToggleBtn>
-              ))}
-            </div>
-          </Row>
-          <Row label="Line-h">
-            <NumUnit value={styles['line-height'] ?? ''} onChange={v => set('line-height', v)} defaultUnit="" />
-          </Row>
-        </Section>
-      )}
-
-      {/* Spacing */}
-      {!isSvgShape && !isPageBreak && (
-        <Section title="SPACING">
-          <SpacingGroup label="Padding" prop="padding" styles={styles} set={set} />
-          <SpacingGroup label="Margin"  prop="margin"  styles={styles} set={set} />
-        </Section>
-      )}
-
-      {/* Fill */}
-      {!isAnyLine && !isSvgShape && !isPageBreak && (
-        <Section title="FILL">
-          <Row label="Background">
-            <ColorPicker
-              value={styles['background-color'] ?? styles['background'] ?? ''}
-              onChange={v => set('background-color', v)}
-            />
-          </Row>
-        </Section>
-      )}
-
-      {/* Border */}
-      {!isAnyLine && !isSvgShape && !isPageBreak && (
-        <Section title="BORDER">
-          <Row label="Radius">
-            <NumUnit value={styles['border-radius'] ?? ''} onChange={v => set('border-radius', v)} />
-          </Row>
-          <Row label="Width">
-            <NumUnit value={styles['border-width'] ?? ''} onChange={v => set('border-width', v)} />
-          </Row>
-          <Row label="Color">
-            <ColorPicker value={styles['border-color'] ?? ''} onChange={v => set('border-color', v)} />
-          </Row>
-          <Row label="Style">
-            <Select
-              value={styles['border-style'] ?? ''}
-              onChange={v => set('border-style', v)}
-              options={[
-                { value: '', label: 'none' },
-                { value: 'solid', label: 'solid' },
-                { value: 'dashed', label: 'dashed' },
-                { value: 'dotted', label: 'dotted' },
-              ]}
-            />
-          </Row>
-        </Section>
-      )}
+      {block.type === 'photo' && <PhotoPanel p={block.props as PhotoProps} set={setProp} />}
+      {block.type === 'list' && <ListPanel p={block.props as ListProps} set={setProp} />}
 
     </div>
   )
 }
 
-// ── PagePanel (no block selected) ─────────────────────────────────────────────
+// ── Per-type panels ───────────────────────────────────────────────────────────
 
-interface PagePanelProps {
-  doc: ParsedDoc
-  onDocChange: (doc: ParsedDoc) => void
-  paperWidth: number
-  onPaperWidthChange: (w: number) => void
+function TextPanel({ p, set }: { p: TextProps; set: (patch: Record<string, unknown>) => void }) {
+  return (
+    <>
+      <Section title="CONTENT">
+        <textarea
+          value={p.text}
+          onChange={e => set({ text: e.target.value })}
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: '18px' }}
+        />
+      </Section>
+      <Section title="TYPOGRAPHY">
+        <Row label="Family">
+          <Select
+            value={p.font}
+            onChange={v => set({ font: v })}
+            options={[{ value: '', label: 'page font' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
+          />
+        </Row>
+        <Row label="Size">
+          <input type="number" value={p.size} min={6}
+            onChange={e => set({ size: Number(e.target.value) || 13 })} style={numInputStyle} />
+        </Row>
+        <Row label="Weight">
+          <div style={{ display: 'flex', gap: 2 }}>
+            <ToggleBtn active={p.weight === 'normal'} onClick={() => set({ weight: 'normal' })}>Reg</ToggleBtn>
+            <ToggleBtn active={p.weight === 'bold'}   onClick={() => set({ weight: 'bold' })}>Bold</ToggleBtn>
+          </div>
+        </Row>
+        <Row label="Color">
+          <ColorPicker value={p.color} onChange={v => set({ color: v })} />
+        </Row>
+        <Row label="Align">
+          <div style={{ display: 'flex', gap: 2 }}>
+            {(['left', 'center', 'right', 'justify'] as const).map(a => (
+              <ToggleBtn key={a} active={p.align === a} onClick={() => set({ align: a })}>
+                <AlignIcon align={a} />
+              </ToggleBtn>
+            ))}
+          </div>
+        </Row>
+        <Row label="Line-h">
+          <input type="number" value={p.lineHeight || ''} placeholder="auto" step={0.1} min={0}
+            onChange={e => set({ lineHeight: Number(e.target.value) || 0 })} style={numInputStyle} />
+        </Row>
+      </Section>
+    </>
+  )
 }
 
-export function PagePanel({ doc, onDocChange, paperWidth, onPaperWidthChange }: PagePanelProps) {
-  const styles = getRootStyles(doc.openTag)
-  const set = (prop: string, value: string) => onDocChange(setRootStyle(doc, prop, value))
+function RectPanel({ p, set }: { p: RectProps; set: (patch: Record<string, unknown>) => void }) {
+  return (
+    <Section title="SHAPE">
+      <Row label="Fill">
+        <ColorPicker value={p.fill} onChange={v => set({ fill: v })} />
+      </Row>
+      <Row label="Stroke">
+        <ColorPicker value={p.stroke} onChange={v => set({ stroke: v })} />
+      </Row>
+      <Row label="Thick">
+        <input type="number" value={p.strokeWidth} min={0} step={0.5}
+          onChange={e => set({ strokeWidth: Number(e.target.value) || 0 })} style={numInputStyle} />
+      </Row>
+      <Row label="Radius">
+        <input type="number" value={p.radius} min={0}
+          onChange={e => set({ radius: Number(e.target.value) || 0 })} style={numInputStyle} />
+      </Row>
+    </Section>
+  )
+}
 
+function LinePanel({ p, set }: { p: LineProps; set: (patch: Record<string, unknown>) => void }) {
+  return (
+    <Section title="LINE">
+      <Row label="Color">
+        <ColorPicker value={p.stroke} onChange={v => set({ stroke: v })} />
+      </Row>
+      <Row label="Thick">
+        <input type="number" value={p.strokeWidth} min={0.5} step={0.5}
+          onChange={e => set({ strokeWidth: Number(e.target.value) || 1 })} style={numInputStyle} />
+      </Row>
+      <Row label="Dash">
+        <Select
+          value={p.dash}
+          onChange={v => set({ dash: v })}
+          options={[
+            { value: 'solid',  label: 'solid' },
+            { value: 'dashed', label: 'dashed' },
+            { value: 'dotted', label: 'dotted' },
+          ]}
+        />
+      </Row>
+    </Section>
+  )
+}
+
+function PhotoPanel({ p, set }: { p: PhotoProps; set: (patch: Record<string, unknown>) => void }) {
+  return (
+    <Section title="IMAGE">
+      <Row label="Src">
+        <input type="text" value={p.src} placeholder="https://…"
+          onChange={e => set({ src: e.target.value })} style={inputStyle} />
+      </Row>
+      <Row label="Fit">
+        <Select
+          value={p.fit}
+          onChange={v => set({ fit: v })}
+          options={[
+            { value: '',        label: 'default' },
+            { value: 'cover',   label: 'cover' },
+            { value: 'contain', label: 'contain' },
+            { value: 'fill',    label: 'fill' },
+          ]}
+        />
+      </Row>
+    </Section>
+  )
+}
+
+function ListPanel({ p, set }: { p: ListProps; set: (patch: Record<string, unknown>) => void }) {
+  return (
+    <>
+      <Section title="ITEMS">
+        <textarea
+          value={p.items.join('\n')}
+          onChange={e => set({ items: e.target.value.split('\n') })}
+          onBlur={e => set({ items: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+          rows={4}
+          placeholder="One item per line"
+          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: '18px' }}
+        />
+      </Section>
+      <Section title="TYPOGRAPHY">
+        <Row label="Family">
+          <Select
+            value={p.font}
+            onChange={v => set({ font: v })}
+            options={[{ value: '', label: 'page font' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
+          />
+        </Row>
+        <Row label="Size">
+          <input type="number" value={p.size} min={6}
+            onChange={e => set({ size: Number(e.target.value) || 13 })} style={numInputStyle} />
+        </Row>
+        <Row label="Color">
+          <ColorPicker value={p.color} onChange={v => set({ color: v })} />
+        </Row>
+      </Section>
+    </>
+  )
+}
+
+// ── PagePanel (no block selected) ─────────────────────────────────────────────
+
+const PAPER_SIZES = [
+  { w: 794,  h: 1123, label: 'A4 (794×1123)' },
+  { w: 816,  h: 1056, label: 'Letter (816×1056)' },
+  { w: 559,  h: 794,  label: 'A5 (559×794)' },
+  { w: 1122, h: 1587, label: 'A3 (1122×1587)' },
+]
+
+interface PagePanelProps {
+  doc: VeDoc
+  onDocChange: (patch: Partial<VeDoc>) => void
+}
+
+export function PagePanel({ doc, onDocChange }: PagePanelProps) {
   return (
     <div style={{ overflowY: 'auto', height: '100%', fontSize: 12, color: '#c9d1d9' }}>
       <Section title="PAGE">
         <Row label="Size">
           <Select
-            value={String(paperWidth)}
-            onChange={v => onPaperWidthChange(Number(v))}
-            options={[
-              { value: '794',  label: 'A4 (794px)' },
-              { value: '816',  label: 'Letter (816px)' },
-              { value: '559',  label: 'A5 (559px)' },
-              { value: '1122', label: 'A3 (1122px)' },
-            ]}
+            value={String(doc.paperWidth)}
+            onChange={v => {
+              const size = PAPER_SIZES.find(s => s.w === Number(v))
+              if (size) onDocChange({ paperWidth: size.w, paperHeight: size.h })
+            }}
+            options={PAPER_SIZES.map(s => ({ value: String(s.w), label: s.label }))}
           />
         </Row>
+        <Row label="Pages">
+          <input type="number" value={doc.pages} min={1} max={50}
+            onChange={e => onDocChange({ pages: Math.max(1, Number(e.target.value) || 1) })}
+            style={numInputStyle} />
+        </Row>
         <Row label="Bg">
-          <ColorPicker
-            value={styles['background-color'] ?? styles['background'] ?? '#ffffff'}
-            onChange={v => set('background-color', v)}
-          />
+          <ColorPicker value={doc.bg} onChange={v => onDocChange({ bg: v })} />
         </Row>
         <Row label="Font">
           <Select
-            value={styles['font-family']?.replace(/['"]/g, '') ?? ''}
-            onChange={v => set('font-family', v ? `'${v}'` : '')}
-            options={[{ value: '', label: '—' }, ...FONT_FAMILIES.map(f => ({ value: f, label: f }))]}
+            value={doc.font}
+            onChange={v => onDocChange({ font: v })}
+            options={FONT_FAMILIES.map(f => ({ value: f, label: f }))}
           />
         </Row>
-      </Section>
-      <Section title="SPACING">
-        <SpacingGroup label="Padding" prop="padding" styles={styles} set={set} />
       </Section>
     </div>
   )
@@ -493,41 +319,6 @@ function Select({ value, onChange, options }: {
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
-  )
-}
-
-function NumUnit({ value, onChange, defaultUnit = 'px' }: {
-  value: string
-  onChange: (v: string) => void
-  defaultUnit?: string
-}) {
-  const num = parseFloat(value) || 0
-  const unit = value?.replace(/[\d.\s-]+/, '') || defaultUnit
-  return (
-    <div style={{ display: 'flex', gap: 2 }}>
-      <input
-        type="number"
-        value={num}
-        onChange={e => onChange(e.target.value + unit)}
-        style={{
-          width: 56, background: '#161b22', border: '1px solid #30363d',
-          borderRadius: 4, color: '#c9d1d9', fontSize: 11, padding: '3px 6px', outline: 'none',
-        }}
-      />
-      {defaultUnit !== '' && (
-        <select
-          value={unit}
-          onChange={e => onChange(String(num) + e.target.value)}
-          style={{
-            width: 42, background: '#161b22', border: '1px solid #30363d',
-            borderRadius: 4, color: '#7d8590', fontSize: 10, padding: '3px 2px',
-            cursor: 'pointer', outline: 'none',
-          }}
-        >
-          {['px', 'em', 'rem', '%'].map(u => <option key={u}>{u}</option>)}
-        </select>
-      )}
-    </div>
   )
 }
 
@@ -592,44 +383,5 @@ function AlignIcon({ align }: { align: 'left' | 'center' | 'right' | 'justify' }
       <rect y="3.5" x={lines[1][0]} width={lines[1][1]} height="1.5" rx="0.5"/>
       <rect y="7" x={lines[2][0]} width={lines[2][1]} height="1.5" rx="0.5"/>
     </svg>
-  )
-}
-
-function SpacingGroup({ label, prop, styles, set }: {
-  label: string
-  prop: string
-  styles: Record<string, string>
-  set: (prop: string, value: string) => void
-}) {
-  const sides = ['top', 'right', 'bottom', 'left'] as const
-  return (
-    <div>
-      <div style={{ fontSize: 10, color: '#3d444d', marginBottom: 4 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
-        {sides.map(side => {
-          const longhand = `${prop}-${side}`
-          const val = styles[longhand] ?? getSide(styles, prop, side)
-          return (
-            <div key={side}>
-              <div style={{ fontSize: 9, color: '#484f58', textAlign: 'center', marginBottom: 2 }}>{side[0].toUpperCase()}</div>
-              <input
-                type="number"
-                value={parseFloat(val) || 0}
-                onChange={e => {
-                  const unit = val?.replace(/[\d.\s-]+/, '') || 'px'
-                  set(longhand, e.target.value + unit)
-                }}
-                style={{
-                  width: '100%', background: '#161b22', border: '1px solid #30363d',
-                  borderRadius: 4, color: '#c9d1d9', fontSize: 11,
-                  padding: '3px 4px', outline: 'none', textAlign: 'center',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          )
-        })}
-      </div>
-    </div>
   )
 }

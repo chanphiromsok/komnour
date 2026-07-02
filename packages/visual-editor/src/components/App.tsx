@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Block, ParsedDoc } from '../types'
-import { parseDoc, serializeDoc, addBlock, getRootStyles } from '../lib/blocks'
-import { loadFonts } from '../lib/fonts'
-import { htmlToSoneSyntax, htmlElemToSoneExpr } from '@komnour/html-to-syntax'
+import type { SoneBlock, VeDoc, BlockType } from '../types'
+import { loadDoc, saveDoc, newBlock, newHeading } from '../lib/block-model'
+import { docToSoneCode } from '../lib/block-sone'
+import { browserRenderer } from '../lib/sone-renderer'
 import Canvas from './Canvas'
 import PropertyPanel, { PagePanel } from './PropertyPanel'
 
@@ -33,101 +33,15 @@ const FONT_MAP: Record<string, string[]> = {
   'KhmerBursa':         [urlKhmerBursaR, urlKhmerBursaB],
 }
 
-// ── Default document ───────────────────────────────────────────────────────
-const DEFAULT_HTML = `<div style="font-family: 'Noto Sans Khmer'; background: white; width: 794px; height: 1123px; position: relative;">
-  <div data-block style="position:absolute;left:20px;top:20px;width:754px;"><div style="text-align: center;"><span style="font-size: 22px; font-weight: bold; color: #1a1a2e;">កិច្ចសន្យាខ្ចីប្រាក់</span></div></div>
-  <div data-block style="position:absolute;left:20px;top:80px;width:754px;"><div style="text-align: center;"><span style="font-size: 13px; color: #555;">LOAN AGREEMENT CONTRACT</span></div></div>
-  <div data-block style="position:absolute;left:20px;top:130px;width:754px;"><p style="font-size: 13px; line-height: 22px; color: #333;">ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong></p></div>
-  <div data-block style="position:absolute;left:20px;top:180px;width:754px;"><p style="font-size: 13px; line-height: 22px; color: #333;">អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span></p></div>
-</div>`
-
-const LS_KEY = 'komnour:ve:html'
-const LS_WIDTH_KEY = 'komnour:ve:paperWidth'
-const LS_HEIGHT_KEY = 'komnour:ve:paperHeight'
-
-const PAPER_SIZES = [
-  { value: 794,  h: 1123, label: 'A4' },
-  { value: 816,  h: 1056, label: 'Letter' },
-  { value: 559,  h: 794,  label: 'A5' },
-  { value: 1122, h: 1587, label: 'A3' },
+const ADD_ITEMS: Array<{ type: BlockType | 'heading'; label: string }> = [
+  { type: 'text',    label: 'Text' },
+  { type: 'heading', label: 'Heading' },
+  { type: 'list',    label: 'List' },
+  { type: 'rect',    label: 'Rectangle' },
+  { type: 'hline',   label: 'H-Line' },
+  { type: 'vline',   label: 'V-Line' },
+  { type: 'photo',   label: 'Image' },
 ]
-
-const ADD_ITEMS = [
-  { tag: 'p',          label: 'Paragraph' },
-  { tag: 'h1',         label: 'Heading 1' },
-  { tag: 'h2',         label: 'Heading 2' },
-  { tag: 'div',        label: 'Section' },
-  { tag: 'img',        label: 'Image' },
-  { tag: 'ul',         label: 'List' },
-  { tag: 'hr',         label: 'H-Line' },
-  { tag: 'rect',       label: 'Rectangle' },
-  { tag: 'vline',      label: 'V-Line' },
-  { tag: 'page-break', label: 'Page Break' },
-]
-
-// ── Block → sone expression ───────────────────────────────────────────────
-function blockToSoneExpr(block: Block): string | null {
-  const { x, y, w, h, html, tagName } = block
-
-  if (tagName === 'page-break') return 'PageBreak()'
-
-  const px = Math.round(x), py = Math.round(y)
-  const bw = Math.round(w), bh = Math.round(h)
-  const pos = `.position("absolute").left(${px}).top(${py})`
-
-  const tmpDoc = new DOMParser().parseFromString(html, 'text/html')
-  const el = tmpDoc.body.firstElementChild as HTMLElement | null
-
-  if (tagName === 'svg') {
-    const shape = el?.getAttribute('data-shape')
-    const inner = el?.firstElementChild
-
-    if (shape === 'hline') {
-      const stroke = inner?.getAttribute('stroke') ?? '#e1e4e8'
-      const sw = Math.max(1, Math.round(parseFloat(inner?.getAttribute('stroke-width') ?? '1')))
-      const lineW = bw > 0 ? bw : 754
-      return `Column()${pos}.width(${lineW}).height(${sw}).bg(${JSON.stringify(stroke)})`
-    }
-
-    if (shape === 'vline') {
-      const stroke = inner?.getAttribute('stroke') ?? '#e1e4e8'
-      const sw = Math.max(1, Math.round(parseFloat(inner?.getAttribute('stroke-width') ?? '1')))
-      const lineH = bh > 0 ? bh : 80
-      return `Column()${pos}.width(${sw}).height(${lineH}).bg(${JSON.stringify(stroke)})`
-    }
-
-    if (shape === 'rect') {
-      const fill   = inner?.getAttribute('fill')   ?? 'transparent'
-      const stroke = inner?.getAttribute('stroke') ?? 'transparent'
-      const sw     = parseFloat(inner?.getAttribute('stroke-width') ?? '0')
-      const rx     = parseFloat(inner?.getAttribute('rx') ?? '0')
-      const rw = bw > 0 ? bw : Math.round(parseFloat(el?.getAttribute('width') ?? '160'))
-      const rh = bh > 0 ? bh : Math.round(parseFloat(el?.getAttribute('height') ?? '80'))
-      let c = `Column()${pos}.width(${rw}).height(${rh})`
-      if (fill && fill !== 'none') c += `.bg(${JSON.stringify(fill)})`
-      if (sw > 0) c += `.borderWidth(${sw}).borderColor(${JSON.stringify(stroke)})`
-      if (rx > 0) c += `.rounded(${rx})`
-      return c
-    }
-
-    return null
-  }
-
-  if (tagName === 'img') {
-    const src = el?.getAttribute('src') ?? ''
-    const imgW = bw > 0 ? bw : (Math.round(parseFloat(el?.style.width ?? '')) || 200)
-    const imgH = bh > 0 ? bh : 0
-    const base = src ? `Photo(${JSON.stringify(src)})` : `Column().bg("#e8e8e8")`
-    return `${base}${pos}${imgW > 0 ? `.width(${imgW})` : ''}${imgH > 0 ? `.height(${imgH})` : ''}`
-  }
-
-  // Text / content blocks — apply position directly to avoid double Column wrapping
-  const innerExpr = htmlElemToSoneExpr(html)
-  const wPart = bw > 0 ? `.width(${bw})` : ''
-  const hPart = bh > 0 ? `.height(${bh})` : ''
-  if (!innerExpr) return `Column()${pos}${wPart}${hPart}`
-  return `${innerExpr}${pos}${wPart}${hPart}`
-}
 
 // ── ZoomPane ───────────────────────────────────────────────────────────────
 function ZoomPane({ children }: { children: React.ReactNode }) {
@@ -230,98 +144,70 @@ function ZBtn({ onClick, children }: { onClick: () => void; children: React.Reac
 
 // ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [rawHtml, setRawHtml] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_HTML)
-  const [doc, setDoc] = useState<ParsedDoc | null>(() => parseDoc(rawHtml))
-  const [blocks, setBlocks] = useState<Block[]>(() => parseDoc(rawHtml)?.blocks ?? [])
+  const [doc, setDoc] = useState<VeDoc>(() => loadDoc())
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [fontsReady, setFontsReady] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  const [paperWidth, setPaperWidth] = useState<number>(
-    () => Number(localStorage.getItem(LS_WIDTH_KEY)) || 794
-  )
-  const [paperHeight, setPaperHeight] = useState<number>(
-    () => Number(localStorage.getItem(LS_HEIGHT_KEY)) || 1123
-  )
 
-  const history = useRef<Block[][]>([])
-  const push = (next: Block[]) => {
-    history.current = [...history.current.slice(-49), blocks]
-    commit(next)
+  const docRef = useRef(doc)
+  docRef.current = doc
+
+  const history = useRef<SoneBlock[][]>([])
+
+  const commit = (next: VeDoc) => {
+    setDoc(next)
+    saveDoc(next)
+  }
+  const commitBlocks = (blocks: SoneBlock[]) => commit({ ...docRef.current, blocks })
+  const push = (blocks: SoneBlock[]) => {
+    history.current = [...history.current.slice(-49), docRef.current.blocks]
+    commitBlocks(blocks)
   }
   const undo = () => {
     const prev = history.current.pop()
-    if (prev) commit(prev)
+    if (prev) commitBlocks(prev)
   }
 
-  const commit = (next: Block[]) => {
-    setBlocks(next)
-    if (!doc) return
-    const html = serializeDoc(doc, next)
-    setRawHtml(html)
-    localStorage.setItem(LS_KEY, html)
+  const handleDocChange = (patch: Partial<VeDoc>) => commit({ ...docRef.current, ...patch })
+
+  const handleBlockChange = (updated: SoneBlock) => {
+    push(doc.blocks.map(b => b.id === updated.id ? updated : b))
   }
 
-  const handleDocChange = (updated: ParsedDoc) => {
-    setDoc(updated)
-    const html = serializeDoc(updated, blocks)
-    setRawHtml(html)
-    localStorage.setItem(LS_KEY, html)
-  }
-
-  const handlePaperWidth = (w: number) => {
-    const size = PAPER_SIZES.find(s => s.value === w)
-    setPaperWidth(w)
-    if (size) { setPaperHeight(size.h); localStorage.setItem(LS_HEIGHT_KEY, String(size.h)) }
-    localStorage.setItem(LS_WIDTH_KEY, String(w))
-  }
-
+  // Register fonts with the sone renderer (it does its own hasFont checks)
   useEffect(() => {
-    loadFonts(FONT_MAP).then(() => setFontsReady(true)).catch(console.error)
+    Promise.all(
+      Object.entries(FONT_MAP).map(([name, urls]) => browserRenderer.registerFont(name, urls))
+    ).then(() => setFontsReady(true)).catch(console.error)
   }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.isContentEditable) return
+      const t = e.target as HTMLElement
+      if (t?.isContentEditable || t?.tagName === 'TEXTAREA' || t?.tagName === 'INPUT') return
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo() }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   })
 
+  const handleAdd = (type: BlockType | 'heading') => {
+    const maxBottom = doc.blocks.length > 0
+      ? Math.max(...doc.blocks.map(b => b.y + (b.h || 40)))
+      : 8
+    const y = maxBottom + 16
+    const blk = type === 'heading'
+      ? newHeading(20, y, doc.paperWidth)
+      : newBlock(type, 20, y, doc.paperWidth)
+    push([...doc.blocks, blk])
+    setSelectedId(blk.id)
+    setShowAddMenu(false)
+  }
+
   const handleCopySone = async () => {
-    if (!doc) return
     try {
-      const rootStyles = getRootStyles(doc.openTag)
-      const rootBg = rootStyles['background-color'] ?? rootStyles['background'] ?? 'white'
-      const rootFont = rootStyles['font-family']?.replace(/['"]/g, '').split(',')[0].trim()
-
-      const blockExprs = blocks.map(b => blockToSoneExpr(b)).filter(Boolean) as string[]
-
-      // Column doesn't support .font() — use TextDefault to cascade font to all children
-      const inner = rootFont
-        ? `TextDefault(\n    ${blockExprs.join(',\n    ')}\n  ).font(${JSON.stringify(rootFont)})`
-        : blockExprs.join(',\n  ')
-
-      const containerCalls = [
-        `.width(${paperWidth})`,
-        `.height(${paperHeight})`,
-        `.bg(${JSON.stringify(rootBg)})`,
-        `.position("relative")`,
-      ].join('')
-
-      const imports = rootFont
-        ? `import { Column, Row, Text, Span, PageBreak, Path, Photo, TextDefault } from 'sone'`
-        : `import { Column, Row, Text, Span, PageBreak, Path, Photo } from 'sone'`
-
-      const code = [
-        imports,
-        ``,
-        `Column(\n  ${inner}\n)${containerCalls}`,
-        ``,
-      ].join('\n')
-
-      await navigator.clipboard.writeText(code)
+      await navigator.clipboard.writeText(docToSoneCode(doc))
       setCopyState('copied')
       setTimeout(() => setCopyState('idle'), 2000)
     } catch (err) {
@@ -329,21 +215,15 @@ export default function App() {
     }
   }
 
-  const selectedBlock = blocks.find(b => b.id === selectedId) ?? null
-
-  const handleBlockChange = (updated: Block) => {
-    push(blocks.map(b => b.id === updated.id ? updated : b))
-  }
+  const selectedBlock = doc.blocks.find(b => b.id === selectedId) ?? null
 
   const injectStyle = `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, 'Inter', sans-serif; background: #090c10; color: #c9d1d9; height: 100vh; overflow: hidden; }
     ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
-    select, button, input { font-family: inherit; }
+    select, button, input, textarea { font-family: inherit; }
   `
-
-  if (!doc) return <div style={{ color: '#f85149', padding: 40 }}>Could not parse HTML. Wrap content in a root &lt;div&gt;.</div>
 
   return (
     <>
@@ -368,22 +248,6 @@ export default function App() {
               Visual Editor
             </span>
           </div>
-
-          <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
-
-          {/* Paper size */}
-          <select
-            value={String(paperWidth)}
-            onChange={e => handlePaperWidth(Number(e.target.value))}
-            style={{
-              background: '#161b22', border: '1px solid #30363d', borderRadius: 6,
-              color: '#7d8590', fontSize: 11, padding: '4px 8px', cursor: 'pointer', outline: 'none',
-            }}
-          >
-            {PAPER_SIZES.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
 
           <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
@@ -414,13 +278,8 @@ export default function App() {
               >
                 {ADD_ITEMS.map(item => (
                   <button
-                    key={item.tag}
-                    onClick={() => {
-                      const next = addBlock(blocks, item.tag, selectedId)
-                      push(next)
-                      setSelectedId(next[next.length - 1].id)
-                      setShowAddMenu(false)
-                    }}
+                    key={item.type}
+                    onClick={() => handleAdd(item.type)}
                     style={{
                       display: 'block', width: '100%', textAlign: 'left',
                       background: 'none', border: 'none', borderRadius: 5,
@@ -435,6 +294,24 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* Add page */}
+          <button
+            onClick={() => handleDocChange({ pages: doc.pages + 1 })}
+            title="Append a page to the artboard"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'transparent', color: '#7d8590',
+              border: '1px solid #30363d', borderRadius: 6,
+              padding: '5px 10px', fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <rect x="1.5" y="1" width="8" height="9" rx="1" stroke="currentColor" strokeWidth="1"/>
+              <path d="M5.5 4v3M4 5.5h3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+            </svg>
+            Page ({doc.pages})
+          </button>
 
           {/* Undo */}
           <button
@@ -505,13 +382,12 @@ export default function App() {
             <ZoomPane>
               <Canvas
                 doc={doc}
-                blocks={blocks}
+                blocks={doc.blocks}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 onBlocksChange={next => push(next)}
                 onBlockChange={handleBlockChange}
-                paperWidth={paperWidth}
-                paperHeight={paperHeight}
+                fontsReady={fontsReady}
               />
             </ZoomPane>
           </div>
@@ -528,18 +404,13 @@ export default function App() {
               borderBottom: '1px solid #21262d', fontSize: 11,
               color: selectedBlock ? '#c9d1d9' : '#7d8590', letterSpacing: '0.04em',
             }}>
-              {selectedBlock ? `Properties · <${selectedBlock.tagName}>` : 'Page'}
+              {selectedBlock ? `Properties · ${selectedBlock.type}` : 'Page'}
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
               {selectedBlock ? (
                 <PropertyPanel block={selectedBlock} onChange={handleBlockChange} />
               ) : (
-                <PagePanel
-                  doc={doc}
-                  onDocChange={handleDocChange}
-                  paperWidth={paperWidth}
-                  onPaperWidthChange={handlePaperWidth}
-                />
+                <PagePanel doc={doc} onDocChange={handleDocChange} />
               )}
             </div>
           </div>
