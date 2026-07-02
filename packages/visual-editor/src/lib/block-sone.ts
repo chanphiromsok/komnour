@@ -161,16 +161,21 @@ export function buildBlockNode(
           if (cw > 0) tc.width(cw)
           const bg = cell.bg || (isHeader ? p.headerBg : '')
           if (bg) tc.bg(bg)
-          if (p.borderWidth > 0) tc.borderWidth(p.borderWidth).borderColor(p.borderColor)
+          if (p.borderWidth > 0) {
+            // Border-collapse: each cell draws right + bottom, plus top on the
+            // first row and left on the first column — single lines, no doubling.
+            const bw = p.borderWidth
+            tc.borderWidth(r === 0 ? bw : 0, bw, bw, c === 0 ? bw : 0).borderColor(p.borderColor)
+          }
           cells.push(tc)
         }
         const tr = TableRow(...cells)
         if (p.rowHeights[r] > 0) tr.height(p.rowHeights[r])
         return tr
       })
-      const node = Table(...rows)
-      if (p.borderWidth > 0) node.borderWidth(p.borderWidth).borderColor(p.borderColor)
-      return pos(node)
+      // No border on the Table node itself — cells own all edges (avoids the
+      // doubled outer border).
+      return pos(Table(...rows))
     }
   }
 }
@@ -190,52 +195,65 @@ export function substituteTokens(block: SoneBlock, pageNum: number, totalPages: 
   return { ...block, props: { ...p, spans } }
 }
 
-/** Expand blocks into their per-page placements (repeat stamping + tokens). */
-export function placeBlocks(doc: VeDoc): SoneBlock[] {
+/**
+ * Group blocks per page, with y made relative to each page's top. A repeat
+ * block appears on every page; other blocks land on the page their y falls in.
+ * Page-number tokens are substituted per page.
+ */
+export function pageGroups(doc: VeDoc): SoneBlock[][] {
   const pages = Math.max(1, doc.pages)
   const ph = doc.paperHeight
-  const out: SoneBlock[] = []
+  const groups: SoneBlock[][] = Array.from({ length: pages }, () => [])
   for (const b of doc.blocks) {
-    if (!b.repeat) {
-      const pageNum = Math.floor(b.y / ph) + 1
-      out.push(substituteTokens(b, pageNum, pages))
-      continue
-    }
-    const masterPage = Math.floor(b.y / ph)
-    const inPageY = b.y - masterPage * ph
-    for (let p = 0; p < pages; p++) {
-      out.push(substituteTokens({ ...b, y: p * ph + inPageY }, p + 1, pages))
+    const inPageY = b.y - Math.floor(b.y / ph) * ph
+    if (b.repeat) {
+      for (let p = 0; p < pages; p++) {
+        groups[p].push(substituteTokens({ ...b, y: inPageY }, p + 1, pages))
+      }
+    } else {
+      const p = Math.min(pages - 1, Math.max(0, Math.floor(b.y / ph)))
+      groups[p].push(substituteTokens({ ...b, y: inPageY }, p + 1, pages))
     }
   }
-  return out
+  return groups
 }
 
 // ── Codegen ───────────────────────────────────────────────────────────────────
 
 /** Generate the full sone layout source code for a document. */
 export function docToSoneCode(doc: VeDoc): string {
-  const exprs = placeBlocks(doc)
-    .map(blk => buildBlockNode(blk, stringBuilders as unknown as SoneBuilderSet, doc.font, true))
-    .filter(Boolean)
-    .map(node => nodeToCode(node, 1))
+  const sb = stringBuilders as unknown as SoneBuilderSet
+  const groups = pageGroups(doc)
+  const usedFns = new Set<string>(['Column'])
 
-  const uses = (fn: string) => exprs.some(e => e.includes(`${fn}(`))
-  const fns = ['Column', 'Row', 'Text', 'Span', 'Photo', 'List', 'ListItem', 'Table', 'TableRow', 'TableCell']
-    .filter(f => f === 'Column' || uses(f))
+  // One relative Column per page; blocks positioned absolutely within it.
+  const pageColumns = groups.map(blocks => {
+    const exprs = blocks
+      .map(blk => buildBlockNode(blk, sb, doc.font, true))
+      .filter(Boolean)
+      .map(node => nodeToCode(node, 2))
+    for (const fn of ['Row', 'Text', 'Span', 'Photo', 'List', 'ListItem', 'Table', 'TableRow', 'TableCell']) {
+      if (exprs.some(e => e.includes(`${fn}(`))) usedFns.add(fn)
+    }
+    const body = exprs.length ? `\n${exprs.map(e => `    ${e}`).join(',\n')}\n  ` : ''
+    return `Column(${body}).width(${doc.paperWidth}).height(${doc.paperHeight}).bg(${JSON.stringify(doc.bg)}).position("relative")`
+  })
 
-  const pages = Math.max(1, doc.pages || 1)
-  const totalH = doc.paperHeight * pages
-  const pageHint = pages > 1
-    ? [`// ${pages} pages — paginate with: renderPages(layout, renderer, { pageHeight: ${doc.paperHeight} })`]
-    : []
+  const pages = groups.length
+  let layout: string
+  if (pages === 1) {
+    layout = pageColumns[0]
+  } else {
+    usedFns.add('PageBreak')
+    const joined = pageColumns.join(',\n  PageBreak(),\n  ')
+    layout = `Column(\n  ${joined}\n)`
+  }
 
-  return [
-    `import { ${fns.join(', ')} } from 'sone'`,
-    ``,
-    ...pageHint,
-    `Column(`,
-    exprs.map(e => `  ${e}`).join(',\n'),
-    `).width(${doc.paperWidth}).height(${totalH}).bg(${JSON.stringify(doc.bg)}).position("relative")`,
-    ``,
-  ].join('\n')
+  const order = ['Column', 'Row', 'Text', 'Span', 'PageBreak', 'Photo', 'List', 'ListItem', 'Table', 'TableRow', 'TableCell']
+  const fns = order.filter(f => usedFns.has(f))
+  const hint = pages > 1
+    ? `\n// Render paginated: renderPages(layout, renderer, { pageHeight: ${doc.paperHeight} })`
+    : ''
+
+  return `import { ${fns.join(', ')} } from 'sone'\n${hint}\n${layout}\n`
 }

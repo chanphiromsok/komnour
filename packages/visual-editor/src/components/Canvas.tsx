@@ -63,15 +63,21 @@ export default function Canvas({
   onBlocksRef.current   = onBlocksChange
 
   const pages = Math.max(1, doc.pages || 1)
-  const artStyle: React.CSSProperties = {
-    position: 'relative',
-    width: doc.paperWidth,
-    height: doc.paperHeight * pages,
-    background: doc.bg || 'white',
-    boxSizing: 'border-box',
-    boxShadow: '0 0 0 1px #21262d, 0 8px 40px rgba(0,0,0,0.6)',
-    borderRadius: 2,
-    overflow: 'hidden',
+  const ph = doc.paperHeight
+  const GAP = 40   // visible gap between page sheets (artboard px)
+  const outerHeight = pages * ph + (pages - 1) * GAP
+
+  // Map a continuous artboard-y to the on-screen y that includes page gaps,
+  // and back. Pages are separate sheets, so dragging across a gap snaps the
+  // block onto the nearest page.
+  const outerTop = (globalY: number) => {
+    const p = Math.min(pages - 1, Math.max(0, Math.floor(globalY / ph)))
+    return globalY + p * GAP
+  }
+  const globalFromOuter = (oy: number) => {
+    const p = Math.min(pages - 1, Math.max(0, Math.floor(oy / (ph + GAP))))
+    const localY = Math.min(ph, Math.max(0, oy - p * (ph + GAP)))
+    return p * ph + localY
   }
 
   useEffect(() => {
@@ -97,7 +103,7 @@ export default function Canvas({
       const blk = blocksRef.current.find(b => b.id === o.blockId)
       if (el && blk) {
         const x = parseFloat(el.style.left) || 0
-        const y = parseFloat(el.style.top)  || 0
+        const y = globalFromOuter(parseFloat(el.style.top) || 0)   // outer → artboard
         let { w, h } = blk
         if (o.kind === 'resize') {
           const dirs = HANDLES_FOR[blk.type]
@@ -139,7 +145,7 @@ export default function Canvas({
     const o: Op = {
       kind, blockId: block.id, dir,
       startMx: e.clientX, startMy: e.clientY,
-      origX: block.x, origY: block.y,
+      origX: block.x, origY: outerTop(block.y),   // work in on-screen (gap-aware) coords
       origW: el.offsetWidth, origH: el.offsetHeight,
       scale: getScale(el),
     }
@@ -167,27 +173,32 @@ export default function Canvas({
       onClick={e => { if (e.target === e.currentTarget) { onSelect(null); stopEditing() } }}
     >
       <div
-        style={artStyle}
+        style={{ position: 'relative', width: doc.paperWidth, height: outerHeight }}
         onClick={e => { if (e.target === e.currentTarget) { onSelect(null); stopEditing() } }}
       >
-        {/* Page boundary guides */}
-        {Array.from({ length: pages - 1 }, (_, i) => (
-          <div key={`pg${i}`} style={{
-            position: 'absolute', left: 0, right: 0, top: (i + 1) * doc.paperHeight,
-            borderTop: '1px dashed #a0b3d0', pointerEvents: 'none', zIndex: 5,
-          }}>
-            <span style={{
-              position: 'absolute', right: 6, top: 2, fontSize: 9, color: '#a0b3d0',
-              background: 'rgba(255,255,255,0.7)', padding: '0 4px', borderRadius: 2,
+        {/* Page sheets — each page is a separate sheet with a gap between them */}
+        {Array.from({ length: pages }, (_, p) => (
+          <div key={`sheet${p}`}
+            onClick={e => { if (e.target === e.currentTarget) { onSelect(null); stopEditing() } }}
+            style={{
+              position: 'absolute', left: 0, top: p * (ph + GAP),
+              width: doc.paperWidth, height: ph,
+              background: doc.bg || 'white',
+              boxShadow: '0 0 0 1px #21262d, 0 8px 40px rgba(0,0,0,0.6)',
+              borderRadius: 2, overflow: 'hidden',
             }}>
-              Page {i + 2}
+            <span style={{
+              position: 'absolute', top: 6, left: 8, fontSize: 10, color: '#c0c8d4',
+              pointerEvents: 'none', letterSpacing: '0.04em',
+            }}>
+              Page {p + 1}
             </span>
           </div>
         ))}
 
         {/* Ghosts (repeated header/footer on other pages) */}
         {ghosts.map(({ key, block }) => (
-          <div key={key} style={{ position: 'absolute', left: block.x, top: block.y, opacity: 0.4, pointerEvents: 'none' }}>
+          <div key={key} style={{ position: 'absolute', left: block.x, top: outerTop(block.y), opacity: 0.4, pointerEvents: 'none' }}>
             <SoneBlockView block={{ ...block, y: 0, x: 0 }} pageFont={doc.font} fontsReady={fontsReady} />
           </div>
         ))}
@@ -203,7 +214,7 @@ export default function Canvas({
               style={{
                 position: 'absolute',
                 left: block.x,
-                top:  block.y,
+                top:  outerTop(block.y),
                 minWidth: 8,
                 minHeight: 4,
                 transform: block.rotation ? `rotate(${block.rotation}deg)` : undefined,
