@@ -311,20 +311,40 @@ export default function App() {
             )}
           </div>
 
-          {/* Add page */}
-          <button
-            onClick={() => handleDocChange({ pages: doc.pages + 1 })}
-            title="Append a page to the artboard"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: 'transparent', color: '#7d8590',
-              border: '1px solid #30363d', borderRadius: 6,
-              padding: '5px 10px', fontSize: 12, cursor: 'pointer',
-            }}
-          >
-            <FilePlus2 size={13} />
-            Page ({doc.pages})
-          </button>
+          {/* Pages: add / remove */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 2,
+            border: '1px solid #30363d', borderRadius: 6, overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#7d8590', fontSize: 12, padding: '5px 8px' }}>
+              <FilePlus2 size={13} />
+              Page {doc.pages}
+            </div>
+            <button
+              onClick={() => handleDocChange({ pages: Math.max(1, doc.pages - 1) })}
+              disabled={doc.pages <= 1}
+              title="Remove last page"
+              style={{
+                display: 'flex', alignItems: 'center', background: 'transparent',
+                color: doc.pages <= 1 ? '#30363d' : '#7d8590',
+                border: 'none', borderLeft: '1px solid #30363d',
+                padding: '6px 8px', cursor: doc.pages <= 1 ? 'default' : 'pointer',
+              }}
+            >
+              <MinusIcon size={13} />
+            </button>
+            <button
+              onClick={() => handleDocChange({ pages: doc.pages + 1 })}
+              title="Add a page to the artboard"
+              style={{
+                display: 'flex', alignItems: 'center', background: 'transparent',
+                color: '#7d8590', border: 'none', borderLeft: '1px solid #30363d',
+                padding: '6px 8px', cursor: 'pointer',
+              }}
+            >
+              <Plus size={13} />
+            </button>
+          </div>
 
           {/* Undo */}
           <button
