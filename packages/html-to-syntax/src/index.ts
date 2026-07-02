@@ -161,12 +161,27 @@ class SNode {
   color(c: string)                { return this._m('color', q(c)) }
   size(v: number)                 { return this._m('size', fmt(v)) }
   weight(s: string)               { return this._m('weight', q(s)) }
+  style(s: string)                { return this._m('style', q(s)) }
   align(s: string)                { return this._m('align', q(s)) }
   font(s: string)                 { return this._m('font', q(s)) }
   lineHeight(v: number)           { return this._m('lineHeight', fmt(v)) }
   letterSpacing(v: number)        { return this._m('letterSpacing', fmt(v)) }
   underline(v = 1)                { return this._m('underline', fmt(v)) }
   lineThrough(v = 1)              { return this._m('lineThrough', fmt(v)) }
+  highlight(c: string)            { return this._m('highlight', q(c)) }
+  // list
+  listStyle(s: string)            { return this._m('listStyle', q(s)) }
+  markerGap(v: number)            { return this._m('markerGap', fmt(v)) }
+  startIndex(v: number)           { return this._m('startIndex', fmt(v)) }
+  // table
+  colspan(v: number)              { return this._m('colspan', fmt(v)) }
+  rowspan(v: number)              { return this._m('rowspan', fmt(v)) }
+  spacing(...v: number[])         { return this._m('spacing', ...v.map(fmt)) }
+  // transforms
+  rotate(v: number)               { return this._m('rotate', fmt(v)) }
+  scale(x: number, y?: number)    { return y == null ? this._m('scale', fmt(x)) : this._m('scale', fmt(x), fmt(y)) }
+  translateX(v: number)           { return this._m('translateX', fmt(v)) }
+  translateY(v: number)           { return this._m('translateY', fmt(v)) }
   textOverflow(s: string)         { return this._m('textOverflow', q(s)) }
   maxLines(v: number)             { return this._m('maxLines', fmt(v)) }
   shadow(s: string)               { return this._m('shadow', q(s)) }
@@ -213,6 +228,11 @@ const snodeBuilders = {
   PageBreak: ():                  SNode  => new SNode('pageBreak', 'PageBreak', []),
   Path:   (d: string):            SNode  => new SNode('path',      'Path',      [d]),
   Photo:  (src: string):          SNode  => new SNode('photo',     'Photo',     [src]),
+  List:      (...children: Child[]): SNode => new SNode('list',       'List',      children),
+  ListItem:  (...children: Child[]): SNode => new SNode('list-item',  'ListItem',  children),
+  Table:     (...children: Child[]): SNode => new SNode('table',      'Table',     children),
+  TableRow:  (...children: Child[]): SNode => new SNode('table-row',  'TableRow',  children),
+  TableCell: (...children: Child[]): SNode => new SNode('table-cell', 'TableCell', children),
 }
 
 // String-building builder set — same shape as real sone builders; each node's
@@ -236,6 +256,11 @@ export interface SoneBuilderSet {
   PageBreak: () => any
   Path:      (d: string) => any
   Photo:     (src: string) => any
+  List?:      (...children: any[]) => any
+  ListItem?:  (...children: any[]) => any
+  Table?:     (...children: any[]) => any
+  TableRow?:  (...children: any[]) => any
+  TableCell?: (...children: any[]) => any
 }
 
 // ── Shared converter factory ───────────────────────────────────────────────

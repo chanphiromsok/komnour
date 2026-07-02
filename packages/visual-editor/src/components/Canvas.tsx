@@ -1,11 +1,14 @@
 import { useRef, useState, useEffect } from 'react'
-import { Column, Row, Text, Span, PageBreak, Path, Photo, render } from 'sone'
+import { Column, Row, Text, Span, PageBreak, Path, Photo, List, ListItem, Table, TableRow, TableCell, render } from 'sone'
+import { Pencil, Copy, Trash2, Bold, Italic, Underline, Strikethrough } from 'lucide-react'
 import type { SoneBuilderSet } from '@komnour/html-to-syntax'
-import type { SoneBlock, VeDoc, BlockType, TextProps, ListProps } from '../types'
+import type { SoneBlock, VeDoc, BlockType, TextProps, ListProps, TableProps } from '../types'
 import { buildBlockNode } from '../lib/block-sone'
 import { browserRenderer } from '../lib/sone-renderer'
+import { spansToHtml, htmlToSpans } from '../lib/rich-text'
+import { spaceKey } from '../lib/interaction'
 
-const soneBuilders: SoneBuilderSet = { Column, Row, Text, Span, PageBreak, Path, Photo }
+const soneBuilders: SoneBuilderSet = { Column, Row, Text, Span, PageBreak, Path, Photo, List, ListItem, Table, TableRow, TableCell }
 const imageCache = new Map<string | Uint8Array, any>()
 
 interface Props {
@@ -29,6 +32,7 @@ const HANDLES_FOR: Record<BlockType, ResizeDir[]> = {
   vline: ['n', 's'],
   rect:  ALL_DIRS,
   photo: ALL_DIRS,
+  table: [],
 }
 
 interface Op {
@@ -70,10 +74,8 @@ export default function Canvas({
     overflow: 'hidden',
   }
 
-  // Document-level mouse listeners during drag/resize
   useEffect(() => {
     if (!op) return
-
     const onMove = (e: MouseEvent) => {
       const o = opRef.current
       if (!o) return
@@ -81,7 +83,6 @@ export default function Canvas({
       if (!el) return
       const dx = (e.clientX - o.startMx) / o.scale
       const dy = (e.clientY - o.startMy) / o.scale
-
       if (o.kind === 'move') {
         el.style.left = `${Math.max(0, o.origX + dx)}px`
         el.style.top  = `${Math.max(0, o.origY + dy)}px`
@@ -89,7 +90,6 @@ export default function Canvas({
         applyResize(el, o, dx, dy)
       }
     }
-
     const onUp = () => {
       const o = opRef.current
       if (!o) return
@@ -101,25 +101,22 @@ export default function Canvas({
         let { w, h } = blk
         if (o.kind === 'resize') {
           const dirs = HANDLES_FOR[blk.type]
-          if (dirs.includes('e') || dirs.includes('w')) w = parseFloat(el.style.width)  || el.offsetWidth
+          if (dirs.includes('e') || dirs.includes('w')) w = parseFloat(el.style.width) || el.offsetWidth
           if (blk.type === 'vline' || blk.type === 'rect' || blk.type === 'photo') {
             h = parseFloat(el.style.height) || el.offsetHeight
           }
-          // a line's thin axis is owned by strokeWidth, not the resize op
           if (blk.type === 'vline') w = blk.w
           if (blk.type === 'hline') h = blk.h
         }
         onBlocksRef.current(
           blocksRef.current.map(b => b.id === o.blockId ? { ...b, x, y, w, h } : b)
         )
-        // Clear inline sizes so the committed block's canvas defines its own box
         el.style.width = ''
         el.style.height = ''
       }
       opRef.current = null
       setOp(null)
     }
-
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup',  onUp)
     return () => {
@@ -152,12 +149,23 @@ export default function Canvas({
 
   const stopEditing = () => setEditingId(null)
 
+  // Ghost copies of repeat blocks on their non-master pages (display only)
+  const ghosts: Array<{ key: string; block: SoneBlock }> = []
+  for (const b of blocks) {
+    if (!b.repeat) continue
+    const masterPage = Math.floor(b.y / doc.paperHeight)
+    const inPageY = b.y - masterPage * doc.paperHeight
+    for (let p = 0; p < pages; p++) {
+      if (p === masterPage) continue
+      ghosts.push({ key: `${b.id}@${p}`, block: { ...b, y: p * doc.paperHeight + inPageY } })
+    }
+  }
+
   return (
     <div
       style={{ position: 'relative', marginLeft: 40 }}
       onClick={e => { if (e.target === e.currentTarget) { onSelect(null); stopEditing() } }}
     >
-      {/* Artboard */}
       <div
         style={artStyle}
         onClick={e => { if (e.target === e.currentTarget) { onSelect(null); stopEditing() } }}
@@ -177,30 +185,30 @@ export default function Canvas({
           </div>
         ))}
 
+        {/* Ghosts (repeated header/footer on other pages) */}
+        {ghosts.map(({ key, block }) => (
+          <div key={key} style={{ position: 'absolute', left: block.x, top: block.y, opacity: 0.4, pointerEvents: 'none' }}>
+            <SoneBlockView block={{ ...block, y: 0, x: 0 }} pageFont={doc.font} fontsReady={fontsReady} />
+          </div>
+        ))}
+
         {blocks.map(block => {
           const isSelected = block.id === selectedId
           const isEditing  = block.id === editingId
           const isHovered  = block.id === hoverId && !isSelected
-
           return (
             <div
               key={block.id}
-              ref={el => {
-                if (el) wrapperRefs.current.set(block.id, el)
-                else wrapperRefs.current.delete(block.id)
-              }}
+              ref={el => { if (el) wrapperRefs.current.set(block.id, el); else wrapperRefs.current.delete(block.id) }}
               style={{
                 position: 'absolute',
                 left: block.x,
                 top:  block.y,
                 minWidth: 8,
                 minHeight: 4,
+                transform: block.rotation ? `rotate(${block.rotation}deg)` : undefined,
                 boxSizing: 'border-box',
-                outline: isSelected
-                  ? '1px solid #58a6ff'
-                  : isHovered
-                  ? '1px dashed #484f58'
-                  : 'none',
+                outline: isSelected ? '1px solid #58a6ff' : isHovered ? '1px dashed #484f58' : 'none',
                 outlineOffset: 1,
                 cursor: isEditing ? 'text' : op?.kind === 'move' ? 'grabbing' : 'default',
                 userSelect: isEditing ? 'text' : 'none',
@@ -208,6 +216,7 @@ export default function Canvas({
               onMouseEnter={() => setHoverId(block.id)}
               onMouseLeave={() => setHoverId(null)}
               onMouseDown={e => {
+                if (spaceKey.down) return                       // let the pan layer handle it
                 if ((e.target as HTMLElement).closest('[data-rh]')) return
                 if (!isEditing) startOp(e, block, 'move')
               }}
@@ -217,40 +226,31 @@ export default function Canvas({
                 if (EDITABLE_TYPES.has(block.type)) { onSelect(block.id); setEditingId(block.id) }
               }}
             >
-              {/* Resize handles */}
-              {isSelected && !isEditing && (
-                <ResizeHandles
-                  dirs={HANDLES_FOR[block.type]}
-                  onMouseDown={(dir, e) => startOp(e, block, 'resize', dir)}
-                />
+              {isSelected && !isEditing && HANDLES_FOR[block.type].length > 0 && (
+                <ResizeHandles dirs={HANDLES_FOR[block.type]} onMouseDown={(dir, e) => startOp(e, block, 'resize', dir)} />
               )}
 
-              {/* Block toolbar */}
+              {isSelected && !isEditing && block.type === 'table' && (
+                <TableColumnResizers block={block} onChange={onBlockChange} />
+              )}
+
               {isSelected && !isEditing && (
                 <BlockToolbar
                   canEdit={EDITABLE_TYPES.has(block.type)}
                   onEdit={() => setEditingId(block.id)}
                   onDelete={() => { onBlocksChange(blocks.filter(b => b.id !== block.id)); onSelect(null) }}
                   onDuplicate={() => {
-                    const copy: SoneBlock = {
-                      ...block,
-                      props: { ...block.props },
-                      id: `b${Date.now()}`, x: block.x + 20, y: block.y + 20,
-                    }
-                    onBlocksChange([...blocks, copy])
-                    onSelect(copy.id)
+                    const copy: SoneBlock = { ...block, props: { ...block.props }, id: `b${Date.now()}`, x: block.x + 20, y: block.y + 20 }
+                    onBlocksChange([...blocks, copy]); onSelect(copy.id)
                   }}
                 />
               )}
 
-              {/* Content: sone-rendered canvas, or overlay editor while editing */}
-              {isEditing ? (
-                <OverlayEditor
-                  block={block}
-                  pageFont={doc.font}
-                  onCommit={updated => { onBlockChange(updated); stopEditing() }}
-                  onCancel={stopEditing}
-                />
+              {isEditing && block.type === 'text' ? (
+                <RichTextEditor block={block} pageFont={doc.font}
+                  onCommit={u => { onBlockChange(u); stopEditing() }} onCancel={stopEditing} />
+              ) : isEditing && block.type === 'list' ? (
+                <ListEditor block={block} onCommit={u => { onBlockChange(u); stopEditing() }} onCancel={stopEditing} />
               ) : (
                 <SoneBlockView block={block} pageFont={doc.font} fontsReady={fontsReady} />
               )}
@@ -268,15 +268,10 @@ export default function Canvas({
   )
 }
 
-// ── SoneBlockView: render one block through sone to a canvas ─────────────────
+// ── SoneBlockView ─────────────────────────────────────────────────────────────
 
-function SoneBlockView({ block, pageFont, fontsReady }: {
-  block: SoneBlock
-  pageFont: string
-  fontsReady: boolean
-}) {
+function SoneBlockView({ block, pageFont, fontsReady }: { block: SoneBlock; pageFont: string; fontsReady: boolean }) {
   const holderRef = useRef<HTMLDivElement>(null)
-  // Content identity: x/y don't affect the rendered pixels, so exclude them
   const contentKey = JSON.stringify([block.type, block.w, block.h, block.props, pageFont])
 
   useEffect(() => {
@@ -302,64 +297,164 @@ function SoneBlockView({ block, pageFont, fontsReady }: {
   return <div ref={holderRef} style={{ pointerEvents: 'none' }} />
 }
 
-// ── OverlayEditor: Figma-style double-click text editing ─────────────────────
+// ── RichTextEditor: contentEditable + floating format toolbar ─────────────────
 
-function OverlayEditor({ block, pageFont, onCommit, onCancel }: {
-  block: SoneBlock
-  pageFont: string
-  onCommit: (updated: SoneBlock) => void
-  onCancel: () => void
+function RichTextEditor({ block, pageFont, onCommit, onCancel }: {
+  block: SoneBlock; pageFont: string; onCommit: (u: SoneBlock) => void; onCancel: () => void
 }) {
-  const taRef = useRef<HTMLTextAreaElement>(null)
-  const isList = block.type === 'list'
-  const p = block.props as TextProps & ListProps
-  const initial = isList ? (p.items ?? []).join('\n') : (p.text ?? '')
+  const ref = useRef<HTMLDivElement>(null)
+  const p = block.props as TextProps
 
   useEffect(() => {
-    const ta = taRef.current
-    if (!ta) return
-    ta.focus()
-    ta.setSelectionRange(ta.value.length, ta.value.length)
-    const fit = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight}px` }
-    fit()
-    ta.addEventListener('input', fit)
-    return () => ta.removeEventListener('input', fit)
-  }, [])
+    const el = ref.current
+    if (!el) return
+    el.innerHTML = spansToHtml(p.spans)
+    document.execCommand('styleWithCSS', false, 'true')
+    el.focus()
+    const range = document.createRange()
+    range.selectNodeContents(el); range.collapse(false)
+    const sel = window.getSelection()
+    sel?.removeAllRanges(); sel?.addRange(range)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const commit = () => {
-    const value = taRef.current?.value ?? initial
-    if (isList) {
-      const items = value.split('\n').map(s => s.trim()).filter(Boolean)
-      onCommit({ ...block, props: { ...p, items: items.length ? items : ['Item'] } })
-    } else {
-      onCommit({ ...block, props: { ...p, text: value } })
-    }
+    const el = ref.current
+    if (!el) return onCancel()
+    onCommit({ ...block, props: { ...p, spans: htmlToSpans(el) } })
+  }
+
+  const cmd = (command: string, value?: string) => {
+    document.execCommand('styleWithCSS', false, 'true')
+    document.execCommand(command, false, value)
+    ref.current?.focus()
   }
 
   return (
-    <textarea
-      ref={taRef}
-      defaultValue={initial}
-      onBlur={commit}
-      onKeyDown={e => {
-        if (e.key === 'Escape') { e.preventDefault(); onCancel() }
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() }
-      }}
+    <>
+      <FloatingFormatBar onCmd={cmd} />
+      <div
+        ref={ref}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={e => {
+          // keep editing if focus moved to the format bar
+          if ((e.relatedTarget as HTMLElement)?.closest('[data-fmtbar]')) return
+          commit()
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit() }
+          e.stopPropagation()
+        }}
+        onMouseDown={e => e.stopPropagation()}
+        style={{
+          display: 'block',
+          width: block.w > 0 ? block.w : 200,
+          outline: 'none',
+          background: 'rgba(88,166,255,0.06)',
+          fontFamily: `'${p.font || pageFont}', sans-serif`,
+          fontSize: p.size,
+          color: p.color,
+          textAlign: p.align,
+          lineHeight: p.lineHeight > 0 ? p.lineHeight : 1.4,
+          whiteSpace: 'pre-wrap',
+        }}
+      />
+    </>
+  )
+}
+
+function FloatingFormatBar({ onCmd }: { onCmd: (cmd: string, value?: string) => void }) {
+  const stop = (e: React.MouseEvent) => e.preventDefault()  // keep the text selection
+  const btnStyle: React.CSSProperties = {
+    background: 'none', border: 'none', color: '#c9d1d9', cursor: 'pointer',
+    padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center',
+  }
+  return (
+    <div data-fmtbar style={{
+      position: 'absolute', top: -40, left: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', gap: 2,
+      background: '#161b22', border: '1px solid #30363d', borderRadius: 6, padding: '3px 5px',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+    }}>
+      <button style={btnStyle} title="Bold" onMouseDown={stop} onClick={() => onCmd('bold')}><Bold size={14} /></button>
+      <button style={btnStyle} title="Italic" onMouseDown={stop} onClick={() => onCmd('italic')}><Italic size={14} /></button>
+      <button style={btnStyle} title="Underline" onMouseDown={stop} onClick={() => onCmd('underline')}><Underline size={14} /></button>
+      <button style={btnStyle} title="Strikethrough" onMouseDown={stop} onClick={() => onCmd('strikeThrough')}><Strikethrough size={14} /></button>
+      <div style={{ width: 1, height: 16, background: '#30363d', margin: '0 2px' }} />
+      <label title="Text color" onMouseDown={stop} style={{ ...btnStyle, position: 'relative' }}>
+        <span style={{ width: 14, height: 14, borderRadius: 3, background: 'linear-gradient(135deg,#f85149,#58a6ff)', display: 'block' }} />
+        <input type="color" onMouseDown={stop}
+          onChange={e => onCmd('foreColor', e.target.value)}
+          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+      </label>
+    </div>
+  )
+}
+
+// ── ListEditor (plain items, one per line) ────────────────────────────────────
+
+function ListEditor({ block, onCommit, onCancel }: {
+  block: SoneBlock; onCommit: (u: SoneBlock) => void; onCancel: () => void
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const p = block.props as ListProps
+  const initial = p.items.join('\n')
+  useEffect(() => {
+    const ta = ref.current; if (!ta) return
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length)
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight}px` }
+    fit(); ta.addEventListener('input', fit); return () => ta.removeEventListener('input', fit)
+  }, [])
+  const commit = () => {
+    const items = (ref.current?.value ?? initial).split('\n').map(s => s.trim()).filter(Boolean)
+    onCommit({ ...block, props: { ...p, items: items.length ? items : ['Item'] } })
+  }
+  return (
+    <textarea ref={ref} defaultValue={initial} onBlur={commit}
+      onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); onCancel() }; e.stopPropagation() }}
       onMouseDown={e => e.stopPropagation()}
       style={{
-        display: 'block',
-        width: block.w > 0 ? block.w : 200,
-        border: 'none', outline: 'none', resize: 'none',
-        background: 'rgba(88,166,255,0.06)',
-        padding: 0, margin: 0, overflow: 'hidden',
-        fontFamily: `'${p.font || pageFont}', sans-serif`,
-        fontSize: p.size ?? 13,
-        color: p.color ?? '#333',
-        fontWeight: !isList && p.weight === 'bold' ? 700 : 400,
-        textAlign: !isList ? (p.align ?? 'left') : 'left',
-        lineHeight: !isList && p.lineHeight > 0 ? p.lineHeight : 1.4,
+        display: 'block', width: block.w > 0 ? block.w : 220, border: 'none', outline: 'none',
+        resize: 'none', background: 'rgba(88,166,255,0.06)', padding: '0 0 0 20px', overflow: 'hidden',
+        fontFamily: 'inherit', fontSize: p.size, color: p.color, lineHeight: 1.5,
       }}
     />
+  )
+}
+
+// ── Table column resizers ─────────────────────────────────────────────────────
+
+function TableColumnResizers({ block, onChange }: { block: SoneBlock; onChange: (u: SoneBlock) => void }) {
+  const p = block.props as TableProps
+  const totalH = p.rowHeights.reduce((a, b) => a + b, 0)
+  let cx = 0
+  return (
+    <>
+      {p.colWidths.slice(0, -1).map((cw, i) => {
+        cx += cw
+        const left = cx
+        return (
+          <div key={i} data-rh="col"
+            onMouseDown={e => {
+              e.stopPropagation(); e.preventDefault()
+              const startX = e.clientX
+              const startW = p.colWidths[i]
+              const el = (e.currentTarget.closest('[style]') as HTMLElement)
+              const scale = el ? el.getBoundingClientRect().width / el.offsetWidth : 1
+              const move = (ev: MouseEvent) => {
+                const next = [...p.colWidths]
+                next[i] = Math.max(24, Math.round(startW + (ev.clientX - startX) / scale))
+                onChange({ ...block, props: { ...p, colWidths: next }, w: next.reduce((a, b) => a + b, 0) })
+              }
+              const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up) }
+              document.addEventListener('mousemove', move); document.addEventListener('mouseup', up)
+            }}
+            style={{ position: 'absolute', top: 0, left: left - 3, width: 6, height: totalH, cursor: 'ew-resize', zIndex: 25 }}
+          />
+        )
+      })}
+    </>
   )
 }
 
@@ -368,12 +463,10 @@ function OverlayEditor({ block, pageFont, onCommit, onCancel }: {
 function applyResize(el: HTMLElement, o: Op, dx: number, dy: number) {
   if (!o.dir) return
   let x = o.origX, y = o.origY, w = o.origW, h = o.origH
-
   if (o.dir.includes('e')) w = Math.max(8, o.origW + dx)
   if (o.dir.includes('s')) h = Math.max(4, o.origH + dy)
   if (o.dir.includes('w')) { x = o.origX + dx; w = Math.max(8, o.origW - dx) }
   if (o.dir.includes('n')) { y = o.origY + dy; h = Math.max(4, o.origH - dy) }
-
   el.style.left = `${x}px`
   el.style.top  = `${y}px`
   if (o.dir.includes('e') || o.dir.includes('w')) el.style.width  = `${w}px`
@@ -393,16 +486,11 @@ const HANDLE_STYLE: Record<ResizeDir, { style: React.CSSProperties; cursor: stri
   w:  { style: { top: '50%', left: -4, transform: 'translateY(-50%)' },    cursor: 'ew-resize'   },
 }
 
-function ResizeHandles({ dirs, onMouseDown }: {
-  dirs: ResizeDir[]
-  onMouseDown: (dir: ResizeDir, e: React.MouseEvent) => void
-}) {
+function ResizeHandles({ dirs, onMouseDown }: { dirs: ResizeDir[]; onMouseDown: (dir: ResizeDir, e: React.MouseEvent) => void }) {
   return (
     <>
       {dirs.map(dir => (
-        <div
-          key={dir}
-          data-rh={dir}
+        <div key={dir} data-rh={dir}
           onMouseDown={e => { e.stopPropagation(); onMouseDown(dir, e) }}
           style={{
             position: 'absolute', width: 8, height: 8,
@@ -427,24 +515,9 @@ function BlockToolbar({ canEdit, onEdit, onDelete, onDuplicate }: {
       display: 'flex', gap: 2,
       background: '#161b22', border: '1px solid #30363d', borderRadius: 5, padding: '2px 4px',
     }}>
-      {canEdit && (
-        <ToolBtn title="Edit text" onClick={onEdit}>
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M7.5 1.5l2 2L3 10H1V8L7.5 1.5z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/>
-          </svg>
-        </ToolBtn>
-      )}
-      <ToolBtn title="Duplicate (offset +20px)" onClick={onDuplicate}>
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-          <rect x="3.5" y="1" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1"/>
-          <rect x="1" y="3.5" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1" fill="#161b22"/>
-        </svg>
-      </ToolBtn>
-      <ToolBtn title="Delete" onClick={onDelete}>
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-          <path d="M1.5 3h8M4 3V1.5h3V3M4.5 5v3.5M6.5 5v3.5M2.5 3l.5 6.5h5L9 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-        </svg>
-      </ToolBtn>
+      {canEdit && <ToolBtn title="Edit text" onClick={onEdit}><Pencil size={12} /></ToolBtn>}
+      <ToolBtn title="Duplicate (offset +20px)" onClick={onDuplicate}><Copy size={12} /></ToolBtn>
+      <ToolBtn title="Delete" onClick={onDelete}><Trash2 size={12} /></ToolBtn>
     </div>
   )
 }

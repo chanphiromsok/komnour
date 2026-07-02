@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  Type, Heading, List as ListIcon, Square, Minus as MinusIcon, Table as TableIcon,
+  Image as ImageIcon, Plus, Undo2, Copy, Check, FilePlus2,
+} from 'lucide-react'
 import type { SoneBlock, VeDoc, BlockType } from '../types'
 import { loadDoc, saveDoc, newBlock, newHeading } from '../lib/block-model'
 import { docToSoneCode } from '../lib/block-sone'
 import { browserRenderer } from '../lib/sone-renderer'
+import { spaceKey } from '../lib/interaction'
 import Canvas from './Canvas'
 import PropertyPanel, { PagePanel } from './PropertyPanel'
 
@@ -33,14 +38,15 @@ const FONT_MAP: Record<string, string[]> = {
   'KhmerBursa':         [urlKhmerBursaR, urlKhmerBursaB],
 }
 
-const ADD_ITEMS: Array<{ type: BlockType | 'heading'; label: string }> = [
-  { type: 'text',    label: 'Text' },
-  { type: 'heading', label: 'Heading' },
-  { type: 'list',    label: 'List' },
-  { type: 'rect',    label: 'Rectangle' },
-  { type: 'hline',   label: 'H-Line' },
-  { type: 'vline',   label: 'V-Line' },
-  { type: 'photo',   label: 'Image' },
+const ADD_ITEMS: Array<{ type: BlockType | 'heading'; label: string; Icon: typeof Type }> = [
+  { type: 'text',    label: 'Text',      Icon: Type },
+  { type: 'heading', label: 'Heading',   Icon: Heading },
+  { type: 'list',    label: 'List',      Icon: ListIcon },
+  { type: 'table',   label: 'Table',     Icon: TableIcon },
+  { type: 'rect',    label: 'Rectangle', Icon: Square },
+  { type: 'hline',   label: 'H-Line',    Icon: MinusIcon },
+  { type: 'vline',   label: 'V-Line',    Icon: MinusIcon },
+  { type: 'photo',   label: 'Image',     Icon: ImageIcon },
 ]
 
 // ── ZoomPane ───────────────────────────────────────────────────────────────
@@ -79,8 +85,19 @@ function ZoomPane({ children }: { children: React.ReactNode }) {
   }, [apply])
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => { if (e.code === 'Space' && !spaceDown.current) { spaceDown.current = true; setCursor('grab') } }
-    const up   = (e: KeyboardEvent) => { if (e.code === 'Space') { spaceDown.current = false; if (!isPanning.current) setCursor('default') } }
+    const editable = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null
+      return !!el && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
+    }
+    const down = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !spaceDown.current && !editable(e.target)) {
+        e.preventDefault()                          // stop page scroll + let canvas pan
+        spaceDown.current = true; spaceKey.down = true; setCursor('grab')
+      }
+    }
+    const up = (e: KeyboardEvent) => {
+      if (e.code === 'Space') { spaceDown.current = false; spaceKey.down = false; if (!isPanning.current) setCursor('default') }
+    }
     window.addEventListener('keydown', down); window.addEventListener('keyup', up)
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
   }, [])
@@ -262,9 +279,7 @@ export default function App() {
                 padding: '5px 12px', fontSize: 12, cursor: 'pointer',
               }}
             >
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M5.5 1v9M1 5.5h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+              <Plus size={13} />
               Add Block
             </button>
             {showAddMenu && (
@@ -281,13 +296,14 @@ export default function App() {
                     key={item.type}
                     onClick={() => handleAdd(item.type)}
                     style={{
-                      display: 'block', width: '100%', textAlign: 'left',
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
                       background: 'none', border: 'none', borderRadius: 5,
                       color: '#c9d1d9', fontSize: 12, padding: '6px 10px', cursor: 'pointer',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#21262d')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                   >
+                    <item.Icon size={13} color="#7d8590" />
                     {item.label}
                   </button>
                 ))}
@@ -306,10 +322,7 @@ export default function App() {
               padding: '5px 10px', fontSize: 12, cursor: 'pointer',
             }}
           >
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <rect x="1.5" y="1" width="8" height="9" rx="1" stroke="currentColor" strokeWidth="1"/>
-              <path d="M5.5 4v3M4 5.5h3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-            </svg>
+            <FilePlus2 size={13} />
             Page ({doc.pages})
           </button>
 
@@ -324,10 +337,7 @@ export default function App() {
               padding: '5px 8px', fontSize: 12, cursor: 'pointer',
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 5H7.5C9.43 5 11 6.57 11 8.5S9.43 12 7.5 12H4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M4.5 2.5L2 5l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Undo2 size={14} />
           </button>
 
           {/* Copy Sone */}
@@ -343,22 +353,7 @@ export default function App() {
               transition: 'all 0.2s',
             }}
           >
-            {copyState === 'copied' ? (
-              <>
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                  <path d="M1.5 5.5l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                  <rect x="3.5" y="1" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1"/>
-                  <rect x="1" y="3.5" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1" fill="#010409"/>
-                </svg>
-                Copy Sone
-              </>
-            )}
+            {copyState === 'copied' ? (<><Check size={12} /> Copied!</>) : (<><Copy size={12} /> Copy Sone</>)}
           </button>
 
           <div style={{ flex: 1 }} />
