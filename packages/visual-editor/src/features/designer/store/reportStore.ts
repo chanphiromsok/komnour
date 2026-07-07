@@ -5,7 +5,9 @@ import {
 	produceWithPatches,
 } from "immer";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { sampleReportDocument } from "@komnour/report/src/model/sample";
+import { ReportDocumentSchema } from "@komnour/report/src/model/schema";
 import {
 	addNode as addNodeToTree,
 	duplicateNode as duplicateSubtree,
@@ -86,8 +88,14 @@ export function snapToGrid(value: number): number {
 	return Math.round(value / GRID_SIZE) * GRID_SIZE;
 }
 
-export const useDesignerStore = create<DesignerState>()((set, get) => {
-	function commit(recipe: (draft: ReportDocument) => void) {
+/** localStorage key for the persisted editor state. Bump PERSIST_VERSION when the persisted shape changes. */
+const PERSIST_KEY = "komnour-visual-editor";
+const PERSIST_VERSION = 1;
+
+export const useDesignerStore = create<DesignerState>()(
+	persist(
+		(set, get) => {
+			function commit(recipe: (draft: ReportDocument) => void) {
 		const state = get();
 		const [nextDocument, patches, inversePatches] = produceWithPatches(
 			state.document,
@@ -298,4 +306,44 @@ export const useDesignerStore = create<DesignerState>()((set, get) => {
 			set({ verify: { status: "idle", pngDataUrl: null } });
 		},
 	};
-});
+		},
+		{
+			name: PERSIST_KEY,
+			version: PERSIST_VERSION,
+			storage: createJSONStorage(() => localStorage),
+			// Persist only durable data. Selection, tool, zoom/pan, undo history,
+			// and the verify overlay (an object URL that dies with the tab) are
+			// session-only and reset on reload.
+			partialize: (state) => ({
+				document: state.document,
+				bindingData: state.bindingData,
+				activePageId: state.activePageId,
+			}),
+			// Validate the persisted document before adopting it; a corrupt or
+			// out-of-date entry falls back to the fresh sample rather than
+			// crashing the editor on load.
+			merge: (persisted, current) => {
+				const saved = persisted as
+					| {
+							document?: unknown;
+							bindingData?: Record<string, unknown> | null;
+							activePageId?: NodeId | null;
+					  }
+					| undefined;
+				const parsed = ReportDocumentSchema.safeParse(saved?.document);
+				if (!parsed.success) return current;
+				const document = parsed.data as ReportDocument;
+				const activePageId =
+					saved?.activePageId && document.nodes[saved.activePageId]
+						? saved.activePageId
+						: (document.pages[0] ?? null);
+				return {
+					...current,
+					document,
+					bindingData: saved?.bindingData ?? null,
+					activePageId,
+				};
+			},
+		},
+	),
+);

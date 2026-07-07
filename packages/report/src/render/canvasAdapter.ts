@@ -274,6 +274,15 @@ export class CanvasAdapter implements RendererAdapter {
 		paint.setStyle(this.canvasKit.PaintStyle.Stroke);
 		paint.setStrokeWidth(stroke.width);
 		paint.setAntiAlias(true);
+		// A dash pattern (on/off lengths in points) matches skia-canvas's
+		// ctx.setLineDash on the server so dashed strokes look the same in the
+		// live preview and the exported PDF/PNG.
+		if (stroke.dash && stroke.dash.length > 0) {
+			const effect = this.canvasKit.PathEffect.MakeDash(stroke.dash);
+			paint.setPathEffect(effect);
+			// setPathEffect refs the effect; drop our handle so it isn't leaked.
+			effect.delete();
+		}
 		return paint;
 	}
 }
