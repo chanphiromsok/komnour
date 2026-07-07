@@ -20,19 +20,36 @@ async function ensureReportFontsRegistered() {
 	fontsRegistered = true;
 }
 
-interface ExportPdfBody {
+interface ExportRequest {
 	document: unknown;
 	data?: Record<string, unknown>;
-}
-
-interface ExportPngBody extends ExportPdfBody {
 	pageIndex?: number;
 }
 
+/**
+ * Accepts either a wrapped request (`{ document, data?, pageIndex? }`) or a
+ * bare document posted as the plain top-level JSON. The bare form is detected
+ * by the absence of a `document` key — a ReportDocument's own top-level keys
+ * are version/pages/nodes/assets/fonts, so there's no ambiguity.
+ */
+function extractExportRequest(body: unknown): ExportRequest {
+	if (body && typeof body === "object" && "document" in body) {
+		const wrapped = body as ExportRequest;
+		return {
+			document: wrapped.document,
+			data: wrapped.data,
+			pageIndex: wrapped.pageIndex,
+		};
+	}
+	return { document: body };
+}
+
 export function registerReportRoutes(app: FastifyInstance) {
-	// POST /report/export/pdf  body: { document, data? }  → application/pdf
-	app.post<{ Body: ExportPdfBody }>("/report/export/pdf", async (req, reply) => {
-		const parsed = ReportDocumentSchema.safeParse(req.body?.document);
+	// POST /report/export/pdf
+	// body: { document, data? } OR a bare document as the plain JSON body → application/pdf
+	app.post("/report/export/pdf", async (req, reply) => {
+		const { document, data } = extractExportRequest(req.body);
+		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {
 			return reply
 				.status(400)
@@ -43,7 +60,7 @@ export function registerReportRoutes(app: FastifyInstance) {
 			const { renderDocumentToPdf } = await import(
 				"@komnour/report/src/render/exportPdf.server"
 			);
-			const buffer = await renderDocumentToPdf(parsed.data, req.body.data);
+			const buffer = await renderDocumentToPdf(parsed.data, data);
 			reply.header("Content-Type", "application/pdf");
 			reply.header("Content-Disposition", 'attachment; filename="report.pdf"');
 			return reply.send(buffer);
@@ -52,9 +69,11 @@ export function registerReportRoutes(app: FastifyInstance) {
 		}
 	});
 
-	// POST /report/export/png  body: { document, data?, pageIndex? }  → image/png
-	app.post<{ Body: ExportPngBody }>("/report/export/png", async (req, reply) => {
-		const parsed = ReportDocumentSchema.safeParse(req.body?.document);
+	// POST /report/export/png
+	// body: { document, data?, pageIndex? } OR a bare document as the plain JSON body → image/png
+	app.post("/report/export/png", async (req, reply) => {
+		const { document, data, pageIndex } = extractExportRequest(req.body);
+		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {
 			return reply
 				.status(400)
@@ -65,11 +84,7 @@ export function registerReportRoutes(app: FastifyInstance) {
 			const { renderPageToPng } = await import(
 				"@komnour/report/src/render/exportPng.server"
 			);
-			const buffer = await renderPageToPng(
-				parsed.data,
-				req.body.pageIndex ?? 0,
-				req.body.data,
-			);
+			const buffer = await renderPageToPng(parsed.data, pageIndex ?? 0, data);
 			reply.header("Content-Type", "image/png");
 			return reply.send(buffer);
 		} catch (err: any) {
