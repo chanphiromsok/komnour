@@ -11,11 +11,13 @@ import {
 	Image,
 	Loader2,
 	Minus,
+	Moon,
 	MousePointer2,
 	Plus,
 	Redo2,
 	ScanEye,
 	Square,
+	Sun,
 	Trash2,
 	Type,
 	Undo2,
@@ -59,6 +61,8 @@ export function Toolbar() {
 	const runVerifyRender = useDesignerStore((s) => s.runVerifyRender);
 	const clearVerify = useDesignerStore((s) => s.clearVerify);
 	const bindingData = useDesignerStore((s) => s.bindingData);
+	const theme = useDesignerStore((s) => s.theme);
+	const toggleTheme = useDesignerStore((s) => s.toggleTheme);
 
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export function Toolbar() {
 	}
 
 	return (
-		<div className="flex h-12 shrink-0 items-center gap-1 border-neutral-300 border-b bg-white px-2">
+		<div className="flex h-12 shrink-0 items-center gap-1 border-neutral-200 border-b bg-white px-2 dark:border-neutral-800 dark:bg-neutral-900">
 			<div className="flex items-center gap-1">
 				{reportDocument.pages.map((pageId, index) => (
 					<button
@@ -134,8 +138,8 @@ export function Toolbar() {
 						}}
 						className={`rounded px-2 py-1 text-xs ${
 							pageId === activePageId
-								? "bg-blue-100 text-blue-700"
-								: "text-neutral-600 hover:bg-neutral-100"
+								? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+								: "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
 						}`}
 					>
 						{reportDocument.nodes[pageId]?.name || `Page ${index + 1}`}
@@ -315,10 +319,19 @@ export function Toolbar() {
 
 			<div className="flex-1" />
 
+			<ToolbarButton
+				label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+				onClick={toggleTheme}
+			>
+				{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+			</ToolbarButton>
+
+			<Divider />
+
 			<ToolbarButton label="Zoom out" onClick={() => setZoom(zoom - 0.1)}>
 				<ZoomOut size={16} />
 			</ToolbarButton>
-			<span className="w-12 text-center text-neutral-600 text-sm tabular-nums">
+			<span className="w-12 text-center text-neutral-600 text-sm tabular-nums dark:text-neutral-400">
 				{Math.round(zoom * 100)}%
 			</span>
 			<ToolbarButton label="Zoom in" onClick={() => setZoom(zoom + 0.1)}>
@@ -329,7 +342,7 @@ export function Toolbar() {
 }
 
 function Divider() {
-	return <div className="mx-1 h-6 w-px bg-neutral-200" />;
+	return <div className="mx-1 h-6 w-px bg-neutral-200 dark:bg-neutral-800" />;
 }
 
 function ToolbarButton({
@@ -352,10 +365,10 @@ function ToolbarButton({
 			aria-label={label}
 			disabled={disabled}
 			onClick={onClick}
-			className={`flex h-8 w-8 items-center justify-center rounded ${
+			className={`flex h-8 w-8 items-center justify-center rounded transition-colors ${
 				active
-					? "bg-blue-100 text-blue-600"
-					: "text-neutral-700 hover:bg-neutral-100"
+					? "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
+					: "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
 			} disabled:cursor-not-allowed disabled:opacity-40`}
 		>
 			{children}

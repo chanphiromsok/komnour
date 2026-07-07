@@ -150,7 +150,7 @@ export function BindingTextarea({
 				}}
 			/>
 			{open && (
-				<ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded border border-neutral-300 bg-white py-1 shadow-lg">
+				<ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded border border-neutral-300 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
 					{suggestions.map((suggestion, index) => (
 						<li key={suggestion.path}>
 							<button
@@ -163,8 +163,8 @@ export function BindingTextarea({
 								onMouseEnter={() => setActiveIndex(index)}
 								className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs ${
 									index === activeIndex
-										? "bg-blue-50 text-blue-700"
-										: "text-neutral-700"
+										? "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+										: "text-neutral-700 dark:text-neutral-300"
 								}`}
 							>
 								<span className="truncate font-mono">

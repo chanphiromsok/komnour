@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* Load symbol fonts as CSS faces too, so the HTML glyph picker can render each
+   candidate character as its actual symbol (CanvasKit loads the same file
+   separately for the canvas). Keep family names identical to FONT_MANIFEST. */
+@font-face {
+	font-family: "Wingdings 2";
+	src: url("/fonts/Wingdings2.ttf") format("truetype");
+	font-display: swap;
+}
+
+/* Manual dark mode: `dark:` utilities apply when <html data-theme="dark">
+   is set (see DesignerApp), instead of following the OS preference only. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 * {
 	box-sizing: border-box;
 }
@@ -12,4 +25,35 @@ body,
 
 body {
 	margin: 0;
+}
+
+/* Drive native form controls (number/color inputs, selects, checkboxes,
+   scrollbars) to match the active theme. */
+:root {
+	color-scheme: light;
+}
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+/* Slim, unobtrusive scrollbars for the editor chrome (Figma-like). */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgb(163 163 163 / 0.5) transparent;
+}
+:root[data-theme="dark"] * {
+	scrollbar-color: rgb(115 115 115 / 0.5) transparent;
+}
+
+/* Text-like form controls inside editor panels/dialogs (marked .report-panel)
+   pick up dark surfaces without editing each input's classes. Color/checkbox/
+   range inputs are left to the native color-scheme so swatches and ticks show. */
+:root[data-theme="dark"]
+	.report-panel
+	input:not([type="color"]):not([type="checkbox"]):not([type="range"]),
+:root[data-theme="dark"] .report-panel textarea,
+:root[data-theme="dark"] .report-panel select {
+	background-color: rgb(38 38 38);
+	border-color: rgb(64 64 64);
+	color: rgb(245 245 245);
 }

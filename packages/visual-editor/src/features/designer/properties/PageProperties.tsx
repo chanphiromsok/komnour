@@ -57,8 +57,8 @@ export function PageProperties({ nodeId }: { nodeId: NodeId }) {
 							}
 							className={`flex-1 rounded border px-2 py-1 text-xs capitalize ${
 								paper.orientation === orientation
-									? "border-blue-500 bg-blue-50 text-blue-700"
-									: "border-neutral-300 text-neutral-700"
+									? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-500/20 dark:text-blue-300"
+									: "border-neutral-300 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
 							}`}
 						>
 							{orientation}

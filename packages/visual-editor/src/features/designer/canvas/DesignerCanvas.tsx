@@ -116,6 +116,9 @@ export function DesignerCanvas() {
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<HTMLDivElement>(null);
 	const activeSheetRef = useRef<HTMLDivElement | null>(null);
+	// Every page sheet's DOM element, keyed by page id — used to hit-test which
+	// page the pointer is over when dropping a cross-page drag.
+	const sheetRefs = useRef<Map<NodeId, HTMLDivElement>>(new Map());
 	const [engine, setEngine] = useState<RenderEngine | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -140,6 +143,9 @@ export function DesignerCanvas() {
 	const setZoom = useDesignerStore((s) => s.setZoom);
 	const setTool = useDesignerStore((s) => s.setTool);
 	const addNode = useDesignerStore((s) => s.addNode);
+	const moveNodeToPage = useDesignerStore((s) => s.moveNodeToPage);
+	const copyNodes = useDesignerStore((s) => s.copyNodes);
+	const pasteNodes = useDesignerStore((s) => s.pasteNodes);
 	const verify = useDesignerStore((s) => s.verify);
 
 	const [editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
@@ -273,6 +279,14 @@ export function DesignerCanvas() {
 			} else if (isMeta && key === "d") {
 				event.preventDefault();
 				if (selection.length > 0) duplicateNodes(selection);
+			} else if (isMeta && key === "c") {
+				if (selection.length > 0) {
+					event.preventDefault();
+					copyNodes(selection);
+				}
+			} else if (isMeta && key === "v") {
+				event.preventDefault();
+				pasteNodes();
 			} else if (isMeta && key === "a") {
 				event.preventDefault();
 				if (activePageId) setSelection(document.nodes[activePageId].children);
@@ -366,6 +380,8 @@ export function DesignerCanvas() {
 		tool,
 		setTool,
 		addNode,
+		copyNodes,
+		pasteNodes,
 	]);
 
 	/** Converts client coordinates to the ACTIVE page's local document points. */
@@ -524,11 +540,52 @@ export function DesignerCanvas() {
 		}
 	}
 
-	function handlePointerUp() {
+	/** The page whose sheet is under the given client point, if any. */
+	function pageUnderPointer(clientX: number, clientY: number): NodeId | null {
+		for (const [pageId, el] of sheetRefs.current) {
+			const rect = el.getBoundingClientRect();
+			if (
+				clientX >= rect.left &&
+				clientX <= rect.right &&
+				clientY >= rect.top &&
+				clientY <= rect.bottom
+			) {
+				return pageId;
+			}
+		}
+		return null;
+	}
+
+	function handlePointerUp(event: React.PointerEvent) {
 		const interaction = interactionRef.current;
 		if (!interaction || !activePageId) {
 			interactionRef.current = null;
 			return;
+		}
+
+		// Dropping a moved node over a different page reparents it there, so it
+		// stays visible (instead of being clipped past the source page's edge).
+		if (interaction.kind === "move") {
+			const targetPageId = pageUnderPointer(event.clientX, event.clientY);
+			if (targetPageId && targetPageId !== activePageId) {
+				const targetEl = sheetRefs.current.get(targetPageId);
+				if (targetEl) {
+					const rect = targetEl.getBoundingClientRect();
+					const grabOffsetX = interaction.startX - interaction.originalFrame.x;
+					const grabOffsetY = interaction.startY - interaction.originalFrame.y;
+					const x = snapToGrid(
+						(event.clientX - rect.left) / zoom - grabOffsetX,
+					);
+					const y = snapToGrid((event.clientY - rect.top) / zoom - grabOffsetY);
+					moveNodeToPage(interaction.nodeId, targetPageId, { x, y });
+					setActivePageId(targetPageId);
+					setSelection([interaction.nodeId]);
+					setDragPreview(null);
+					setGuides({ vertical: [], horizontal: [] });
+					interactionRef.current = null;
+					return;
+				}
+			}
 		}
 
 		if (interaction.kind === "move" || interaction.kind === "resize") {
@@ -571,7 +628,7 @@ export function DesignerCanvas() {
 	return (
 		<div
 			ref={viewportRef}
-			className="relative flex-1 overflow-auto bg-neutral-200"
+			className="relative flex-1 overflow-auto bg-neutral-200 dark:bg-neutral-950"
 			onPointerDown={handleViewportPointerDown}
 			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
@@ -598,7 +655,11 @@ export function DesignerCanvas() {
 							// biome-ignore lint/a11y/noStaticElementInteractions: graphical editor surface (canvas + overlays), not a semantic content element
 							<div
 								key={pageId}
-								ref={isActive ? activeSheetRef : undefined}
+								ref={(el) => {
+									if (el) sheetRefs.current.set(pageId, el);
+									else sheetRefs.current.delete(pageId);
+									if (isActive) activeSheetRef.current = el;
+								}}
 								className="relative"
 								style={{ width: pageSize.width, height: pageSize.height }}
 								onPointerDown={(event) =>
@@ -606,7 +667,7 @@ export function DesignerCanvas() {
 								}
 								onDoubleClick={isActive ? handleSheetDoubleClick : undefined}
 							>
-								<div className="pointer-events-none absolute -top-6 left-0 select-none text-neutral-500 text-xs">
+								<div className="pointer-events-none absolute -top-6 left-0 select-none text-neutral-500 text-xs dark:text-neutral-400">
 									{pageNode.name || `Page ${index + 1}`}
 								</div>
 								<PageCanvas
@@ -755,7 +816,9 @@ function PageCanvas({
 			height={height}
 			style={{ width, height }}
 			className={`bg-white shadow-lg ${
-				isActive ? "ring-2 ring-blue-400" : "ring-1 ring-neutral-300"
+				isActive
+					? "ring-2 ring-blue-400"
+					: "ring-1 ring-neutral-300 dark:ring-neutral-700"
 			}`}
 		/>
 	);

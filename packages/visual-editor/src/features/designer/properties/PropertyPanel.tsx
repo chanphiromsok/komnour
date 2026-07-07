@@ -12,13 +12,13 @@ export function PropertyPanel() {
 	);
 
 	return (
-		<div className="flex w-64 shrink-0 flex-col gap-4 overflow-auto border-neutral-300 border-l bg-white p-3">
-			<div className="font-medium text-neutral-500 text-xs uppercase tracking-wide">
+		<div className="report-panel flex w-64 shrink-0 flex-col gap-4 overflow-auto border-neutral-200 border-l bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900">
+			<div className="font-medium text-neutral-500 text-xs uppercase tracking-wide dark:text-neutral-400">
 				Properties
 			</div>
 
 			{!node && (
-				<p className="text-neutral-400 text-sm">
+				<p className="text-neutral-400 text-sm dark:text-neutral-500">
 					{selection.length > 1
 						? "Multiple elements selected"
 						: "Nothing selected"}

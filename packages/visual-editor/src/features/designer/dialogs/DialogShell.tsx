@@ -17,14 +17,16 @@ export function DialogShell({
 				if (event.target === event.currentTarget) onClose();
 			}}
 		>
-			<div className="flex max-h-[80vh] w-[480px] flex-col rounded-lg bg-white shadow-xl">
-				<div className="flex items-center justify-between border-neutral-200 border-b px-4 py-3">
-					<h2 className="font-medium text-neutral-800 text-sm">{title}</h2>
+			<div className="report-panel flex max-h-[80vh] w-[480px] flex-col rounded-lg bg-white shadow-xl dark:bg-neutral-900 dark:ring-1 dark:ring-neutral-800">
+				<div className="flex items-center justify-between border-neutral-200 border-b px-4 py-3 dark:border-neutral-800">
+					<h2 className="font-medium text-neutral-800 text-sm dark:text-neutral-100">
+						{title}
+					</h2>
 					<button
 						type="button"
 						aria-label="Close"
 						onClick={onClose}
-						className="flex h-6 w-6 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100"
+						className="flex h-6 w-6 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
 					>
 						<X size={14} />
 					</button>

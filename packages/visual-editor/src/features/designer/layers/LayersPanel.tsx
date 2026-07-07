@@ -34,8 +34,8 @@ export function LayersPanel() {
 	const childIds = page ? [...page.children].reverse() : [];
 
 	return (
-		<div className="flex w-56 shrink-0 flex-col border-neutral-300 border-r bg-white">
-			<div className="border-neutral-200 border-b px-3 py-2 font-medium text-neutral-500 text-xs uppercase tracking-wide">
+		<div className="flex w-56 shrink-0 flex-col border-neutral-200 border-r bg-white dark:border-neutral-800 dark:bg-neutral-900">
+			<div className="border-neutral-200 border-b px-3 py-2 font-medium text-neutral-500 text-xs uppercase tracking-wide dark:border-neutral-800 dark:text-neutral-400">
 				Layers
 			</div>
 			<div className="flex-1 overflow-auto py-1">
@@ -80,8 +80,8 @@ function LayerRow({
 			onClick={onSelect}
 			className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${
 				selected
-					? "bg-blue-50 text-blue-700"
-					: "text-neutral-700 hover:bg-neutral-50"
+					? "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+					: "text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
 			}`}
 		>
 			<Icon size={14} />

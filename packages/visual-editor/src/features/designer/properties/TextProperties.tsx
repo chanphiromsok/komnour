@@ -1,9 +1,17 @@
 import { BindingTextarea } from "#/features/designer/bindings/BindingTextarea";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
+import { SYMBOL_FONT_FAMILIES } from "@komnour/report/src/fonts/manifest";
 import type { NodeId, TextNode } from "@komnour/report/src/model/types";
+import { GlyphPicker } from "./GlyphPicker";
 import { NumberField } from "./NumberField";
 
-const FONT_FAMILIES = ["Inter", "Roboto", "Battambang", "Noto Sans Khmer"];
+const FONT_FAMILIES = [
+	"Inter",
+	"Roboto",
+	"Battambang",
+	"Noto Sans Khmer",
+	"Wingdings 2",
+];
 const ALIGNS: TextNode["style"]["align"][] = ["left", "center", "right"];
 
 export function TextProperties({ nodeId }: { nodeId: NodeId }) {
@@ -43,6 +51,15 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 				</select>
 			</label>
 
+			{SYMBOL_FONT_FAMILIES.includes(node.style.fontFamily) && (
+				<GlyphPicker
+					fontFamily={node.style.fontFamily}
+					onInsert={(char) =>
+						updateNode(nodeId, { text: `${node.text}${char}` })
+					}
+				/>
+			)}
+
 			<div className="grid grid-cols-2 gap-2">
 				<NumberField
 					label="Size"
@@ -78,8 +95,8 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 							onClick={() => updateNodeStyle(nodeId, { align })}
 							className={`flex-1 rounded border px-2 py-1 text-xs capitalize ${
 								node.style.align === align
-									? "border-blue-500 bg-blue-50 text-blue-700"
-									: "border-neutral-300 text-neutral-700"
+									? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-500/20 dark:text-blue-300"
+									: "border-neutral-300 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
 							}`}
 						>
 							{align}

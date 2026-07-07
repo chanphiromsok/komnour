@@ -29,6 +29,13 @@ const API_BASE_URL: string =
 	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 
 export type Tool = "select" | "pan";
+export type Theme = "light" | "dark";
+
+/** A self-contained copy of a node and all its descendants, for the clipboard. */
+interface ClipboardSubtree {
+	rootId: NodeId;
+	nodes: Record<NodeId, ReportNode>;
+}
 
 interface HistoryEntry {
 	patches: Patch[];
@@ -45,7 +52,10 @@ export interface DesignerState {
 	history: { past: HistoryEntry[]; future: HistoryEntry[] };
 	/** JSON data used to resolve `{{path}}` bindings in text nodes (preview + exports). */
 	bindingData: Record<string, unknown> | null;
+	/** Editor chrome theme (paper stays white in both). */
+	theme: Theme;
 
+	toggleTheme: () => void;
 	setActivePageId: (pageId: NodeId) => void;
 	setBindingData: (data: Record<string, unknown> | null) => void;
 	/** Replaces the whole document (e.g. JSON import) and resets selection/history/view. */
@@ -67,6 +77,18 @@ export interface DesignerState {
 	addNode: (node: ReportNode, parentId: NodeId | null) => void;
 	removeNodes: (ids: NodeId[]) => void;
 	duplicateNodes: (ids: NodeId[]) => void;
+	/** Reparents a top-level node to another page, setting its new page-local frame position. */
+	moveNodeToPage: (
+		id: NodeId,
+		targetPageId: NodeId,
+		position: Pick<Frame, "x" | "y">,
+	) => void;
+
+	/** In-app clipboard (subtree snapshots); not the OS clipboard. */
+	clipboard: ClipboardSubtree[] | null;
+	copyNodes: (ids: NodeId[]) => void;
+	/** Clones the clipboard onto the active page, offset and selected. */
+	pasteNodes: () => void;
 
 	undo: () => void;
 	redo: () => void;
@@ -120,8 +142,12 @@ export const useDesignerStore = create<DesignerState>()(
 		pan: { x: 0, y: 0 },
 		history: { past: [], future: [] },
 		bindingData: null,
+		theme: "light",
+		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
 
+		toggleTheme: () =>
+			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
 		setBindingData: (data) => set({ bindingData: data }),
 		loadDocument: (document) =>
@@ -231,6 +257,89 @@ export const useDesignerStore = create<DesignerState>()(
 			if (newIds.length > 0) set({ selection: newIds });
 		},
 
+		moveNodeToPage: (id, targetPageId, position) => {
+			commit((draft) => {
+				const node = draft.nodes[id];
+				const targetPage = draft.nodes[targetPageId];
+				if (!node || !targetPage || targetPage.type !== "page") return;
+				const oldParentId = node.parentId;
+				if (oldParentId !== targetPageId) {
+					const oldParent = oldParentId ? draft.nodes[oldParentId] : undefined;
+					if (oldParent) {
+						oldParent.children = oldParent.children.filter(
+							(childId) => childId !== id,
+						);
+					}
+					node.parentId = targetPageId;
+					targetPage.children.push(id);
+				}
+				node.frame.x = position.x;
+				node.frame.y = position.y;
+			});
+		},
+
+		copyNodes: (ids) => {
+			const { document } = get();
+			const items: ClipboardSubtree[] = [];
+			for (const id of ids) {
+				const root = document.nodes[id];
+				// Pages can't be nested into a page, so they aren't copyable here.
+				if (!root || root.type === "page") continue;
+				const nodes: Record<NodeId, ReportNode> = {};
+				const collect = (nodeId: NodeId) => {
+					const n = document.nodes[nodeId];
+					if (!n) return;
+					nodes[nodeId] = structuredClone(n);
+					for (const childId of n.children) collect(childId);
+				};
+				collect(id);
+				items.push({ rootId: id, nodes });
+			}
+			set({ clipboard: items.length > 0 ? items : null });
+		},
+
+		pasteNodes: () => {
+			const { clipboard, activePageId } = get();
+			if (!clipboard || !activePageId) return;
+			const newRootIds: NodeId[] = [];
+			commit((draft) => {
+				if (!draft.nodes[activePageId]) return;
+				let next = draft as ReportDocument;
+				for (const item of clipboard) {
+					const idMap = new Map<NodeId, NodeId>();
+					const assignIds = (nodeId: NodeId) => {
+						idMap.set(nodeId, crypto.randomUUID());
+						for (const childId of item.nodes[nodeId].children)
+							assignIds(childId);
+					};
+					assignIds(item.rootId);
+					const insert = (srcId: NodeId, newParentId: NodeId) => {
+						const src = item.nodes[srcId];
+						const newId = idMap.get(srcId);
+						if (!newId) return;
+						const clone: ReportNode = {
+							...structuredClone(src),
+							id: newId,
+							parentId: newParentId,
+							children: [],
+						};
+						next = addNodeToTree(next, clone, newParentId);
+						for (const childId of src.children) insert(childId, newId);
+					};
+					insert(item.rootId, activePageId);
+					const newRootId = idMap.get(item.rootId);
+					if (newRootId) {
+						newRootIds.push(newRootId);
+						// Offset so a paste is visibly distinct from the original.
+						next.nodes[newRootId].frame.x += GRID_SIZE;
+						next.nodes[newRootId].frame.y += GRID_SIZE;
+					}
+				}
+				Object.assign(draft, next);
+			});
+			if (newRootIds.length > 0) set({ selection: newRootIds });
+		},
+
 		undo: () => {
 			const state = get();
 			const entry = state.history.past.at(-1);
@@ -318,6 +427,7 @@ export const useDesignerStore = create<DesignerState>()(
 				document: state.document,
 				bindingData: state.bindingData,
 				activePageId: state.activePageId,
+				theme: state.theme,
 			}),
 			// Validate the persisted document before adopting it; a corrupt or
 			// out-of-date entry falls back to the fresh sample rather than
@@ -328,10 +438,12 @@ export const useDesignerStore = create<DesignerState>()(
 							document?: unknown;
 							bindingData?: Record<string, unknown> | null;
 							activePageId?: NodeId | null;
+							theme?: Theme;
 					  }
 					| undefined;
+				const theme: Theme = saved?.theme === "dark" ? "dark" : "light";
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
-				if (!parsed.success) return current;
+				if (!parsed.success) return { ...current, theme };
 				const document = parsed.data as ReportDocument;
 				const activePageId =
 					saved?.activePageId && document.nodes[saved.activePageId]
@@ -342,6 +454,7 @@ export const useDesignerStore = create<DesignerState>()(
 					document,
 					bindingData: saved?.bindingData ?? null,
 					activePageId,
+					theme,
 				};
 			},
 		},
