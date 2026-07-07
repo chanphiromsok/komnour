@@ -26,7 +26,9 @@ export function GlyphPicker({
 							type="button"
 							title={`Insert '${char}' (U+${code.toString(16).toUpperCase().padStart(4, "0")})`}
 							onClick={() => onInsert(char)}
-							style={{ fontFamily }}
+							// Quote the family: an unquoted CSS family token can't start
+							// with a digit (e.g. "Wingdings 2"), so it must be quoted.
+							style={{ fontFamily: `"${fontFamily}"` }}
 							className="flex h-8 items-center justify-center rounded text-lg text-neutral-800 hover:bg-blue-50 dark:text-neutral-100 dark:hover:bg-blue-500/20"
 						>
 							{char}

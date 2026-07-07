@@ -64,7 +64,7 @@ export function TextEditOverlay({
 				height: frame.height,
 			}}
 			style={{
-				fontFamily: style.fontFamily,
+				fontFamily: `"${style.fontFamily}"`,
 				fontSize: style.fontSize,
 				fontWeight: style.fontWeight,
 				fontStyle: style.fontStyle,
