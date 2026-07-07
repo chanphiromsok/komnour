@@ -1,40 +1,137 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
+import { Column, Row, Text, Span, PageBreak, Path, Photo, renderPages } from 'sone'
+import { htmlToSoneSyntax } from '@komnour/html-to-syntax'
 import { setupMonaco } from './monaco-setup'
+import { browserRenderer } from './sone-renderer'
+
+// Font files served via Vite asset pipeline
+import notoKhmer400 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-400-normal.woff?url'
+import notoKhmer700 from '@fontsource/noto-sans-khmer/files/noto-sans-khmer-all-700-normal.woff?url'
+import inter400 from '@fontsource/inter/files/inter-all-400-normal.woff?url'
+
+// Glyph/specialty fonts (same set as server loads at runtime)
+import urlKhmerOSSiemreap   from '../../glyphs/fonts/KhmerOsSiemreab/KhmerOSsiemreap.ttf?url'
+import urlKhSiemreap        from '../../glyphs/fonts/KhSiemreap/Kh-Siemreap.ttf?url'
+import urlKhmerOSMuolLight  from '../../glyphs/fonts/KhmerOSMuolLight/Khmer-OS-Muol-Light.ttf?url'
+import urlWingdings2        from '../../glyphs/fonts/KhmerWing2/wingdings2.ttf?url'
+import urlWingding          from '../../glyphs/fonts/KhmerWing/wingding.ttf?url'
+import urlCalibriR          from '../../glyphs/fonts/Calibri/calibri.ttf?url'
+import urlCalibriB          from '../../glyphs/fonts/Calibri/calibrib.ttf?url'
+import urlCalibriI          from '../../glyphs/fonts/Calibri/calibrii.ttf?url'
+import urlCalibriL          from '../../glyphs/fonts/Calibri/calibril.ttf?url'
+import urlCalibriBI         from '../../glyphs/fonts/Calibri/calibriz.ttf?url'
+import urlKhmerBursaR       from '../../glyphs/fonts/KhmerBursa/Mo5V56.ttf?url'
+import urlKhmerBursaB       from '../../glyphs/fonts/KhmerBursa/Mo8V56.ttf?url'
 
 const SERVER = 'http://localhost:3001'
 const LS_KEY = 'komnour:html'
 
-const DEFAULT_HTML = `<div style="padding: 48px; font-family: 'Noto Sans Khmer';">
+const TEMPLATES: { label: string; html: string }[] = [
+  {
+    label: 'Loan Agreement',
+    html: `<div style="padding: 48px; font-family: 'Noto Sans Khmer';">
   <div style="text-align: center; margin-bottom: 32px;">
     <div style="font-size: 22px; font-weight: bold; color: #1a1a2e;">
       កិច្ចសន្យាខ្ចីប្រាក់
     </div>
     <div style="font-size: 13px; color: #555; margin-top: 4px;">LOAN AGREEMENT CONTRACT</div>
   </div>
-
   <p style="font-size: 13px; line-height: 22px; margin-bottom: 16px; color: #333;">
-    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong> —
-    អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
+    ចំនួនប្រាក់កម្ចី: <strong>$12,000.00</strong> — អត្រាការប្រាក់: <span style="color: #c0392b;">1.5% / ខែ</span>
   </p>
-
   <ul style="margin-bottom: 24px; padding-left: 20px;">
     <li style="font-size: 13px; line-height: 22px; margin-bottom: 6px;">ត្រូវមានអត្តសញ្ញាណប័ណ្ណ</li>
     <li style="font-size: 13px; line-height: 22px; margin-bottom: 6px;">ត្រូវមានទ្រព្យជំហររ</li>
     <li style="font-size: 13px; line-height: 22px; color: #c0392b;">ការទូទាត់មុនថ្ងៃទី 1</li>
   </ul>
-
   <page-break></page-break>
-
   <p style="font-size: 13px; line-height: 22px; color: #333;">Page 2 content after break.</p>
-</div>`
+</div>`,
+  },
+  {
+    label: 'Invoice',
+    html: `<div style="padding: 48px; font-family: 'Inter', sans-serif;">
+  <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+    <div>
+      <div style="font-size: 24px; font-weight: bold; color: #0d1117;">INVOICE</div>
+      <div style="font-size: 12px; color: #666; margin-top: 4px;">#INV-2024-001</div>
+    </div>
+    <div style="text-align: right; font-size: 12px; color: #444;">
+      <div>Issued: Jan 1, 2024</div>
+      <div>Due: Jan 31, 2024</div>
+    </div>
+  </div>
+  <div style="display: flex; justify-content: space-between; margin-bottom: 32px; font-size: 13px;">
+    <div>
+      <div style="font-weight: bold; margin-bottom: 4px;">From</div>
+      <div>Acme Corp</div>
+      <div style="color: #666;">123 Main St, City</div>
+    </div>
+    <div style="text-align: right;">
+      <div style="font-weight: bold; margin-bottom: 4px;">Bill To</div>
+      <div>Client Name</div>
+      <div style="color: #666;">456 Other Ave, Town</div>
+    </div>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+    <tr style="background: #f6f8fa; font-weight: bold;">
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Description</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Qty</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Unit Price</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">Total</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Design Services</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">10</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$50.00</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$500.00</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8;">Development</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">20</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$80.00</td>
+      <td style="padding: 10px 12px; border: 1px solid #e1e4e8; text-align: right;">$1,600.00</td>
+    </tr>
+  </table>
+  <div style="text-align: right; font-size: 14px; font-weight: bold; color: #0d1117;">
+    Total: $2,100.00
+  </div>
+</div>`,
+  },
+  {
+    label: 'Report',
+    html: `<div style="padding: 48px; font-family: 'Inter', sans-serif; color: #24292f;">
+  <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 8px; color: #0d1117;">Monthly Report</h1>
+  <div style="font-size: 12px; color: #57606a; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #e1e4e8;">
+    January 2024 · Prepared by Finance Team
+  </div>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Executive Summary</h2>
+  <p style="font-size: 13px; line-height: 22px; margin-bottom: 24px; color: #444;">
+    This month saw a <strong>12% increase</strong> in revenue compared to the previous period,
+    driven primarily by new client acquisitions and expansion of existing accounts.
+  </p>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Key Metrics</h2>
+  <ul style="font-size: 13px; line-height: 24px; margin-bottom: 24px; padding-left: 20px;">
+    <li>Revenue: <strong>$84,500</strong> (+12%)</li>
+    <li>New Clients: <strong>8</strong></li>
+    <li>Retention Rate: <strong>94%</strong></li>
+    <li>Avg. Deal Size: <strong>$10,562</strong></li>
+  </ul>
+  <page-break></page-break>
+  <h2 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #0d1117;">Appendix</h2>
+  <p style="font-size: 13px; line-height: 22px; color: #444;">Detailed breakdown available on request.</p>
+</div>`,
+  },
+]
+
+const DEFAULT_HTML = TEMPLATES[0].html
 
 type Status = 'idle' | 'loading' | 'error'
 
 const css = String.raw
 
-// Inline global styles injected once
 const GLOBAL_STYLE = css`
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Inter', system-ui, sans-serif; background: #0d1117; color: #c9d1d9; height: 100vh; overflow: hidden; }
@@ -47,6 +144,232 @@ const GLOBAL_STYLE = css`
   @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 `
 
+// ── Block drag-and-drop outline ────────────────────────────────────────────
+type Block = { html: string; tagName: string; label: string }
+type ParsedHTML = { openTag: string; closeTag: string; blocks: Block[] }
+
+function parseHTMLBlocks(rawHtml: string): ParsedHTML | null {
+  try {
+    const doc = new DOMParser().parseFromString(rawHtml, 'text/html')
+    const root = doc.body.firstElementChild
+    if (!root) return null
+    const shell = (root.cloneNode(false) as Element).outerHTML
+    const openTag = shell.slice(0, shell.indexOf('>') + 1)
+    const closeTag = `</${root.tagName.toLowerCase()}>`
+    const blocks: Block[] = Array.from(root.children).map(el => ({
+      html: el.outerHTML,
+      tagName: el.tagName.toLowerCase(),
+      label: el.tagName.toLowerCase() === 'page-break'
+        ? '─── Page Break ───'
+        : (el.textContent?.trim().replace(/\s+/g, ' ').slice(0, 72) || `<${el.tagName.toLowerCase()}>`),
+    }))
+    return { openTag, closeTag, blocks }
+  } catch { return null }
+}
+
+function serializeHTMLBlocks({ openTag, closeTag }: ParsedHTML, blocks: Block[]): string {
+  return [openTag, ...blocks.map(b => '  ' + b.html), closeTag].join('\n')
+}
+
+function parseInlineStyle(openTag: string): React.CSSProperties {
+  const m = openTag.match(/style="([^"]*)"/)
+  if (!m) return {}
+  const out: Record<string, string> = {}
+  for (const decl of m[1].split(';')) {
+    const colon = decl.indexOf(':')
+    if (colon === -1) continue
+    const prop = decl.slice(0, colon).trim()
+    const val = decl.slice(colon + 1).trim()
+    if (prop && val) out[prop.replace(/-([a-z])/g, (_, l) => l.toUpperCase())] = val
+  }
+  return out as React.CSSProperties
+}
+
+// ── Interactive design canvas: drag blocks on the live DOM preview ──────────
+function DesignCanvas({ html, onChange }: { html: string; onChange: (html: string) => void }) {
+  const parsed = useMemo(() => parseHTMLBlocks(html), [html])
+  const rootStyle = useMemo(() => parsed ? parseInlineStyle(parsed.openTag) : {}, [parsed])
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
+  if (!parsed) return (
+    <div style={{ padding: 40, textAlign: 'center', color: '#484f58', fontSize: 12 }}>
+      Wrap content in a root &lt;div&gt; to enable design mode.
+    </div>
+  )
+
+  const handleDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) return
+    const next = [...parsed.blocks]
+    const [moved] = next.splice(dragIdx, 1)
+    next.splice(toIdx, 0, moved)
+    onChange(serializeHTMLBlocks(parsed, next))
+    setDragIdx(null)
+    setOverIdx(null)
+  }
+
+  return (
+    <div style={{ position: 'relative', marginLeft: 32 }}>
+      <div style={{
+        width: 794,
+        background: 'white',
+        boxSizing: 'border-box',
+        boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
+        borderRadius: 2,
+        ...rootStyle,
+      }}>
+        {parsed.blocks.map((block, i) => (
+          <div
+            key={i}
+            draggable
+            onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setDragIdx(i) }}
+            onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setOverIdx(i) }}
+            onDragLeave={e => {
+              // only clear if leaving to a non-child element
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverIdx(null)
+            }}
+            onDrop={() => handleDrop(i)}
+            onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx(null)}
+            style={{
+              position: 'relative',
+              opacity: dragIdx === i ? 0.25 : 1,
+              transition: 'opacity 0.1s',
+              outline: overIdx === i && dragIdx !== i ? '2px solid #58a6ff' : hoverIdx === i ? '1px dashed #30363d' : 'none',
+              outlineOffset: 2,
+              cursor: 'default',
+            }}
+          >
+            {/* Blue insertion line at top when dragging over */}
+            {overIdx === i && dragIdx !== i && (
+              <div style={{
+                position: 'absolute', top: -2, left: -8, right: -8, height: 2,
+                background: '#58a6ff', borderRadius: 1, zIndex: 20, pointerEvents: 'none',
+              }} />
+            )}
+
+            {/* Drag handle in the left gutter — appears on hover */}
+            {(hoverIdx === i || dragIdx === i) && (
+              <div
+                title="Drag to reorder"
+                style={{
+                  position: 'absolute', left: -28, top: '50%', transform: 'translateY(-50%)',
+                  width: 20, height: 20,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'grab', color: '#484f58', userSelect: 'none',
+                  background: '#161b22', border: '1px solid #30363d', borderRadius: 4,
+                }}
+              >
+                <svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor">
+                  <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+                  <circle cx="2" cy="7" r="1.5"/><circle cx="6" cy="7" r="1.5"/>
+                  <circle cx="2" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/>
+                </svg>
+              </div>
+            )}
+
+            <div dangerouslySetInnerHTML={{ __html: block.html }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const BLOCK_ICONS: Record<string, string> = {
+  p: 'P', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4',
+  div: '▭', ul: '≡', ol: '≡', table: '⊞', 'page-break': '╌', img: '▨',
+}
+
+function BlockOutline({ html, onChange }: { html: string; onChange: (html: string) => void }) {
+  const parsed = useMemo(() => parseHTMLBlocks(html), [html])
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+
+  if (!parsed) return (
+    <div style={{ padding: 24, color: '#484f58', fontSize: 12, textAlign: 'center', lineHeight: '20px' }}>
+      Wrap content in a root &lt;div&gt; to enable block editing.
+    </div>
+  )
+  if (!parsed.blocks.length) return (
+    <div style={{ padding: 24, color: '#484f58', fontSize: 12, textAlign: 'center' }}>No blocks found</div>
+  )
+
+  const handleDrop = (toIdx: number) => {
+    if (dragIdx === null || dragIdx === toIdx) return
+    const next = [...parsed.blocks]
+    const [moved] = next.splice(dragIdx, 1)
+    next.splice(toIdx, 0, moved)
+    onChange(serializeHTMLBlocks(parsed, next))
+    setDragIdx(null)
+    setOverIdx(null)
+  }
+
+  const onDragStart = (e: DragEvent, i: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    setDragIdx(i)
+  }
+  const onDragOver = (e: DragEvent, i: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setOverIdx(i)
+  }
+
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', padding: '10px 8px' }}>
+      <div style={{ fontSize: 10, color: '#3d444d', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 8px 8px' }}>
+        {parsed.blocks.length} blocks · drag to reorder
+      </div>
+      {parsed.blocks.map((block, i) => (
+        <div
+          key={i}
+          draggable
+          onDragStart={e => onDragStart(e, i)}
+          onDragOver={e => onDragOver(e, i)}
+          onDragLeave={() => setOverIdx(null)}
+          onDrop={() => handleDrop(i)}
+          onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+          style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            padding: '7px 10px', marginBottom: 4,
+            background: dragIdx === i ? '#161b22' : '#0d1117',
+            border: '1px solid',
+            borderColor: overIdx === i && dragIdx !== i ? '#58a6ff' : dragIdx === i ? '#30363d' : '#21262d',
+            borderRadius: 6, cursor: 'grab',
+            opacity: dragIdx === i ? 0.35 : 1,
+            transition: 'border-color 0.1s, opacity 0.12s',
+            userSelect: 'none',
+          }}
+        >
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="#30363d" style={{ flexShrink: 0, marginTop: 2 }}>
+            <circle cx="2" cy="2" r="1.5"/><circle cx="6" cy="2" r="1.5"/>
+            <circle cx="2" cy="7" r="1.5"/><circle cx="6" cy="7" r="1.5"/>
+            <circle cx="2" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/>
+          </svg>
+          <div style={{
+            flexShrink: 0, padding: '0 5px', minWidth: 24, height: 18,
+            background: '#161b22', border: '1px solid #30363d', borderRadius: 3,
+            fontSize: 9, fontWeight: 700, color: block.tagName === 'page-break' ? '#484f58' : '#7d8590',
+            fontFamily: 'monospace', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {BLOCK_ICONS[block.tagName] || block.tagName.slice(0, 3).toUpperCase()}
+          </div>
+          <div style={{
+            flex: 1, minWidth: 0, fontSize: 12, lineHeight: '18px',
+            color: block.tagName === 'page-break' ? '#3d444d' : '#7d8590',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontStyle: block.tagName === 'page-break' ? 'italic' : 'normal',
+          }}>
+            {block.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Figma-like zoom/pan canvas ─────────────────────────────────────────────
 function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNode; loading: boolean; onZoomChange?: (z: number) => void }) {
   const [zoom, setZoom] = useState(1)
@@ -56,7 +379,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
   const isPanning = useRef(false)
   const spaceDown = useRef(false)
   const panStart = useRef({ mx: 0, my: 0, px: 0, py: 0 })
-  // refs mirror state so wheel handler (added via addEventListener) always reads fresh values
   const zoomRef = useRef(1)
   const panRef = useRef({ x: 40, y: 40 })
 
@@ -70,7 +392,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
 
   const resetView = useCallback(() => applyZoom(1, { x: 40, y: 40 }), [applyZoom])
 
-  // Wheel: Ctrl/Meta+scroll or trackpad pinch → zoom; plain scroll → pan
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -98,7 +419,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
     return () => el.removeEventListener('wheel', handler)
   }, [applyZoom])
 
-  // Space key → grab cursor + enable pan
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'Space') return
@@ -149,7 +469,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
       onMouseLeave={onMouseUp}
       style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', cursor }}
     >
-      {/* Canvas content */}
       <div style={{
         position: 'absolute', top: 0, left: 0,
         transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -161,7 +480,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
         {children}
       </div>
 
-      {/* Zoom controls (bottom-right) */}
       <div style={{
         position: 'absolute', bottom: 14, right: 14,
         display: 'flex', alignItems: 'center', gap: 1,
@@ -187,7 +505,6 @@ function ZoomPane({ children, loading, onZoomChange }: { children: React.ReactNo
         >+</button>
       </div>
 
-      {/* Hint */}
       <div style={{
         position: 'absolute', bottom: 14, left: 14,
         fontSize: 10, color: '#30363d', userSelect: 'none', pointerEvents: 'none',
@@ -212,69 +529,48 @@ export default function App() {
   injectStyle(GLOBAL_STYLE)
 
   const [html, setHtml] = useState(() => localStorage.getItem(LS_KEY) ?? DEFAULT_HTML)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [format, setFormat] = useState<'png' | 'pdf'>('png')
-  const [showWarnings, setShowWarnings] = useState(false)
+  const [pages, setPages] = useState<string[]>([])     // canvas data URLs, one per page
+  const [fontsReady, setFontsReady] = useState(false)
   const [zoomPct, setZoomPct] = useState(100)
-  const [pages, setPages] = useState<string[]>([])   // base64 PNGs for PDF pages
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const prevUrlRef = useRef<string | null>(null)
+  const [serverUrl, setServerUrl] = useState(() => localStorage.getItem('komnour:server') ?? SERVER)
+  const [showServerConfig, setShowServerConfig] = useState(false)
+  const [serverUrlDraft, setServerUrlDraft] = useState(serverUrl)
+  const [routing, setRouting] = useState(false)
 
-  const render = useCallback(async (source: string, fmt: 'png' | 'pdf') => {
+  // Load fonts on mount — registers into document.fonts so both canvas and DOM preview have them
+  useEffect(() => {
+    Promise.all([
+      // Text fonts
+      browserRenderer.registerFont('Noto Sans Khmer', [notoKhmer400, notoKhmer700]),
+      browserRenderer.registerFont('Inter', [inter400]),
+      // Glyph / specialty fonts (mirrors what the server loads)
+      browserRenderer.registerFont('KhmerOSsiemreap',    [urlKhmerOSSiemreap]),
+      browserRenderer.registerFont('Kh-Siemreap',        [urlKhSiemreap]),
+      browserRenderer.registerFont('Khmer-OS-Muol-Light',[urlKhmerOSMuolLight]),
+      browserRenderer.registerFont('Wingdings2',         [urlWingdings2]),
+      browserRenderer.registerFont('Wingding',           [urlWingding]),
+      browserRenderer.registerFont('Calibri', [urlCalibriR, urlCalibriB, urlCalibriI, urlCalibriL, urlCalibriBI]),
+      browserRenderer.registerFont('KhmerBursa', [urlKhmerBursaR, urlKhmerBursaB]),
+    ]).then(() => setFontsReady(true)).catch(console.error)
+  }, [])
+
+  // Local render: HTML → sone syntax → eval with real builders → renderPages → data URLs
+  const renderLocal = useCallback(async (source: string) => {
     setStatus('loading')
     setError('')
     try {
-      if (fmt === 'pdf') {
-        const [sanRes, pagesRes] = await Promise.all([
-          fetch(`${SERVER}/sanitize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-          fetch(`${SERVER}/preview-pages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-        ])
-        const { warnings: w } = await sanRes.json()
-        setWarnings(w ?? [])
-        if (!pagesRes.ok) {
-          const { error: msg } = await pagesRes.json()
-          throw new Error(msg)
-        }
-        const { pages: p } = await pagesRes.json()
-        setPages(p ?? [])
-        setPreviewUrl(null)
-      } else {
-        const [sanRes, renderRes] = await Promise.all([
-          fetch(`${SERVER}/sanitize`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source }),
-          }),
-          fetch(`${SERVER}/render`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ html: source, format: fmt }),
-          }),
-        ])
-        const { warnings: w } = await sanRes.json()
-        setWarnings(w ?? [])
-        if (!renderRes.ok) {
-          const { error: msg } = await renderRes.json()
-          throw new Error(msg)
-        }
-        const blob = await renderRes.blob()
-        const url = URL.createObjectURL(blob)
-        if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current)
-        prevUrlRef.current = url
-        setPreviewUrl(url)
-        setPages([])
-      }
+      const syntax = htmlToSoneSyntax(source)
+      // eslint-disable-next-line no-new-func
+      const layout = new Function(
+        'Column', 'Row', 'Text', 'Span', 'PageBreak', 'Path', 'Photo',
+        `"use strict"; return (${syntax})`
+      )(Column, Row, Text, Span, PageBreak, Path, Photo)
+
+      const canvases = await renderPages(layout, browserRenderer, { pageHeight: 1123 })
+      setPages(canvases.map(c => c.toDataURL('image/png')))
       setStatus('idle')
     } catch (e: any) {
       setError(e.message)
@@ -282,20 +578,32 @@ export default function App() {
     }
   }, [])
 
+  // Debounce render on html change (waits for fonts first)
   useEffect(() => {
+    if (!fontsReady) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => render(html, format), 600)
+    debounceRef.current = setTimeout(() => renderLocal(html), 600)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [html, format, render])
+  }, [html, fontsReady, renderLocal])
 
   useEffect(() => { localStorage.setItem(LS_KEY, html) }, [html])
+
+  const [leftView, setLeftView] = useState<'code' | 'blocks'>('code')
+  const [view, setView] = useState<'preview' | 'design' | 'syntax'>('preview')
+  const syntax = useMemo(() => htmlToSoneSyntax(html, { preamble: true }), [html])
+  const [copied, setCopied] = useState(false)
+  const copySyntax = () => {
+    navigator.clipboard.writeText(syntax)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
 
   const [exporting, setExporting] = useState<'pdf' | 'png' | null>(null)
 
   const exportFile = async (fmt: 'pdf' | 'png') => {
     setExporting(fmt)
     try {
-      const res = await fetch(`${SERVER}/render`, {
+      const res = await fetch(`${serverUrl}/render`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html, format: fmt }),
@@ -309,6 +617,26 @@ export default function App() {
     } finally {
       setExporting(null)
     }
+  }
+
+  const routeToServer = async () => {
+    setRouting(true)
+    try {
+      await fetch(`${serverUrl}/document`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html }),
+      })
+    } finally {
+      setRouting(false)
+    }
+  }
+
+  const saveServerUrl = () => {
+    const url = serverUrlDraft.trim().replace(/\/$/, '')
+    setServerUrl(url)
+    localStorage.setItem('komnour:server', url)
+    setShowServerConfig(false)
   }
 
   const handleMonacoMount = (_: unknown, monaco: Monaco) => {
@@ -342,44 +670,31 @@ export default function App() {
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
-        {/* Format toggle */}
-        <div style={{ display: 'flex', background: '#161b22', borderRadius: 6, padding: 2, border: '1px solid #30363d' }}>
-          {(['png', 'pdf'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFormat(f)}
-              style={{
-                background: format === f ? '#21262d' : 'transparent',
-                color: format === f ? '#e6edf3' : '#7d8590',
-                border: 'none', borderRadius: 4,
-                padding: '3px 12px', fontSize: 11, fontWeight: 500,
-                cursor: 'pointer', transition: 'all 0.12s',
-                textTransform: 'uppercase', letterSpacing: '0.04em',
-              }}
-            >
-              {f}
-            </button>
-          ))}
+        {/* Template selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ color: '#484f58', flexShrink: 0 }}>
+            <rect x="0.5" y="0.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="6.5" y="0.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="0.5" y="6.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+            <rect x="6.5" y="6.5" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
+          </svg>
+          <select
+            value=""
+            onChange={e => { if (e.target.value) setHtml(e.target.value); e.target.value = '' }}
+            style={{
+              background: 'transparent', color: '#7d8590',
+              border: 'none', fontSize: 12, cursor: 'pointer',
+              outline: 'none', padding: '2px 0',
+            }}
+          >
+            <option value="" disabled>Templates</option>
+            {TEMPLATES.map(t => (
+              <option key={t.label} value={t.html}>{t.label}</option>
+            ))}
+          </select>
         </div>
 
         <div style={{ flex: 1 }} />
-
-        {/* Warnings badge */}
-        {warnings.length > 0 && (
-          <button
-            onClick={() => setShowWarnings(v => !v)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: '#2d2208', border: '1px solid #5a4a00',
-              borderRadius: 6, padding: '3px 10px',
-              color: '#f2cc60', fontSize: 11, cursor: 'pointer',
-              animation: 'fadein 0.2s ease',
-            }}
-          >
-            <span style={{ fontSize: 10 }}>⚠</span>
-            {warnings.length} {warnings.length === 1 ? 'warning' : 'warnings'}
-          </button>
-        )}
 
         {/* Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 90, justifyContent: 'flex-end' }}>
@@ -390,21 +705,23 @@ export default function App() {
             </svg>
           )}
           {status === 'error' && <span style={{ fontSize: 10 }}>⛔</span>}
-          {status === 'idle' && <span style={{ fontSize: 10, color: '#3db87a' }}>●</span>}
+          {status === 'idle' && !fontsReady && <span style={{ fontSize: 10, color: '#7d8590' }}>●</span>}
+          {status === 'idle' && fontsReady && <span style={{ fontSize: 10, color: '#3db87a' }}>●</span>}
           <span style={{
-            fontSize: 11, color: status === 'error' ? '#f85149' : status === 'loading' ? '#7d8590' : '#3db87a',
+            fontSize: 11, color: status === 'error' ? '#f85149' : status === 'loading' ? '#7d8590' : fontsReady ? '#3db87a' : '#7d8590',
           }}>
-            {status === 'loading' ? 'rendering…' : status === 'error' ? error.slice(0, 40) : 'ready'}
+            {!fontsReady ? 'loading fonts…' : status === 'loading' ? 'rendering…' : status === 'error' ? error.slice(0, 40) : 'ready'}
           </span>
         </div>
 
         <div style={{ width: 1, height: 20, background: '#21262d', margin: '0 4px' }} />
 
-        {/* Export buttons */}
+        {/* Export + Route buttons */}
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={() => exportFile('png')}
             disabled={exporting !== null}
+            title="Export PNG (requires server)"
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               background: 'transparent', color: '#7d8590',
@@ -425,6 +742,7 @@ export default function App() {
           <button
             onClick={() => exportFile('pdf')}
             disabled={exporting !== null}
+            title="Export PDF (requires server)"
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               background: '#1f6feb', color: '#ffffff',
@@ -442,27 +760,102 @@ export default function App() {
             }
             PDF
           </button>
+
+          <div style={{ width: 1, height: 20, background: '#21262d', alignSelf: 'center' }} />
+
+          {/* Route to server — placeholder */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={routeToServer}
+              disabled={routing}
+              title={`Send to ${serverUrl}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                background: 'transparent', color: '#7d8590',
+                border: '1px solid #30363d',
+                borderRadius: 6, padding: '5px 12px',
+                fontSize: 12, fontWeight: 500, cursor: routing ? 'wait' : 'pointer',
+                transition: 'all 0.12s',
+              }}
+              onMouseEnter={e => { if (!routing) { e.currentTarget.style.color = '#e6edf3'; e.currentTarget.style.borderColor = '#484f58' } }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#7d8590'; e.currentTarget.style.borderColor = '#30363d' }}
+            >
+              {routing
+                ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 1s linear infinite' }}><circle cx="6" cy="6" r="4.5" stroke="#30363d" strokeWidth="1.5" fill="none" /><path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="#7d8590" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+                : <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              }
+              Route
+            </button>
+          </div>
+
+          {/* Server config button */}
+          <button
+            onClick={() => { setServerUrlDraft(serverUrl); setShowServerConfig(v => !v) }}
+            title="Configure server URL"
+            style={{
+              display: 'flex', alignItems: 'center',
+              background: 'transparent', color: showServerConfig ? '#58a6ff' : '#484f58',
+              border: '1px solid ' + (showServerConfig ? '#388bfd40' : '#30363d'),
+              borderRadius: 6, padding: '5px 8px',
+              fontSize: 12, cursor: 'pointer',
+              transition: 'all 0.12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#e6edf3' }}
+            onMouseLeave={e => { e.currentTarget.style.color = showServerConfig ? '#58a6ff' : '#484f58' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="2" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M6 1v1M6 10v1M1 6h1M10 6h1M2.5 2.5l.7.7M8.8 8.8l.7.7M9.5 2.5l-.7.7M3.2 8.8l-.7.7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* ── Warnings panel ─────────────────────────────────────────────── */}
-      {showWarnings && warnings.length > 0 && (
+      {/* ── Server config popover ─────────────────────────────────────────── */}
+      {showServerConfig && (
         <div style={{
-          background: '#13110a', borderBottom: '1px solid #2d2208',
-          padding: '8px 16px', flexShrink: 0,
-          animation: 'fadein 0.15s ease',
+          position: 'fixed', top: 52, right: 16, zIndex: 100,
+          background: '#161b22', border: '1px solid #30363d',
+          borderRadius: 8, padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          minWidth: 280,
+          animation: 'fadein 0.1s ease',
         }}>
-          {warnings.slice(0, 5).map((w, i) => (
-            <div key={i} style={{ fontSize: 11, color: '#e6c84a', lineHeight: '20px', display: 'flex', gap: 8 }}>
-              <span style={{ color: '#5a4a00', flexShrink: 0 }}>⚠</span>
-              {w}
-            </div>
-          ))}
-          {warnings.length > 5 && (
-            <div style={{ fontSize: 11, color: '#7d8590', marginTop: 2 }}>
-              …and {warnings.length - 5} more
-            </div>
-          )}
+          <div style={{ fontSize: 11, color: '#7d8590', marginBottom: 2 }}>Server URL</div>
+          <input
+            autoFocus
+            value={serverUrlDraft}
+            onChange={e => setServerUrlDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') saveServerUrl(); if (e.key === 'Escape') setShowServerConfig(false) }}
+            placeholder="http://localhost:3001"
+            style={{
+              background: '#0d1117', border: '1px solid #30363d',
+              borderRadius: 6, padding: '6px 10px',
+              color: '#c9d1d9', fontSize: 12, outline: 'none',
+              fontFamily: "'JetBrains Mono', monospace",
+            }}
+          />
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setShowServerConfig(false)}
+              style={{
+                background: 'none', border: '1px solid #30363d', borderRadius: 5,
+                color: '#7d8590', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveServerUrl}
+              style={{
+                background: '#1f6feb', border: 'none', borderRadius: 5,
+                color: '#fff', fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       )}
 
@@ -472,158 +865,241 @@ export default function App() {
         {/* Editor panel */}
         <Panel defaultSize={50} minSize={20}>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* Editor tab bar */}
+
+            {/* Left panel tab bar */}
             <div style={{
-              display: 'flex', alignItems: 'center',
-              height: 35, background: '#010409',
-              borderBottom: '1px solid #21262d',
-              flexShrink: 0, paddingLeft: 12,
+              display: 'flex', alignItems: 'stretch', height: 35, flexShrink: 0,
+              background: '#010409', borderBottom: '1px solid #21262d',
             }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '0 12px', height: '100%',
-                borderRight: '1px solid #21262d',
-                color: '#c9d1d9', fontSize: 12,
-                background: '#0d1117',
-                borderTop: '2px solid #58a6ff',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.6 }}>
-                  <rect x="1" y="1" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="7" y="1" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="1" y="7" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                  <rect x="7" y="7" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" />
-                </svg>
-                document.html
-              </div>
+              {(['code', 'blocks'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setLeftView(v)}
+                  style={{
+                    background: leftView === v ? '#0d1117' : 'transparent',
+                    color: leftView === v ? '#c9d1d9' : '#484f58',
+                    border: 'none',
+                    borderTop: leftView === v ? '2px solid #58a6ff' : '2px solid transparent',
+                    borderRight: '1px solid #21262d',
+                    padding: '0 16px',
+                    fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    transition: 'color 0.12s', display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  {v === 'code' ? (
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ opacity: 0.7 }}>
+                      <polyline points="1,3 4,5.5 1,8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <line x1="5.5" y1="8" x2="10" y2="8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ opacity: 0.7 }}>
+                      <rect x="1" y="1" width="9" height="2.5" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                      <rect x="1" y="4.5" width="9" height="2.5" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                      <rect x="1" y="8" width="9" height="2" rx="0.5" stroke="currentColor" strokeWidth="1"/>
+                    </svg>
+                  )}
+                  {v}
+                </button>
+              ))}
             </div>
 
-            <Editor
-              height="calc(100% - 35px)"
-              defaultLanguage="html"
-              value={html}
-              onChange={v => setHtml(v ?? '')}
-              theme="komnour-dark"
-              onMount={handleMonacoMount}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                lineHeight: 22,
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
-                fontLigatures: true,
-                wordWrap: 'on',
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                tabSize: 2,
-                insertSpaces: true,
-                renderWhitespace: 'none',
-                smoothScrolling: true,
-                cursorBlinking: 'smooth',
-                cursorSmoothCaretAnimation: 'on',
-                bracketPairColorization: { enabled: true },
-                guides: { bracketPairs: true, indentation: true },
-                padding: { top: 16, bottom: 16 },
-                scrollbar: {
-                  verticalScrollbarSize: 6,
-                  horizontalScrollbarSize: 6,
-                  useShadows: false,
-                },
-                suggest: { showKeywords: false, preview: true },
-                overviewRulerLanes: 0,
-                hideCursorInOverviewRuler: true,
-                renderLineHighlight: 'gutter',
-                automaticLayout: true,
-              }}
-            />
+            {/* Left panel content */}
+            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+              {/* Monaco always rendered (but hidden when blocks view) to preserve editor state */}
+              <div style={{ position: 'absolute', inset: 0, display: leftView === 'code' ? 'block' : 'none' }}>
+                <Editor
+                  height="100%"
+                  defaultLanguage="html"
+                  value={html}
+                  onChange={v => setHtml(v ?? '')}
+                  theme="komnour-dark"
+                  onMount={handleMonacoMount}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                    lineHeight: 22,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
+                    fontLigatures: true,
+                    wordWrap: 'on',
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    tabSize: 2,
+                    insertSpaces: true,
+                    renderWhitespace: 'none',
+                    smoothScrolling: true,
+                    cursorBlinking: 'smooth',
+                    cursorSmoothCaretAnimation: 'on',
+                    bracketPairColorization: { enabled: true },
+                    guides: { bracketPairs: true, indentation: true },
+                    padding: { top: 16, bottom: 16 },
+                    scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6, useShadows: false },
+                    suggest: { showKeywords: false, preview: true },
+                    overviewRulerLanes: 0,
+                    hideCursorInOverviewRuler: true,
+                    renderLineHighlight: 'gutter',
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+              {leftView === 'blocks' && (
+                <div style={{ position: 'absolute', inset: 0, background: '#0d1117' }}>
+                  <BlockOutline html={html} onChange={setHtml} />
+                </div>
+              )}
+            </div>
           </div>
         </Panel>
 
         {/* ── Resize handle ──────────────────────────────────────────── */}
         <PanelResizeHandle style={{ width: 4, background: '#21262d', cursor: 'col-resize' }} />
 
-        {/* Preview panel */}
+        {/* Preview / Syntax panel */}
         <Panel defaultSize={50} minSize={20}>
           <div style={{
             height: '100%',
-            background: '#090c10',
-            backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-            display: 'flex', flexDirection: 'column',
+            background: view === 'syntax' ? '#0d1117' : '#090c10',
+            ...(view !== 'syntax' && {
+              backgroundImage: 'radial-gradient(circle, #21262d 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }),
+            display: 'flex', flexDirection: 'column', position: 'relative',
           }}>
-            {/* Preview header */}
+
+            {/* Tab bar */}
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 16px', height: 35, flexShrink: 0,
-              background: '#090c10cc',
-              backdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'stretch', height: 35, flexShrink: 0,
+              background: '#010409',
               borderBottom: '1px solid #21262d',
             }}>
-              <span style={{ fontSize: 11, color: '#484f58', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Preview · {format.toUpperCase()}
-              </span>
-              <span style={{ fontSize: 10, color: '#30363d' }}>794px wide</span>
+              {(['preview', 'design', 'syntax'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    background: view === v ? (v === 'syntax' ? '#0d1117' : '#090c10') : 'transparent',
+                    color: view === v ? '#c9d1d9' : '#484f58',
+                    border: 'none',
+                    borderTop: view === v ? '2px solid #58a6ff' : '2px solid transparent',
+                    borderRight: '1px solid #21262d',
+                    padding: '0 16px',
+                    fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    transition: 'color 0.12s',
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+
+              <div style={{ flex: 1 }} />
+
+              {view === 'preview' && (
+                <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+                  794px · canvas
+                </span>
+              )}
+              {view === 'design' && (
+                <span style={{ fontSize: 10, color: '#30363d', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+                  794px · drag to reorder
+                </span>
+              )}
+              {view === 'syntax' && (
+                <button
+                  onClick={copySyntax}
+                  style={{
+                    background: 'none', border: 'none',
+                    color: copied ? '#3db87a' : '#484f58',
+                    fontSize: 11, cursor: 'pointer', padding: '0 16px',
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    transition: 'color 0.15s',
+                  }}
+                >
+                  {copied
+                    ? <><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5 L4 8 L9.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> Copied</>
+                    : <><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="3.5" y="1" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1"/><rect x="1" y="3.5" width="6.5" height="7.5" rx="1" stroke="currentColor" strokeWidth="1" fill="#010409"/></svg> Copy</>
+                  }
+                </button>
+              )}
             </div>
 
-            {/* Preview content */}
-            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-              {/* Loading spinner (shown before first render) */}
-              {status === 'loading' && !previewUrl && pages.length === 0 && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 12, color: '#484f58', fontSize: 12, pointerEvents: 'none',
-                }}>
-                  <svg width="32" height="32" viewBox="0 0 32 32" style={{ animation: 'spin 1.2s linear infinite' }}>
-                    <circle cx="16" cy="16" r="12" stroke="#21262d" strokeWidth="3" fill="none" />
-                    <path d="M16 4 A12 12 0 0 1 28 16" stroke="#58a6ff" strokeWidth="3" fill="none" strokeLinecap="round" />
-                  </svg>
-                  rendering…
-                </div>
-              )}
-
-              {/* PNG or PDF: same Figma-like zoom/pan canvas */}
-              <ZoomPane loading={status === 'loading'} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
-                {/* Single PNG */}
-                {format === 'png' && previewUrl && (
-                  <img
-                    src={previewUrl}
-                    alt="preview"
-                    draggable={false}
-                    style={{
-                      display: 'block',
-                      boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
-                      borderRadius: 2,
-                    }}
-                  />
-                )}
-                {/* PDF pages stacked */}
-                {format === 'pdf' && pages.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    {pages.map((b64, i) => (
-                      <div key={i} style={{ position: 'relative' }}>
-                        <img
-                          src={`data:image/png;base64,${b64}`}
-                          alt={`page ${i + 1}`}
-                          draggable={false}
-                          style={{
-                            display: 'block',
-                            width: 794,   // rendered at 2× (1588px), shown at 1× CSS px → crisp
-                            boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)',
-                            borderRadius: 2,
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute', bottom: -14, right: 0,
-                          fontSize: 9, color: '#3d444d',
-                          userSelect: 'none', pointerEvents: 'none',
-                        }}>
-                          {i + 1} / {pages.length}
-                        </div>
-                      </div>
-                    ))}
+            {/* Content */}
+            {view === 'design' && (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ZoomPane loading={false} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
+                  <DesignCanvas html={html} onChange={setHtml} />
+                </ZoomPane>
+              </div>
+            )}
+            {view === 'preview' && (
+              <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                {status === 'loading' && pages.length === 0 && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 12, color: '#484f58', fontSize: 12, pointerEvents: 'none',
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 32 32" style={{ animation: 'spin 1.2s linear infinite' }}>
+                      <circle cx="16" cy="16" r="12" stroke="#21262d" strokeWidth="3" fill="none" />
+                      <path d="M16 4 A12 12 0 0 1 28 16" stroke="#58a6ff" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    </svg>
+                    rendering…
                   </div>
                 )}
-              </ZoomPane>
-            </div>
+                <ZoomPane loading={status === 'loading'} onZoomChange={z => setZoomPct(Math.round(z * 100))}>
+                  {pages.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                      {pages.map((url, i) => (
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img
+                            src={url}
+                            alt={`page ${i + 1}`}
+                            draggable={false}
+                            style={{ display: 'block', width: 794, boxShadow: '0 0 0 1px #21262d, 0 12px 48px rgba(0,0,0,0.7)', borderRadius: 2 }}
+                          />
+                          {pages.length > 1 && (
+                            <div style={{ position: 'absolute', bottom: -14, right: 0, fontSize: 9, color: '#3d444d', userSelect: 'none', pointerEvents: 'none' }}>
+                              {i + 1} / {pages.length}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ZoomPane>
+              </div>
+            )}
+            {view === 'syntax' && (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <Editor
+                  height="100%"
+                  language="typescript"
+                  value={syntax}
+                  theme="komnour-dark"
+                  onMount={(_, monaco) => setupMonaco(monaco)}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 20,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
+                    fontLigatures: true,
+                    wordWrap: 'off',
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    renderWhitespace: 'none',
+                    smoothScrolling: true,
+                    domReadOnly: true,
+                    cursorStyle: 'line',
+                    padding: { top: 16, bottom: 16 },
+                    scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6, useShadows: false },
+                    overviewRulerLanes: 0,
+                    renderLineHighlight: 'none',
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+            )}
           </div>
         </Panel>
 
@@ -636,15 +1112,22 @@ export default function App() {
         background: '#010409', borderTop: '1px solid #21262d',
         flexShrink: 0, gap: 16,
       }}>
-        {format === 'png' && (
+        {(view === 'preview' || view === 'design') && (
           <span style={{ fontSize: 10, color: '#484f58' }}>{zoomPct}%</span>
         )}
         <span style={{ fontSize: 10, color: '#30363d' }}>·</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>HTML</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>UTF-8</span>
-        <span style={{ fontSize: 10, color: '#484f58' }}>
-          {html.length.toLocaleString()} chars
-        </span>
+        {view === 'syntax' ? (
+          <>
+            <span style={{ fontSize: 10, color: '#484f58' }}>TypeScript</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>{syntax.length.toLocaleString()} chars</span>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 10, color: '#484f58' }}>HTML</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>UTF-8</span>
+            <span style={{ fontSize: 10, color: '#484f58' }}>{html.length.toLocaleString()} chars</span>
+          </>
+        )}
       </div>
     </div>
   )
