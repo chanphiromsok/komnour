@@ -9,10 +9,13 @@
   "dependencies": {
     "@fastify/cors": "^10.0.0",
     "@komnour/core": "workspace:*",
+    "@komnour/report": "workspace:*",
     "fastify": "^5.0.0",
     "sone": "^1.4.0"
   },
   "devDependencies": {
-    "tsx": "^4.0.0"
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^22.10.2"
   }
 }

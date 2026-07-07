@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import { join } from "node:path";
 import { renderToBuffer, renderToPages, sanitize } from "@komnour/core";
 import { Font } from "sone";
+import { registerReportRoutes } from "./reportRoutes";
 
 const glyphFonts = join(import.meta.dirname, "../../glyphs/fonts");
 
@@ -13,6 +14,7 @@ Font.load("Wingdings2",      join(glyphFonts, "KhmerWing2/wingdings2.ttf"));
 
 const app = Fastify({ logger: false });
 app.register(cors, { origin: true });
+registerReportRoutes(app);
 app.get("/health", async () => ({ ok: true }));
 
 // POST /render  body: { html, format? }  → image/png or application/pdf

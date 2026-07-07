@@ -1,0 +1,15 @@
+{
+  "name": "@komnour/report",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "canvaskit-wasm": "^0.41.1",
+    "skia-canvas": "^3.0.8",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.0.0"
+  }
+}
