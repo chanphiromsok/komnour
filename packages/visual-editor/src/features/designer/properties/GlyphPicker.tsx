@@ -1,11 +1,16 @@
+import { SYMBOL_GLYPH_RANGE } from "@komnour/report/src/fonts/manifest";
+
 /**
- * A grid of characters rendered in a symbol font (e.g. Wingdings 2), where each
- * Latin character maps to a symbol. Clicking a cell inserts that character into
- * the text node; the canvas then renders it as the corresponding symbol because
- * the node uses the same font family. Covers the printable ASCII range, which
- * is where dingbat fonts place their glyphs.
+ * A grid of the symbols in a symbol font (e.g. Wingdings 2). Each cell is a
+ * Private Use Area code point (see SYMBOL_GLYPH_RANGE); clicking inserts that
+ * code point into the text node — not the legacy ASCII alias — so the stored
+ * content is the symbol itself. The canvas and PDF/PNG export shape it through
+ * the font's symbol cmap, matching the preview here.
  */
-const GLYPH_CODES = Array.from({ length: 0x7e - 0x21 + 1 }, (_, i) => 0x21 + i);
+const GLYPH_CODEPOINTS = Array.from(
+	{ length: SYMBOL_GLYPH_RANGE.end - SYMBOL_GLYPH_RANGE.start + 1 },
+	(_, i) => SYMBOL_GLYPH_RANGE.start + i,
+);
 
 export function GlyphPicker({
 	fontFamily,
@@ -18,13 +23,14 @@ export function GlyphPicker({
 		<div className="flex flex-col gap-1 text-neutral-500 text-xs dark:text-neutral-400">
 			Glyphs
 			<div className="grid max-h-48 grid-cols-6 gap-1 overflow-auto rounded border border-neutral-200 p-1 dark:border-neutral-700">
-				{GLYPH_CODES.map((code) => {
-					const char = String.fromCharCode(code);
+				{GLYPH_CODEPOINTS.map((code) => {
+					const char = String.fromCodePoint(code);
+					const hex = code.toString(16).toUpperCase().padStart(4, "0");
 					return (
 						<button
 							key={code}
 							type="button"
-							title={`Insert '${char}' (U+${code.toString(16).toUpperCase().padStart(4, "0")})`}
+							title={`Insert U+${hex}`}
 							onClick={() => onInsert(char)}
 							// Quote the family: an unquoted CSS family token can't start
 							// with a digit (e.g. "Wingdings 2"), so it must be quoted.

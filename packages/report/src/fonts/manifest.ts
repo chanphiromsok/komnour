@@ -75,3 +75,13 @@ export const FONT_MANIFEST: FontDefinition[] = [
 
 /** Font families whose characters are symbols/dingbats — the glyph picker is offered for these. */
 export const SYMBOL_FONT_FAMILIES: readonly string[] = ["Wingdings 2"];
+
+/**
+ * Legacy symbol fonts (Wingdings/Webdings families) expose their glyphs through
+ * a Windows "Symbol" cmap in the Private Use Area at U+F020–U+F0FF, in parallel
+ * with a raw-ASCII cmap. The glyph picker inserts these PUA code points rather
+ * than the ASCII aliases so the stored text is unambiguously a symbol (it
+ * survives font changes as tofu instead of decoding to Latin letters), and both
+ * skia-canvas and CanvasKit shape it via the symbol cmap. U+F020 is space.
+ */
+export const SYMBOL_GLYPH_RANGE = { start: 0xf021, end: 0xf0ff } as const;
