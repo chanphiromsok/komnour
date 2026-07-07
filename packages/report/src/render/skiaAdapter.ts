@@ -113,18 +113,20 @@ export class SkiaAdapter implements RendererAdapter {
 		}
 	}
 
-	drawCircle(radius: number, opts: CircleOptions): void {
+	drawEllipse(width: number, height: number, opts: CircleOptions): void {
 		const ctx = this.context;
+		const rx = width / 2;
+		const ry = height / 2;
 		if (opts.fill) {
 			ctx.fillStyle = opts.fill.color;
 			ctx.beginPath();
-			ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.fill();
 		}
 		if (opts.stroke) {
 			this.applyStroke(opts.stroke);
 			ctx.beginPath();
-			ctx.arc(radius, radius, radius, 0, Math.PI * 2);
+			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.stroke();
 		}
 	}

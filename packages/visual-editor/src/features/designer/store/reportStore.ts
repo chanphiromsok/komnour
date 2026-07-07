@@ -41,8 +41,13 @@ export interface DesignerState {
 	zoom: number;
 	pan: { x: number; y: number };
 	history: { past: HistoryEntry[]; future: HistoryEntry[] };
+	/** JSON data used to resolve `{{path}}` bindings in text nodes (preview + exports). */
+	bindingData: Record<string, unknown> | null;
 
 	setActivePageId: (pageId: NodeId) => void;
+	setBindingData: (data: Record<string, unknown> | null) => void;
+	/** Replaces the whole document (e.g. JSON import) and resets selection/history/view. */
+	loadDocument: (document: ReportDocument) => void;
 	setSelection: (ids: NodeId[]) => void;
 	toggleSelection: (id: NodeId) => void;
 	clearSelection: () => void;
@@ -106,10 +111,20 @@ export const useDesignerStore = create<DesignerState>()((set, get) => {
 		zoom: 1,
 		pan: { x: 0, y: 0 },
 		history: { past: [], future: [] },
+		bindingData: null,
 		verify: { status: "idle", pngDataUrl: null },
 
-		setActivePageId: (pageId) =>
-			set({ activePageId: pageId, selection: [], pan: { x: 0, y: 0 } }),
+		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
+		setBindingData: (data) => set({ bindingData: data }),
+		loadDocument: (document) =>
+			set({
+				document,
+				activePageId: document.pages[0] ?? null,
+				selection: [],
+				history: { past: [], future: [] },
+				pan: { x: 0, y: 0 },
+				zoom: 1,
+			}),
 		setSelection: (ids) => set({ selection: ids }),
 		toggleSelection: (id) =>
 			set((state) => ({
@@ -173,7 +188,14 @@ export const useDesignerStore = create<DesignerState>()((set, get) => {
 				}
 				Object.assign(draft, next);
 			});
-			set({ selection: [] });
+			const { document, activePageId } = get();
+			set({
+				selection: [],
+				activePageId:
+					activePageId && document.nodes[activePageId]
+						? activePageId
+						: (document.pages[0] ?? null),
+			});
 		},
 
 		duplicateNodes: (ids) => {
@@ -243,7 +265,11 @@ export const useDesignerStore = create<DesignerState>()((set, get) => {
 				const response = await fetch(`${API_BASE_URL}/report/export/png`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ document: state.document, pageIndex }),
+					body: JSON.stringify({
+						document: state.document,
+						pageIndex,
+						data: state.bindingData ?? undefined,
+					}),
 				});
 				if (!response.ok) {
 					throw new Error(`Verify render failed: ${response.status}`);

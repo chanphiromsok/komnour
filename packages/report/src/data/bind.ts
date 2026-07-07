@@ -1,10 +1,40 @@
 import type { ReportDocument } from "../model/types";
 
-// Phase 4: resolve `{{path}}` expressions in text nodes against `data`.
-// No-op passthrough until then so the renderer's `data` param is already wired.
+const BINDING_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
+
+/** Walks `data` along a dot path like "customer.address.city". Array indices work as plain segments ("items.0.name"). */
+function lookupPath(data: Record<string, unknown>, path: string): unknown {
+	let current: unknown = data;
+	for (const segment of path.split(".")) {
+		if (current === null || typeof current !== "object") return undefined;
+		current = (current as Record<string, unknown>)[segment];
+	}
+	return current;
+}
+
+/**
+ * Resolves `{{path}}` expressions in text nodes against `data`. Unresolved
+ * paths (undefined/null) are left as-is so missing bindings stay visible
+ * in the output instead of silently disappearing. Returns the same document
+ * instance when nothing matched.
+ */
 export function resolveBindings(
 	doc: ReportDocument,
-	_data: Record<string, unknown>,
+	data: Record<string, unknown>,
 ): ReportDocument {
-	return doc;
+	let changed = false;
+	const nodes: ReportDocument["nodes"] = { ...doc.nodes };
+	for (const [id, node] of Object.entries(doc.nodes)) {
+		if (node.type !== "text") continue;
+		const text = node.text.replace(BINDING_PATTERN, (match, path: string) => {
+			const value = lookupPath(data, path.trim());
+			if (value === undefined || value === null) return match;
+			return typeof value === "object" ? JSON.stringify(value) : String(value);
+		});
+		if (text !== node.text) {
+			nodes[id] = { ...node, text };
+			changed = true;
+		}
+	}
+	return changed ? { ...doc, nodes } : doc;
 }

@@ -117,7 +117,13 @@ async function drawNodeContent(
 			});
 			return;
 		case "circle":
-			adapter.drawCircle(node.radius, { fill: node.fill, stroke: node.stroke });
+			// Frame-driven so the shape resizes with its frame (a square frame is
+			// a circle, a non-square frame an ellipse). The legacy `radius` field
+			// is ignored for rendering.
+			adapter.drawEllipse(node.frame.width, node.frame.height, {
+				fill: node.fill,
+				stroke: node.stroke,
+			});
 			return;
 		case "line":
 			adapter.drawLine(node.x1, node.y1, node.x2, node.y2, node.stroke);

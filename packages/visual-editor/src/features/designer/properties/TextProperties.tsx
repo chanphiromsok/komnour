@@ -1,3 +1,4 @@
+import { BindingTextarea } from "#/features/designer/bindings/BindingTextarea";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
 import type { NodeId, TextNode } from "@komnour/report/src/model/types";
 import { NumberField } from "./NumberField";
@@ -17,11 +18,11 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 		<div className="flex flex-col gap-3">
 			<label className="flex flex-col gap-1 text-neutral-500 text-xs">
 				Content
-				<textarea
+				<BindingTextarea
 					value={node.text}
-					onChange={(event) => updateNode(nodeId, { text: event.target.value })}
+					onValueChange={(text) => updateNode(nodeId, { text })}
 					rows={3}
-					className="rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
+					className="w-full rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
 				/>
 			</label>
 

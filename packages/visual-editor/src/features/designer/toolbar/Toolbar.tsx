@@ -1,8 +1,12 @@
 import {
+	Braces,
+	Check,
 	Circle,
+	ClipboardCopy,
 	Copy,
 	FileDown,
 	FileJson,
+	FileUp,
 	Hand,
 	Image,
 	Loader2,
@@ -18,7 +22,9 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { DataBindingDialog } from "#/features/designer/dialogs/DataBindingDialog";
+import { ImportJsonDialog } from "#/features/designer/dialogs/ImportJsonDialog";
 import {
 	createCircleNode,
 	createImageNode,
@@ -52,9 +58,27 @@ export function Toolbar() {
 	const verify = useDesignerStore((s) => s.verify);
 	const runVerifyRender = useDesignerStore((s) => s.runVerifyRender);
 	const clearVerify = useDesignerStore((s) => s.clearVerify);
+	const bindingData = useDesignerStore((s) => s.bindingData);
 
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
+	const [importOpen, setImportOpen] = useState(false);
+	const [dataOpen, setDataOpen] = useState(false);
+	const [copied, setCopied] = useState(false);
+	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	async function handleCopyJson() {
+		try {
+			await navigator.clipboard.writeText(
+				JSON.stringify(reportDocument, null, 2),
+			);
+			setCopied(true);
+			if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current);
+			copiedTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+		} catch (error) {
+			setExportError(error instanceof Error ? error.message : String(error));
+		}
+	}
 
 	async function handleExportPdf() {
 		setExportingPdf(true);
@@ -63,7 +87,10 @@ export function Toolbar() {
 			const response = await fetch(`${API_BASE_URL}/report/export/pdf`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ document: reportDocument }),
+				body: JSON.stringify({
+					document: reportDocument,
+					data: bindingData ?? undefined,
+				}),
 			});
 			if (!response.ok) {
 				throw new Error(`Export failed: ${response.status}`);
@@ -248,6 +275,35 @@ export function Toolbar() {
 			>
 				<FileJson size={16} />
 			</ToolbarButton>
+			<ToolbarButton
+				label={copied ? "Copied!" : "Copy document JSON"}
+				onClick={handleCopyJson}
+			>
+				{copied ? (
+					<Check size={16} className="text-green-600" />
+				) : (
+					<ClipboardCopy size={16} />
+				)}
+			</ToolbarButton>
+			<ToolbarButton
+				label="Import document JSON"
+				onClick={() => setImportOpen(true)}
+			>
+				<FileUp size={16} />
+			</ToolbarButton>
+			<ToolbarButton
+				active={bindingData !== null}
+				label={
+					bindingData !== null
+						? "Data binding (active)"
+						: "Data binding ({{path}} placeholders)"
+				}
+				onClick={() => setDataOpen(true)}
+			>
+				<Braces size={16} />
+			</ToolbarButton>
+			{importOpen && <ImportJsonDialog onClose={() => setImportOpen(false)} />}
+			{dataOpen && <DataBindingDialog onClose={() => setDataOpen(false)} />}
 			{exportError && (
 				<span
 					className="max-w-48 truncate text-red-600 text-xs"

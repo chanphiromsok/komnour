@@ -48,7 +48,8 @@ export interface RendererAdapter {
 	clipRect(width: number, height: number, radius?: number): void;
 
 	drawRect(width: number, height: number, opts: RectOptions): void;
-	drawCircle(radius: number, opts: CircleOptions): void;
+	/** Draws an ellipse filling the box (0,0,width,height); a square box yields a circle. */
+	drawEllipse(width: number, height: number, opts: CircleOptions): void;
 	drawLine(
 		x1: number,
 		y1: number,

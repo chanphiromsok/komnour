@@ -136,15 +136,16 @@ export class CanvasAdapter implements RendererAdapter {
 		}
 	}
 
-	drawCircle(radius: number, opts: CircleOptions): void {
+	drawEllipse(width: number, height: number, opts: CircleOptions): void {
+		const oval = this.canvasKit.XYWHRect(0, 0, width, height);
 		if (opts.fill) {
 			const paint = this.makeFillPaint(opts.fill);
-			this.canvas.drawCircle(radius, radius, radius, paint);
+			this.canvas.drawOval(oval, paint);
 			paint.delete();
 		}
 		if (opts.stroke) {
 			const paint = this.makeStrokePaint(opts.stroke);
-			this.canvas.drawCircle(radius, radius, radius, paint);
+			this.canvas.drawOval(oval, paint);
 			paint.delete();
 		}
 	}

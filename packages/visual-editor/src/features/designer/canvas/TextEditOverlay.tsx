@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BindingTextarea } from "#/features/designer/bindings/BindingTextarea";
 import type { TextStyle } from "@komnour/report/src/model/types";
 import type { AbsoluteFrame } from "./geometry";
 
@@ -25,6 +26,7 @@ export function TextEditOverlay({
 	onCancel,
 }: TextEditOverlayProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const [value, setValue] = useState(initialValue);
 
 	useEffect(() => {
 		const textarea = textareaRef.current;
@@ -34,13 +36,16 @@ export function TextEditOverlay({
 	}, []);
 
 	return (
-		<textarea
-			ref={textareaRef}
-			defaultValue={initialValue}
+		<BindingTextarea
+			textareaRef={textareaRef}
+			value={value}
+			onValueChange={setValue}
 			onClick={(event) => event.stopPropagation()}
 			onPointerDown={(event) => event.stopPropagation()}
 			onKeyDown={(event) => {
 				event.stopPropagation();
+				// Enter only reaches here when the autocomplete dropdown is closed
+				// (BindingTextarea consumes Enter to accept a suggestion otherwise).
 				if (event.key === "Escape") {
 					event.preventDefault();
 					onCancel();
@@ -50,12 +55,15 @@ export function TextEditOverlay({
 				}
 			}}
 			onBlur={(event) => onCommit(event.currentTarget.value)}
-			className="absolute resize-none overflow-hidden border border-blue-500 bg-white/95 outline-none"
-			style={{
+			className="h-full w-full resize-none overflow-hidden border border-blue-500 bg-white/95 outline-none"
+			containerClassName="absolute"
+			containerStyle={{
 				left: frame.x,
 				top: frame.y,
 				width: frame.width,
 				height: frame.height,
+			}}
+			style={{
 				fontFamily: style.fontFamily,
 				fontSize: style.fontSize,
 				fontWeight: style.fontWeight,

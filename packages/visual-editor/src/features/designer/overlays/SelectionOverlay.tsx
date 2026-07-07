@@ -1,7 +1,8 @@
 import { getAbsoluteFrame } from "#/features/designer/canvas/geometry";
 import type { NodeId, ReportDocument } from "@komnour/report/src/model/types";
 
-type ResizeEdge = "right" | "bottom" | "corner";
+/** Which frame edges a handle drives. "n"/"s" move top/bottom, "e"/"w" move right/left. */
+export type ResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 interface SelectionOverlayProps {
 	document: ReportDocument;
@@ -14,7 +15,21 @@ interface SelectionOverlayProps {
 	) => void;
 }
 
-const HANDLE_SIZE = 8;
+/** Visible dot size, in screen px (kept constant across zoom). */
+const HANDLE_SIZE = 9;
+/** Transparent grab area around each dot — a much larger hit target than the dot. */
+const HIT_SIZE = 20;
+
+const HANDLES: { edge: ResizeEdge; fx: number; fy: number; cursor: string }[] = [
+	{ edge: "nw", fx: 0, fy: 0, cursor: "nwse-resize" },
+	{ edge: "n", fx: 0.5, fy: 0, cursor: "ns-resize" },
+	{ edge: "ne", fx: 1, fy: 0, cursor: "nesw-resize" },
+	{ edge: "e", fx: 1, fy: 0.5, cursor: "ew-resize" },
+	{ edge: "se", fx: 1, fy: 1, cursor: "nwse-resize" },
+	{ edge: "s", fx: 0.5, fy: 1, cursor: "ns-resize" },
+	{ edge: "sw", fx: 0, fy: 1, cursor: "nesw-resize" },
+	{ edge: "w", fx: 0, fy: 0.5, cursor: "ew-resize" },
+];
 
 export function SelectionOverlay({
 	document,
@@ -41,35 +56,19 @@ export function SelectionOverlay({
 								height: frame.height,
 							}}
 						/>
-						{showHandles && (
-							<>
+						{showHandles &&
+							HANDLES.map((handle) => (
 								<ResizeHandle
-									cursor="ew-resize"
-									x={frame.x + frame.width}
-									y={frame.y + frame.height / 2}
+									key={handle.edge}
+									cursor={handle.cursor}
+									x={frame.x + frame.width * handle.fx}
+									y={frame.y + frame.height * handle.fy}
 									zoom={zoom}
-									onPointerDown={(e) => onHandlePointerDown(nodeId, "right", e)}
-								/>
-								<ResizeHandle
-									cursor="ns-resize"
-									x={frame.x + frame.width / 2}
-									y={frame.y + frame.height}
-									zoom={zoom}
-									onPointerDown={(e) =>
-										onHandlePointerDown(nodeId, "bottom", e)
+									onPointerDown={(event) =>
+										onHandlePointerDown(nodeId, handle.edge, event)
 									}
 								/>
-								<ResizeHandle
-									cursor="nwse-resize"
-									x={frame.x + frame.width}
-									y={frame.y + frame.height}
-									zoom={zoom}
-									onPointerDown={(e) =>
-										onHandlePointerDown(nodeId, "corner", e)
-									}
-								/>
-							</>
-						)}
+							))}
 					</div>
 				);
 			})}
@@ -90,20 +89,27 @@ function ResizeHandle({
 	cursor: string;
 	onPointerDown: (event: React.PointerEvent) => void;
 }) {
+	// A transparent HIT_SIZE grab box (easy to hit) wraps a small visible dot.
+	// Both counter-scale by 1/zoom so their on-screen size is constant.
 	return (
 		<div
-			className="pointer-events-auto absolute rounded-sm border border-blue-500 bg-white"
+			className="pointer-events-auto absolute flex items-center justify-center"
 			style={{
 				left: x,
 				top: y,
-				width: HANDLE_SIZE,
-				height: HANDLE_SIZE,
-				marginLeft: -HANDLE_SIZE / 2,
-				marginTop: -HANDLE_SIZE / 2,
+				width: HIT_SIZE,
+				height: HIT_SIZE,
+				marginLeft: -HIT_SIZE / 2,
+				marginTop: -HIT_SIZE / 2,
 				cursor,
 				transform: `scale(${1 / zoom})`,
 			}}
 			onPointerDown={onPointerDown}
-		/>
+		>
+			<div
+				className="rounded-sm border border-blue-500 bg-white"
+				style={{ width: HANDLE_SIZE, height: HANDLE_SIZE }}
+			/>
+		</div>
 	);
 }
