@@ -816,30 +816,106 @@ function PageCanvas({
 	// make.
 	const settledZoom = useDebouncedValue(zoom, ZOOM_RESIZE_DEBOUNCE_MS);
 
+	// Kept fresh on every render (not an effect dependency) so the resize
+	// effect below can render "whatever the document currently is" without
+	// re-running itself whenever content changes — that's the general render
+	// effect's job, on the existing surface, with no resize involved.
+	const latestRenderInputsRef = useRef({ document, pageId, bindingData });
+	latestRenderInputsRef.current = { document, pageId, bindingData };
+
 	useEffect(() => {
 		const canvasEl = canvasRef.current;
 		if (!canvasEl || !engine) return;
-		const dpr = window.devicePixelRatio || 1;
-		const scale = Math.min(dpr * settledZoom, MAX_RENDER_SCALE);
-		canvasEl.width = width * scale;
-		canvasEl.height = height * scale;
-		const surface = engine.canvasKit.MakeCanvasSurface(canvasEl);
-		if (!surface) {
-			onError("Failed to create CanvasKit surface");
-			return;
+		let cancelled = false;
+		let ownSurface: Surface | null = null;
+
+		async function buildAndSwap() {
+			const dpr = window.devicePixelRatio || 1;
+			const scale = Math.min(dpr * settledZoom, MAX_RENDER_SCALE);
+
+			// Resizing the *visible* canvas's width/height clears it to blank
+			// synchronously (an HTML canvas spec requirement), but the redraw
+			// (renderDocument) is async — image decode, etc. — so doing that
+			// resize before the new frame is ready left a real window where the
+			// visible canvas sat blank, seen as a flicker on every zoom-driven
+			// resize. Rendering the frame on a hidden canvas first and blitting
+			// the finished result onto the visible one in one uninterrupted
+			// synchronous step means the visible canvas only ever goes directly
+			// from "old frame" to "new, complete frame" — never through blank.
+			const offscreenEl = window.document.createElement("canvas");
+			offscreenEl.width = width * scale;
+			offscreenEl.height = height * scale;
+			const offscreenSurface = engine.canvasKit.MakeCanvasSurface(offscreenEl);
+			if (!offscreenSurface) {
+				onError("Failed to create CanvasKit surface");
+				return;
+			}
+			const offscreenAdapter = new CanvasAdapter(
+				engine.canvasKit,
+				offscreenSurface,
+				engine.fontMgr,
+				scale,
+			);
+			const { document: currentDocument, pageId: currentPageId, bindingData: currentBindingData } =
+				latestRenderInputsRef.current;
+			const pageDocument = extractPageDocument(currentDocument, currentPageId);
+			try {
+				await renderDocument(
+					pageDocument,
+					offscreenAdapter,
+					currentBindingData ?? undefined,
+					{ resolveAsset: resolveAssetBrowser, shouldAbort: () => cancelled },
+				);
+			} catch (err) {
+				offscreenSurface.delete();
+				if (!cancelled) onError(err instanceof Error ? err.message : String(err));
+				return;
+			}
+			if (cancelled) {
+				offscreenSurface.delete();
+				return;
+			}
+
+			const snapshot = offscreenSurface.makeImageSnapshot();
+			canvasEl.width = width * scale;
+			canvasEl.height = height * scale;
+			const surface = engine.canvasKit.MakeCanvasSurface(canvasEl);
+			if (!surface) {
+				snapshot.delete();
+				offscreenSurface.delete();
+				onError("Failed to create CanvasKit surface");
+				return;
+			}
+			const rect = engine.canvasKit.XYWHRect(0, 0, width * scale, height * scale);
+			const paint = new engine.canvasKit.Paint();
+			surface.getCanvas().drawImageRect(snapshot, rect, rect, paint, true);
+			surface.flush();
+			paint.delete();
+			snapshot.delete();
+			offscreenSurface.delete();
+
+			ownSurface = surface;
+			surfaceRef.current = surface;
+			adapterRef.current = new CanvasAdapter(
+				engine.canvasKit,
+				surface,
+				engine.fontMgr,
+				scale,
+			);
+			setSurfaceGeneration((generation) => generation + 1);
 		}
-		surfaceRef.current = surface;
-		adapterRef.current = new CanvasAdapter(
-			engine.canvasKit,
-			surface,
-			engine.fontMgr,
-			scale,
-		);
-		setSurfaceGeneration((generation) => generation + 1);
+
+		buildAndSwap().catch((err) => {
+			if (!cancelled) onError(err instanceof Error ? err.message : String(err));
+		});
+
 		return () => {
-			surface.delete();
-			surfaceRef.current = null;
-			adapterRef.current = null;
+			cancelled = true;
+			if (ownSurface) {
+				ownSurface.delete();
+				if (surfaceRef.current === ownSurface) surfaceRef.current = null;
+				adapterRef.current = null;
+			}
 		};
 	}, [engine, width, height, onError, settledZoom]);
 
