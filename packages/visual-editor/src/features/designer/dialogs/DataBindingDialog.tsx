@@ -5,6 +5,12 @@ import { DialogShell } from "./DialogShell";
 export function DataBindingDialog({ onClose }: { onClose: () => void }) {
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const setBindingData = useDesignerStore((s) => s.setBindingData);
+	const boundFieldIndicatorColor = useDesignerStore(
+		(s) => s.boundFieldIndicatorColor,
+	);
+	const setBoundFieldIndicatorColor = useDesignerStore(
+		(s) => s.setBoundFieldIndicatorColor,
+	);
 	const [text, setText] = useState(() =>
 		bindingData ? JSON.stringify(bindingData, null, 2) : "",
 	);
@@ -47,6 +53,24 @@ export function DataBindingDialog({ onClose }: { onClose: () => void }) {
 				className="h-48 w-full resize-none rounded border border-neutral-300 p-2 font-mono text-xs focus:border-blue-400 focus:outline-none"
 			/>
 			{error && <p className="text-red-600 text-xs">{error}</p>}
+
+			<label className="flex items-center justify-between gap-2 border-neutral-200 border-t pt-3 text-neutral-500 text-xs dark:border-neutral-700">
+				<span>
+					Bound-field tick color (editor only)
+					<br />
+					<span className="text-neutral-400">
+						Marks data-driven checkboxes on the canvas — applies across every
+						document, and never appears in exported PDF/PNG.
+					</span>
+				</span>
+				<input
+					type="color"
+					value={boundFieldIndicatorColor}
+					onChange={(event) => setBoundFieldIndicatorColor(event.target.value)}
+					className="h-8 w-8 shrink-0 rounded border border-neutral-300"
+				/>
+			</label>
+
 			<div className="flex items-center justify-between">
 				<button
 					type="button"

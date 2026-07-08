@@ -130,6 +130,12 @@ export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 					}
 					className="h-8 w-full rounded border border-neutral-300"
 				/>
+				{isBound && (
+					<span className="text-neutral-400">
+						Used in exported PDF/PNG. The canvas shows the editor's bound-field
+						indicator color instead while bound (set in Data binding).
+					</span>
+				)}
 			</label>
 		</div>
 	);

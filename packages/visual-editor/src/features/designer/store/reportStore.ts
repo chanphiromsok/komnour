@@ -31,6 +31,9 @@ const API_BASE_URL: string =
 export type Tool = "select" | "pan";
 export type Theme = "light" | "dark";
 
+/** Matches the blue used for selection outlines/active toolbar states elsewhere (Tailwind blue-500). */
+const DEFAULT_BOUND_FIELD_INDICATOR_COLOR = "#3b82f6";
+
 /** A self-contained copy of a node and all its descendants, for the clipboard. */
 interface ClipboardSubtree {
 	rootId: NodeId;
@@ -52,8 +55,18 @@ export interface DesignerState {
 	history: { past: HistoryEntry[]; future: HistoryEntry[] };
 	/** Editor chrome theme (paper stays white in both). */
 	theme: Theme;
+	/**
+	 * Tick color used ONLY in the canvas preview for a checkbox whose checked
+	 * state comes from checkedBinding — a "this field is data-driven" visual
+	 * aid while building a template. An editor-level setting (like theme),
+	 * not part of any document: it persists across every document you open,
+	 * and never affects what's actually exported (PDF/PNG always use the
+	 * node's own designed checkColor, never this).
+	 */
+	boundFieldIndicatorColor: string;
 
 	toggleTheme: () => void;
+	setBoundFieldIndicatorColor: (color: string) => void;
 	setActivePageId: (pageId: NodeId) => void;
 	/**
 	 * JSON data used to resolve `{{path}}` bindings (preview + exports). Lives
@@ -148,11 +161,14 @@ export const useDesignerStore = create<DesignerState>()(
 		pan: { x: 0, y: 0 },
 		history: { past: [], future: [] },
 		theme: "light",
+		boundFieldIndicatorColor: DEFAULT_BOUND_FIELD_INDICATOR_COLOR,
 		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
 
 		toggleTheme: () =>
 			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
+		setBoundFieldIndicatorColor: (color) =>
+			set({ boundFieldIndicatorColor: color }),
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
 		setBindingData: (data) => {
 			commit((draft) => {
@@ -461,6 +477,7 @@ export const useDesignerStore = create<DesignerState>()(
 				document: state.document,
 				activePageId: state.activePageId,
 				theme: state.theme,
+				boundFieldIndicatorColor: state.boundFieldIndicatorColor,
 			}),
 			// Validate the persisted document before adopting it; a corrupt or
 			// out-of-date entry falls back to the fresh sample rather than
@@ -473,11 +490,14 @@ export const useDesignerStore = create<DesignerState>()(
 							bindingData?: Record<string, unknown> | null;
 							activePageId?: NodeId | null;
 							theme?: Theme;
+							boundFieldIndicatorColor?: string;
 					  }
 					| undefined;
 				const theme: Theme = saved?.theme === "dark" ? "dark" : "light";
+				const boundFieldIndicatorColor =
+					saved?.boundFieldIndicatorColor ?? DEFAULT_BOUND_FIELD_INDICATOR_COLOR;
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
-				if (!parsed.success) return { ...current, theme };
+				if (!parsed.success) return { ...current, theme, boundFieldIndicatorColor };
 				const document = parsed.data as ReportDocument;
 				// Fold in the old sibling-field shape so upgrading doesn't drop it.
 				if (document.bindingData === undefined && saved?.bindingData !== undefined) {
@@ -492,6 +512,7 @@ export const useDesignerStore = create<DesignerState>()(
 					document,
 					activePageId,
 					theme,
+					boundFieldIndicatorColor,
 				};
 			},
 		},

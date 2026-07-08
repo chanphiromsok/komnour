@@ -179,6 +179,9 @@ export function DesignerCanvas() {
 	const zoom = useDesignerStore((s) => s.zoom);
 	const pan = useDesignerStore((s) => s.pan);
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
+	const boundFieldIndicatorColor = useDesignerStore(
+		(s) => s.boundFieldIndicatorColor,
+	);
 	const setActivePageId = useDesignerStore((s) => s.setActivePageId);
 	const setSelection = useDesignerStore((s) => s.setSelection);
 	const toggleSelection = useDesignerStore((s) => s.toggleSelection);
@@ -220,21 +223,43 @@ export function DesignerCanvas() {
 	const interactionRef = useRef<Interaction | null>(null);
 	const toolBeforeSpaceRef = useRef<typeof tool | null>(null);
 
+	// Canvas-preview-only aid: a checkbox whose checked state comes from
+	// checkedBinding gets its tick redrawn in boundFieldIndicatorColor here,
+	// so it's visually obvious which fields are data-driven while building a
+	// template. This never touches the stored document, so PDF/PNG export
+	// (which renders the real document, not this preview copy) always uses
+	// the node's own designed checkColor.
+	const previewDocument = useMemo<ReportDocument>(() => {
+		let changed = false;
+		const nodes: ReportDocument["nodes"] = { ...document.nodes };
+		for (const [id, node] of Object.entries(document.nodes)) {
+			if (
+				node.type === "checkbox" &&
+				node.checkedBinding &&
+				node.checkColor !== boundFieldIndicatorColor
+			) {
+				nodes[id] = { ...node, checkColor: boundFieldIndicatorColor };
+				changed = true;
+			}
+		}
+		return changed ? { ...document, nodes } : document;
+	}, [document, boundFieldIndicatorColor]);
+
 	const effectiveDocument = useMemo<ReportDocument>(() => {
-		if (!dragPreview) return document;
-		const node = document.nodes[dragPreview.nodeId];
-		if (!node) return document;
+		if (!dragPreview) return previewDocument;
+		const node = previewDocument.nodes[dragPreview.nodeId];
+		if (!node) return previewDocument;
 		return {
-			...document,
+			...previewDocument,
 			nodes: {
-				...document.nodes,
+				...previewDocument.nodes,
 				[dragPreview.nodeId]: {
 					...node,
 					frame: { ...node.frame, ...dragPreview.frame },
 				},
 			},
 		};
-	}, [document, dragPreview]);
+	}, [previewDocument, dragPreview]);
 
 	const editingNode = editingNodeId ? document.nodes[editingNodeId] : undefined;
 	const editingFrame = editingNodeId
