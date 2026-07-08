@@ -42,6 +42,31 @@ const MAX_ZOOM = 4;
 const PAGE_GAP = 48;
 /** Smallest a node can be resized to, in document points. */
 const MIN_SIZE = 8;
+/**
+ * Ceiling on devicePixelRatio × zoom used to size a page's canvas backing
+ * buffer. Without a cap, a Retina display (dpr 2-3) zoomed to MAX_ZOOM (4)
+ * would render at 8-12x the page's point size — for a multi-page document
+ * that's several such surfaces at once, ballooning GPU/memory for a level of
+ * sharpness well past what's visible on any real screen.
+ */
+const MAX_RENDER_SCALE = 4;
+/** How long a zoom change must stay put before the canvas resizes to match it. */
+const ZOOM_RESIZE_DEBOUNCE_MS = 150;
+
+/**
+ * Debounced copy of `value`, settling `delayMs` after the last change.
+ * Used to defer the (comparatively expensive) canvas-resolution resize until
+ * a zoom gesture actually stops, instead of recreating the CanvasKit surface
+ * on every intermediate tick of a scroll-wheel zoom.
+ */
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+	const [debounced, setDebounced] = useState(value);
+	useEffect(() => {
+		const timer = setTimeout(() => setDebounced(value), delayMs);
+		return () => clearTimeout(timer);
+	}, [value, delayMs]);
+	return debounced;
+}
 
 type Interaction =
 	| {
@@ -682,6 +707,7 @@ export function DesignerCanvas() {
 									bindingData={bindingData}
 									isActive={isActive}
 									onError={setError}
+									zoom={zoom}
 								/>
 								{isActive && (
 									<>
@@ -752,6 +778,7 @@ function PageCanvas({
 	bindingData,
 	isActive,
 	onError,
+	zoom,
 }: {
 	engine: RenderEngine | null;
 	document: ReportDocument;
@@ -761,21 +788,33 @@ function PageCanvas({
 	bindingData: Record<string, unknown> | null;
 	isActive: boolean;
 	onError: (message: string) => void;
+	zoom: number;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const surfaceRef = useRef<Surface | null>(null);
 	const adapterRef = useRef<CanvasAdapter | null>(null);
 	const [ready, setReady] = useState(false);
 
+	// The stage (all page sheets) is scaled on-screen via a CSS transform, not
+	// by re-rendering — so a canvas sized only for devicePixelRatio stays a
+	// fixed-resolution bitmap that the browser stretches to fit whatever the
+	// current zoom displays it at. Past 100% zoom that's a real, measured
+	// upscale (e.g. 0.33x effective resolution at 300% zoom) that looks
+	// exactly like a blurry raster image, because at that point it is one.
+	// Debounced so a scroll-wheel zoom gesture doesn't recreate the surface
+	// on every intermediate tick — the canvas stays at its previous
+	// resolution (softening slightly) while actively zooming, then snaps
+	// sharp once the gesture settles, same trade-off design tools typically
+	// make.
+	const settledZoom = useDebouncedValue(zoom, ZOOM_RESIZE_DEBOUNCE_MS);
+
 	useEffect(() => {
 		const canvasEl = canvasRef.current;
 		if (!canvasEl || !engine) return;
-		// Size the backing pixel buffer at devicePixelRatio; CSS size (the
-		// `style` prop below) stays in document points, so the canvas is crisp
-		// on HiDPI displays instead of upscaled/blurry.
 		const dpr = window.devicePixelRatio || 1;
-		canvasEl.width = width * dpr;
-		canvasEl.height = height * dpr;
+		const scale = Math.min(dpr * settledZoom, MAX_RENDER_SCALE);
+		canvasEl.width = width * scale;
+		canvasEl.height = height * scale;
 		const surface = engine.canvasKit.MakeCanvasSurface(canvasEl);
 		if (!surface) {
 			onError("Failed to create CanvasKit surface");
@@ -786,7 +825,7 @@ function PageCanvas({
 			engine.canvasKit,
 			surface,
 			engine.fontMgr,
-			dpr,
+			scale,
 		);
 		setReady(true);
 		return () => {
@@ -795,7 +834,7 @@ function PageCanvas({
 			surfaceRef.current = null;
 			adapterRef.current = null;
 		};
-	}, [engine, width, height, onError]);
+	}, [engine, width, height, onError, settledZoom]);
 
 	useEffect(() => {
 		if (!ready || !adapterRef.current) return;
