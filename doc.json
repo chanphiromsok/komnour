@@ -1,0 +1,4021 @@
+{
+  "version": 1,
+  "pages": [
+    "page-1",
+    "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+    "bed033ba-593e-46a7-b72d-842e45495dcf",
+    "f1f2d4b1-1422-4802-8a03-5552eb47bc6c"
+  ],
+  "nodes": {
+    "page-1": {
+      "id": "page-1",
+      "parentId": null,
+      "children": [
+        "khmer-text",
+        "ec2c08ae-1b4d-4a0c-849b-ce23a6436396",
+        "59cf1a95-f7b2-46d6-8f84-8af1ef518440",
+        "c1c34ede-4072-42b0-acdb-5e821ca60f30",
+        "49a066ee-b6e2-4024-9493-de18bc69cbd7",
+        "154f9ca4-7920-47df-b413-da9c2ac272a0",
+        "b83271d0-fc5d-4ba3-9a15-8f11dedfae0d",
+        "d08e1079-4a0b-4e00-a92e-93357778856c",
+        "f84a1e51-9b93-4a11-bda3-5724c3acad5c",
+        "20176222-7d75-48c9-9164-5c4520e2059c",
+        "22eb45b1-57f4-41d8-85f6-58a0ee7ecf78",
+        "4a814fbf-b185-4610-859a-c0d689c4f071",
+        "5cfa3abd-74d8-43a5-9df1-2d4f58f1e050",
+        "cefebd5e-1c63-4fb7-87c1-b3a729b988fe",
+        "39e0163a-c615-4fb0-9ced-9b1f8e7625c0",
+        "f5de612a-9c91-4d09-8938-16b76094e845",
+        "2e232d13-9cfd-48e7-b66d-20fa03975899",
+        "5cf387f6-670f-4644-a8d9-909f04d75a31",
+        "9326be76-9d4f-4627-a5df-ddc9d200f9be",
+        "5122a8fd-67eb-47e6-a5f7-7112614e6c3b",
+        "b4f4c790-e793-4923-8a48-e4897283f11c",
+        "f1bec96d-235a-478a-bb04-11c9afd4478a",
+        "32756d95-70b0-4a9a-8201-e6f3eb06fc05",
+        "fa0b2159-f12c-4da5-94e1-cbdc8ced7677",
+        "73b4f037-cc12-4b6e-a70f-d42ddbbf2d6b",
+        "9853c01f-e8d9-4bfd-b34f-f05aa8f006a8",
+        "5e6ce035-2983-4979-a7c1-376c0fd3f42c",
+        "c755051d-f7df-44a0-9dab-f3030adcc0be",
+        "bca51573-8dca-4571-9156-56355b967663",
+        "50267afc-9715-442e-82e6-7d2f2b4f4afb",
+        "83082a66-659f-4b70-b725-d167c4269eeb",
+        "3bc0a651-52ef-48be-a5c4-9750df2d8cd3",
+        "6c763029-5258-4486-8eeb-63802f0576cf",
+        "6b18d325-3cb6-4c7f-a1be-73b8644b684b",
+        "4b50d0bf-6e26-48e9-80ea-ca283f291f88",
+        "e4706637-6ba2-49af-a72d-5ee773df2b9f",
+        "5452ca19-baa1-4029-a9ba-4222ed364a4f",
+        "6e3266bd-8379-4e2b-b1dd-2a400f9f0cb5",
+        "855725ed-0b17-48f8-95a9-15154fa2e514",
+        "9407cc11-ad22-476f-b148-d39ca28b3938",
+        "8484a8f3-7d9c-4624-ace4-323ac4cedb9e",
+        "9699ddf4-b2c4-476c-bb12-7d52de5377b3",
+        "6aa23e41-d11e-47b7-a02a-910b1ec97a30",
+        "90b13a05-c973-44e3-bd4f-54828466f2aa",
+        "edb9400f-ccb0-4a60-a44a-a7c85830e0bd",
+        "813f6c83-1dd1-40dc-988d-db2caf3a3107",
+        "9c368c27-d914-40a3-97c8-1db4a318fa1a",
+        "34442981-742c-4bd1-9723-494e3023dc75",
+        "eb298f52-94f4-4b9a-87be-091aae59d128",
+        "c94921a0-5427-43da-bfb0-022d44e29194",
+        "6b20ca14-3b12-4d91-b958-fe3a49edbdd8",
+        "fb415832-c940-4137-b2df-a5a3e05b58d0",
+        "496b0dca-2dbf-4849-a0a3-23aa253ed967",
+        "a9db0be4-4a79-4db0-af37-e923b8418440",
+        "6f01b626-7c56-40cf-b64c-07f13a278e7f",
+        "b9caa71c-db5e-4e57-90ba-22a4015ef2e3",
+        "a869396a-3592-4ef7-a020-3d730e8485f4",
+        "b6e22cab-0ebf-4bd5-920e-e6012e86cece",
+        "0b076b31-be3d-4a02-b923-7e7e6e28ee90"
+      ],
+      "name": "Page 1",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 595.28,
+        "height": 841.89,
+        "rotation": 0
+      },
+      "type": "page",
+      "paper": {
+        "preset": "A4",
+        "orientation": "portrait"
+      },
+      "margin": {
+        "top": 48,
+        "right": 48,
+        "bottom": 48,
+        "left": 48
+      },
+      "background": "#ffffff"
+    },
+    "khmer-text": {
+      "id": "khmer-text",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Khmer paragraph",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 36,
+        "width": 568,
+        "height": 128,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី {{disbursed_date.day}} ខែ {{disbursed_date.month}} ឆ្នាំ {{disbursed_date.year}} រវាង៖ \nធនាគារ វីង (ខេមបូឌា) ម.ក  ជាក្រុមហ៊ុនមហាជនទទួលខុសត្រូវមានកម្រិត (ចុះបញ្ជីពាណិជ្ជកម្មលេខ 00005108  ចុះថ្ងៃទី 18 ខែ សីហា ឆ្នាំ 2008) និង ទទួលបានអាជ្ញាបណ្ណធ្វើប្រតិបត្តិការធនាគារ ស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា និង​មានទីស្នាក់ការចុះបញ្ជីស្ថិតនៅវីងថៅវើ មហាវិថីព្រះមុនីវង្ស កែងមហាវិថីកម្ពុជាក្រោម ភូមិ ៦ សង្កាត់មនោរម្យ ខណ្ឌ៧មករា រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា (\"ធនាគារ\"​ ឬ \"ភាគី \"ក\")​ និង  ឈ្មោះ {{customer.name}} ភេទ {{customer.gender}} ​ថ្ងៃខែឆ្នាំកំណើត​​ ​​ ថ្ងៃទី {{customer.dob.day}} ខែ {{customer.dob.month}} ឆ្នាំ {{customer.dob.year}} សញ្ជាតិ​ {{customer.national}} កាន់អត្តសញ្ញាណប័ណ្ណលេខ {{national_id}} ថ្ងៃផុតកំណត់ ថ្ងៃទី [...] ខែ [...] ឆ្នាំ [...] [7] និងឈ្មោះ [...] ភេទ [...] ​ថ្ងៃខែឆ្នាំកំណើត​​ ថ្ងៃទី [...] សញ្ជាតិ​ [...] កាន់អត្តសញ្ញាណប័ណ្ណលេខ/លិខិតឆ្លងដែនលេខ [...] ចុះថ្ងៃទី [...] មានអាសយដ្ឋានបច្ចុប្បន្នស្ថិតនៅ ផ្ទះលេខ [...]​ ផ្លូវ [...] ភូមិ [8] [...] ឃុំ-សង្កាត់ [9] [...] ក្រុង-ស្រុក-ខណ្ឌ [10] [...] ខេត្ត-រាជធានី​ [11]​ [...] (តទៅហៅថា \"ភាគី \"ខ\")។ (ភាគី \"ក\" និង ភាគី \"ខ\" អាចត្រូវបានហៅជារួមគ្នាថា \"គូភាគី\" និងហៅដោយឡែកពីគ្នាថា \"ភាគី\")។ ",
+      "style": {
+        "fontFamily": "Battambang",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#222222",
+        "lineHeight": 1.6,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី "
+        },
+        {
+          "text": "{{disbursed_date.day}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ខែ "
+        },
+        {
+          "text": "{{disbursed_date.month}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ឆ្នាំ "
+        },
+        {
+          "text": "{{disbursed_date.year}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " រវាង៖ \n"
+        },
+        {
+          "text": "ធនាគារ វីង (ខេមបូឌា) ម.ក",
+          "style": {
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "  ជាក្រុមហ៊ុនមហាជនទទួលខុសត្រូវមានកម្រិត (ចុះបញ្ជីពាណិជ្ជកម្មលេខ 00005108  ចុះថ្ងៃទី 18 ខែ សីហា ឆ្នាំ 2008) និង ទទួលបានអាជ្ញាបណ្ណធ្វើប្រតិបត្តិការធនាគារ ស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា និង​មានទីស្នាក់ការចុះបញ្ជីស្ថិតនៅវីងថៅវើ មហាវិថីព្រះមុនីវង្ស កែងមហាវិថីកម្ពុជាក្រោម ភូមិ ៦ សង្កាត់មនោរម្យ ខណ្ឌ៧មករា រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា (\""
+        },
+        {
+          "text": "ធនាគារ\"",
+          "style": {
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "​ ឬ \""
+        },
+        {
+          "text": "ភាគី \"ក\"",
+          "style": {
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": ")​ និង  ឈ្មោះ "
+        },
+        {
+          "text": "{{customer.name}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ភេទ "
+        },
+        {
+          "text": "{{customer.gender}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ​ថ្ងៃខែឆ្នាំកំណើត​​ ​​ ថ្ងៃទី "
+        },
+        {
+          "text": "{{customer.dob.day}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ខែ "
+        },
+        {
+          "text": "{{customer.dob.month}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " ឆ្នាំ "
+        },
+        {
+          "text": "{{customer.dob.year}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " សញ្ជាតិ​ "
+        },
+        {
+          "text": "{{customer.national}}",
+          "style": {
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " កាន់អត្តសញ្ញាណប័ណ្ណលេខ "
+        },
+        {
+          "text": "{{national_id}}",
+          "style": {
+            "color": "#0033ff"
+          }
+        },
+        {
+          "text": " ថ្ងៃផុតកំណត់ ថ្ងៃទី [...] ខែ [...] ឆ្នាំ [...] [7] និងឈ្មោះ [...] ភេទ [...] ​ថ្ងៃខែឆ្នាំកំណើត​​ ថ្ងៃទី [...] សញ្ជាតិ​ [...] កាន់អត្តសញ្ញាណប័ណ្ណលេខ/លិខិតឆ្លងដែនលេខ [...] ចុះថ្ងៃទី [...] មានអាសយដ្ឋានបច្ចុប្បន្នស្ថិតនៅ ផ្ទះលេខ [...]​ ផ្លូវ [...] ភូមិ [8] [...] ឃុំ-សង្កាត់ [9] [...] ក្រុង-ស្រុក-ខណ្ឌ [10] [...] ខេត្ត-រាជធានី​ [11]​ [...] (តទៅហៅថា \"ភាគី \"ខ\")។ (ភាគី \"ក\" និង ភាគី \"ខ\" អាចត្រូវបានហៅជារួមគ្នាថា "
+        },
+        {
+          "text": "\"",
+          "style": {
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "គូភាគី\"",
+          "style": {
+            "fontWeight": 700,
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "text": " និងហៅដោយឡែកពីគ្នាថា"
+        },
+        {
+          "text": " \"ភាគី\"",
+          "style": {
+            "fontWeight": 700,
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "text": ")។ "
+        }
+      ]
+    },
+    "ec2c08ae-1b4d-4a0c-849b-ce23a6436396": {
+      "id": "ec2c08ae-1b4d-4a0c-849b-ce23a6436396",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 24,
+        "y": 805,
+        "width": 560,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 560,
+      "y2": 0,
+      "stroke": {
+        "color": "#000000",
+        "width": 0.5,
+        "dash": [
+          2,
+          2
+        ]
+      }
+    },
+    "59cf1a95-f7b2-46d6-8f84-8af1ef518440": {
+      "id": "59cf1a95-f7b2-46d6-8f84-8af1ef518440",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 216,
+        "y": 16,
+        "width": 120,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "កិច្ចសន្យាខ្ចីបរិភោគ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "កិច្ចសន្យាខ្ចីបរិភោគ ",
+          "style": {
+            "fontFamily": "Khmer OS Moul"
+          }
+        }
+      ]
+    },
+    "c1c34ede-4072-42b0-acdb-5e821ca60f30": {
+      "id": "c1c34ede-4072-42b0-acdb-5e821ca60f30",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 177,
+        "width": 152,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ១. ប្រាក់កម្ចី ឬឥណទាន ",
+      "style": {
+        "fontFamily": "Battambang",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ១. ប្រាក់កម្ចី ឬឥណទាន ",
+          "style": {
+            "fontFamily": "Khmer OS Moul"
+          }
+        }
+      ]
+    },
+    "49a066ee-b6e2-4024-9493-de18bc69cbd7": {
+      "id": "49a066ee-b6e2-4024-9493-de18bc69cbd7",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 193,
+        "width": 472,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី “ក” យល់ព្រមផ្តល់ និង ភាគី “ខ” យល់ព្រមទទួលយក ឥណទានដូចខាងក្រោម (តទៅហៅថា “ប្រាក់កម្ចី”  ឬ “ឥណទាន”)៖  ",
+      "style": {
+        "fontFamily": "Battambang",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី “ក” យល់ព្រមផ្តល់ និង ភាគី “ខ” យល់ព្រមទទួលយក ឥណទានដូចខាងក្រោម (តទៅហៅថា ",
+          "style": {
+            "fontFamily": "Noto Sans Khmer"
+          }
+        },
+        {
+          "text": "“ប្រាក់កម្ចី”",
+          "style": {
+            "fontFamily": "Noto Sans Khmer",
+            "fontWeight": 700,
+            "fontStyle": "italic",
+            "decoration": "none"
+          }
+        },
+        {
+          "text": "  ឬ ",
+          "style": {
+            "fontFamily": "Noto Sans Khmer"
+          }
+        },
+        {
+          "text": "“ឥណទាន”",
+          "style": {
+            "fontFamily": "Noto Sans Khmer",
+            "fontWeight": 700,
+            "fontStyle": "italic",
+            "decoration": "none"
+          }
+        },
+        {
+          "text": ")៖  ",
+          "style": {
+            "fontFamily": "Noto Sans Khmer"
+          }
+        }
+      ]
+    },
+    "154f9ca4-7920-47df-b413-da9c2ac272a0": {
+      "id": "154f9ca4-7920-47df-b413-da9c2ac272a0",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 444,
+        "width": 176,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ៣. ការប្រាក់ និងការចំណាយ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ៣. ការប្រាក់ និងការចំណាយ ",
+          "style": {
+            "fontFamily": "Khmer OS Moul"
+          }
+        }
+      ]
+    },
+    "b83271d0-fc5d-4ba3-9a15-8f11dedfae0d": {
+      "id": "b83271d0-fc5d-4ba3-9a15-8f11dedfae0d",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 367,
+        "width": 344,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ២. ការដកប្រាក់កម្ចី ឬការបពោ្ចញឥណទាន  \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ២. ការដកប្រាក់កម្ចី ឬការបពោ្ចញឥណទាន  ",
+          "style": {
+            "fontFamily": "Khmer OS Moul"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "d08e1079-4a0b-4e00-a92e-93357778856c": {
+      "id": "d08e1079-4a0b-4e00-a92e-93357778856c",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 383,
+        "width": 456,
+        "height": 32,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" អាចបើក/ដកប្រាក់កម្ចីបាន លុះត្រាតែ ភាគី \"ខ\" បានបំពេញត្រឹមត្រូវនូវរាល់កាតព្វកិច្ច និងលក្ខខណ្ឌមុននិងក្រោយការបញ្ចេញឥណទាន ដូចដែលមានកំណត់នៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" អាចបើក/ដកប្រាក់កម្ចីបាន លុះត្រាតែ ភាគី \"ខ\" បានបំពេញត្រឹមត្រូវនូវរាល់កាតព្វកិច្ច និងលក្ខខណ្ឌមុននិងក្រោយការបញ្ចេញឥណទាន ដូចដែលមានកំណត់នៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "f84a1e51-9b93-4a11-bda3-5724c3acad5c": {
+      "id": "f84a1e51-9b93-4a11-bda3-5724c3acad5c",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 17,
+        "y": 383,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "២.១.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "២.១.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "20176222-7d75-48c9-9164-5c4520e2059c": {
+      "id": "20176222-7d75-48c9-9164-5c4520e2059c",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 413,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "២.២.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "២.២.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "22eb45b1-57f4-41d8-85f6-58a0ee7ecf78": {
+      "id": "22eb45b1-57f4-41d8-85f6-58a0ee7ecf78",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 413,
+        "width": 456,
+        "height": 32,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ក\" នឹងបើកប្រាក់កម្ចីជាសាច់ប្រាក់ជូន ឬបញ្ចូលចំនួនប្រាក់កម្ចីចូលទៅក្នុងគណនីផ្ទាល់របស់ភាគី \"ខ\" ដែលមាននៅជាមួយ  \nភាគី \"ក\"  លើកលែងតែមានចែងជាក់លាក់ផ្សេងពីនេះនៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។​",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ក\" នឹងបើកប្រាក់កម្ចីជាសាច់ប្រាក់ជូន ឬបញ្ចូលចំនួនប្រាក់កម្ចីចូលទៅក្នុងគណនីផ្ទាល់របស់ភាគី \"ខ\" ដែលមាននៅជាមួយ  ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "ភាគី \"ក\"  លើកលែងតែមានចែងជាក់លាក់ផ្សេងពីនេះនៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។​",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "4a814fbf-b185-4610-859a-c0d689c4f071": {
+      "id": "4a814fbf-b185-4610-859a-c0d689c4f071",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 462,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៣.១.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 9,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៣.១.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "5cfa3abd-74d8-43a5-9df1-2d4f58f1e050": {
+      "id": "5cfa3abd-74d8-43a5-9df1-2d4f58f1e050",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 462,
+        "width": 456,
+        "height": 32,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ការប្រាក់៖ ភាគី \"ខ\" យល់ព្រមបង់ការប្រាក់ស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ក្នុងអត្រាការប្រាក់ដូចមានកំណត់ក្នុងប្រការ១ ដោយគណនាការប្រាក់ប្រចាំថ្ងៃ លើប្រាក់ដើមដែលនៅសល់។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ការប្រាក់៖",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": " ភាគី \"ខ\" យល់ព្រមបង់ការប្រាក់ស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ក្នុងអត្រាការប្រាក់ដូចមានកំណត់ក្នុងប្រការ១ ដោយគណនាការប្រាក់ប្រចាំថ្ងៃ លើប្រាក់ដើមដែលនៅសល់។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "cefebd5e-1c63-4fb7-87c1-b3a729b988fe": {
+      "id": "cefebd5e-1c63-4fb7-87c1-b3a729b988fe",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 494,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៣.២.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៣.២.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "39e0163a-c615-4fb0-9ced-9b1f8e7625c0": {
+      "id": "39e0163a-c615-4fb0-9ced-9b1f8e7625c0",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 494,
+        "width": 456,
+        "height": 40,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "អត្រា​ការប្រាក់យឺតយ៉ាវ៖ ក្នុងករណីភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ខ\" ត្រូវបង់ការប្រាក់ក្នុងអត្រាការប្រាក់យឺតយ៉ាវស្មើនឹង [២៧]% (ម្ភៃប្រាំពីរភាគរយ) ក្នុងមួយឆ្នាំ លើចំនួនដែលយឺតយ៉ាវ បន្ថែមលើអត្រាការប្រាក់ថេរដែលមានកំណត់ក្នុងប្រការ១ខាងលើ។ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "អត្រា​ការប្រាក់យឺតយ៉ាវ៖ ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "ក្នុងករណីភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ខ\" ត្រូវបង់ការប្រាក់ក្នុងអត្រាការប្រាក់យឺតយ៉ាវស្មើនឹង [២៧]% (ម្ភៃប្រាំពីរភាគរយ) ក្នុងមួយឆ្នាំ លើចំនួនដែលយឺតយ៉ាវ បន្ថែមលើអត្រាការប្រាក់ថេរដែលមានកំណត់ក្នុងប្រការ១ខាងលើ។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "5aa2f8c3-5f1a-4a6a-93d0-5f6626328569": {
+      "id": "5aa2f8c3-5f1a-4a6a-93d0-5f6626328569",
+      "parentId": "f1f2d4b1-1422-4802-8a03-5552eb47bc6c",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 80,
+        "y": 32,
+        "width": 200,
+        "height": 24,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 22,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    "e0a79551-7e0a-44fb-b08b-50fc021f63ff": {
+      "id": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "parentId": null,
+      "children": [
+        "38b94148-cbd1-44bf-bb3f-09072a4cbf62",
+        "0d787d9d-5f6a-4a71-bf09-122fa49ec574",
+        "587eb97e-6e5a-4624-bb50-2ec7ddaf4673",
+        "6cc259be-3b2b-442e-b313-49ab825c4f01",
+        "62d26ac8-fc53-410e-9f23-e97ab63e818f",
+        "398e7d08-e97e-4634-8f8f-654f2b3dca77",
+        "0403b152-0d23-40ab-911f-52a2eb2a5b3e",
+        "385daa77-f024-4f87-8a89-f6586c93f989",
+        "e2c4bbf5-66fa-4fef-b252-3605ce224554",
+        "c8954a88-ad2a-4226-beba-33f254437a69",
+        "e9ed8823-c922-454a-a0a1-b25239078232",
+        "b25a2d72-b1ff-4179-8355-80ffe5cbc346",
+        "7cc25c6b-d231-441d-a66f-443d55a65137",
+        "86e8c687-d86b-4372-9368-745643dc748f",
+        "17d58858-03af-4d49-bdf5-6f0769f9e519",
+        "49e810c2-00c9-4aca-812d-5e1c1021e9a6",
+        "b1909b59-9580-49a6-8940-291ffc28d5d8",
+        "6712ddfb-e655-420c-924d-5134ff11f948",
+        "00ee41c1-fad5-4a6b-b637-251753562dbf",
+        "2fd02318-a837-4c25-8b7f-e88cbcb60787",
+        "9e2e3e0d-b200-469c-b186-2ea10a9d6f52",
+        "b79c70f9-2791-4bca-af31-e9665862a5f7",
+        "52a884df-899c-4582-9679-680c0f89b7b9",
+        "a39616b9-d781-4820-9a0f-26054a338cf3",
+        "9b1f40d2-6288-4502-8391-78fd38efc5ce"
+      ],
+      "name": "Page",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 595.28,
+        "height": 841.89,
+        "rotation": 0
+      },
+      "type": "page",
+      "paper": {
+        "preset": "A4",
+        "orientation": "portrait"
+      },
+      "margin": {
+        "top": 48,
+        "right": 48,
+        "bottom": 48,
+        "left": 48
+      },
+      "background": "#ffffff"
+    },
+    "f5de612a-9c91-4d09-8938-16b76094e845": {
+      "id": "f5de612a-9c91-4d09-8938-16b76094e845",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 214,
+        "width": 544,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 544,
+      "y2": 0,
+      "stroke": {
+        "color": "#000000",
+        "width": 1
+      }
+    },
+    "2e232d13-9cfd-48e7-b66d-20fa03975899": {
+      "id": "2e232d13-9cfd-48e7-b66d-20fa03975899",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Rectangle",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 214,
+        "width": 544,
+        "height": 147,
+        "rotation": 0
+      },
+      "type": "rect",
+      "fill": {
+        "color": "#ffffff"
+      },
+      "stroke": {
+        "color": "#000000",
+        "width": 1
+      }
+    },
+    "5cf387f6-670f-4644-a8d9-909f04d75a31": {
+      "id": "5cf387f6-670f-4644-a8d9-909f04d75a31",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 232,
+        "width": 544,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 544,
+      "y2": 0,
+      "stroke": {
+        "color": "#000000",
+        "width": 1
+      }
+    },
+    "9326be76-9d4f-4627-a5df-ddc9d200f9be": {
+      "id": "9326be76-9d4f-4627-a5df-ddc9d200f9be",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 24,
+        "y": 214,
+        "width": 64,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រភេទឥណទាន ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រភេទឥណទាន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "5122a8fd-67eb-47e6-a5f7-7112614e6c3b": {
+      "id": "5122a8fd-67eb-47e6-a5f7-7112614e6c3b",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 135,
+        "y": 215,
+        "width": 64,
+        "height": 15,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រភេទឥណទាន ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រភេទឥណទាន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "b4f4c790-e793-4923-8a48-e4897283f11c": {
+      "id": "b4f4c790-e793-4923-8a48-e4897283f11c",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 240,
+        "y": 214,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "លក្ខខណ្ឌគោលនៃឥណទាន ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "លក្ខខណ្ឌគោលនៃឥណទាន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "f1bec96d-235a-478a-bb04-11c9afd4478a": {
+      "id": "f1bec96d-235a-478a-bb04-11c9afd4478a",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 250,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "32756d95-70b0-4a9a-8201-e6f3eb06fc05": {
+      "id": "32756d95-70b0-4a9a-8201-e6f3eb06fc05",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 268,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "fa0b2159-f12c-4da5-94e1-cbdc8ced7677": {
+      "id": "fa0b2159-f12c-4da5-94e1-cbdc8ced7677",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 286,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "73b4f037-cc12-4b6e-a70f-d42ddbbf2d6b": {
+      "id": "73b4f037-cc12-4b6e-a70f-d42ddbbf2d6b",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 304,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "9853c01f-e8d9-4bfd-b34f-f05aa8f006a8": {
+      "id": "9853c01f-e8d9-4bfd-b34f-f05aa8f006a8",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 240,
+        "y": 232,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "គោលបំណង ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "គោលបំណង ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "5e6ce035-2983-4979-a7c1-376c0fd3f42c": {
+      "id": "5e6ce035-2983-4979-a7c1-376c0fd3f42c",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 240,
+        "y": 250,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "អត្រាការប្រាក់ថេរ ",
+      "style": {
+        "fontFamily": "Battambang",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "អត្រាការប្រាក់ថេរ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "c755051d-f7df-44a0-9dab-f3030adcc0be": {
+      "id": "c755051d-f7df-44a0-9dab-f3030adcc0be",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 239,
+        "y": 268,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "រយៈពេលឥណទាន ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "រយៈពេលឥណទាន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "bca51573-8dca-4571-9156-56355b967663": {
+      "id": "bca51573-8dca-4571-9156-56355b967663",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 239,
+        "y": 286,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "សោហ៊ុយអនុម័តឥណទាន ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "សោហ៊ុយអនុម័តឥណទាន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "50267afc-9715-442e-82e6-7d2f2b4f4afb": {
+      "id": "50267afc-9715-442e-82e6-7d2f2b4f4afb",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 323,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "83082a66-659f-4b70-b725-d167c4269eeb": {
+      "id": "83082a66-659f-4b70-b725-d167c4269eeb",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 232,
+        "y": 342,
+        "width": 328,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 328,
+      "y2": 0,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "3bc0a651-52ef-48be-a5c4-9750df2d8cd3": {
+      "id": "3bc0a651-52ef-48be-a5c4-9750df2d8cd3",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 239,
+        "y": 304,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "សោហ៊ុយរដ្ឋបាល ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "សោហ៊ុយរដ្ឋបាល ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6c763029-5258-4486-8eeb-63802f0576cf": {
+      "id": "6c763029-5258-4486-8eeb-63802f0576cf",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 239,
+        "y": 324,
+        "width": 8,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "*",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "*",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6b18d325-3cb6-4c7f-a1be-73b8644b684b": {
+      "id": "6b18d325-3cb6-4c7f-a1be-73b8644b684b",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 239,
+        "y": 343,
+        "width": 8,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "*",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "*",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "4b50d0bf-6e26-48e9-80ea-ca283f291f88": {
+      "id": "4b50d0bf-6e26-48e9-80ea-ca283f291f88",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 158,
+        "y": 287,
+        "width": 147,
+        "height": 1,
+        "rotation": -90
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 147,
+      "y2": 1,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "e4706637-6ba2-49af-a72d-5ee773df2b9f": {
+      "id": "e4706637-6ba2-49af-a72d-5ee773df2b9f",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 272,
+        "y": 287,
+        "width": 147,
+        "height": 1,
+        "rotation": -90
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 147,
+      "y2": 1,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "5452ca19-baa1-4029-a9ba-4222ed364a4f": {
+      "id": "5452ca19-baa1-4029-a9ba-4222ed364a4f",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 291,
+        "y": 287,
+        "width": 147,
+        "height": 1,
+        "rotation": -90
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 147,
+      "y2": 1,
+      "stroke": {
+        "color": "#333333",
+        "width": 1
+      }
+    },
+    "6e3266bd-8379-4e2b-b1dd-2a400f9f0cb5": {
+      "id": "6e3266bd-8379-4e2b-b1dd-2a400f9f0cb5",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 346,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "855725ed-0b17-48f8-95a9-15154fa2e514": {
+      "id": "855725ed-0b17-48f8-95a9-15154fa2e514",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 326,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "9407cc11-ad22-476f-b148-d39ca28b3938": {
+      "id": "9407cc11-ad22-476f-b148-d39ca28b3938",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 235,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "8484a8f3-7d9c-4624-ace4-323ac4cedb9e": {
+      "id": "8484a8f3-7d9c-4624-ace4-323ac4cedb9e",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 308,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "9699ddf4-b2c4-476c-bb12-7d52de5377b3": {
+      "id": "9699ddf4-b2c4-476c-bb12-7d52de5377b3",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 254,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6aa23e41-d11e-47b7-a02a-910b1ec97a30": {
+      "id": "6aa23e41-d11e-47b7-a02a-910b1ec97a30",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 272,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "90b13a05-c973-44e3-bd4f-54828466f2aa": {
+      "id": "90b13a05-c973-44e3-bd4f-54828466f2aa",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 344,
+        "y": 290,
+        "width": 21,
+        "height": 11,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "edb9400f-ccb0-4a60-a44a-a7c85830e0bd": {
+      "id": "edb9400f-ccb0-4a60-a44a-a7c85830e0bd",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 369,
+        "y": 232,
+        "width": 144,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រើប្រាស់ក្នុងគ្រួសារ និងចំណាយផ្សេងៗ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រើប្រាស់ក្នុងគ្រួសារ និងចំណាយផ្សេងៗ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "813f6c83-1dd1-40dc-988d-db2caf3a3107": {
+      "id": "813f6c83-1dd1-40dc-988d-db2caf3a3107",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 368,
+        "y": 249,
+        "width": 112,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{monthly_interest_fee}}",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{monthly_interest_fee}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "color": "#0000ff"
+          }
+        }
+      ]
+    },
+    "9c368c27-d914-40a3-97c8-1db4a318fa1a": {
+      "id": "9c368c27-d914-40a3-97c8-1db4a318fa1a",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 368,
+        "y": 267,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{tenure}}",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{tenure}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "color": "#0000ff"
+          }
+        }
+      ]
+    },
+    "34442981-742c-4bd1-9723-494e3023dc75": {
+      "id": "34442981-742c-4bd1-9723-494e3023dc75",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 368,
+        "y": 285,
+        "width": 144,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{amount_processing_fee}}",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{amount_processing_fee}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "color": "#0000ff"
+          }
+        }
+      ]
+    },
+    "eb298f52-94f4-4b9a-87be-091aae59d128": {
+      "id": "eb298f52-94f4-4b9a-87be-091aae59d128",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 368,
+        "y": 303,
+        "width": 104,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{amount_upfront_fee}}",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{amount_upfront_fee}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "color": "#0000ff"
+          }
+        }
+      ]
+    },
+    "c94921a0-5427-43da-bfb0-022d44e29194": {
+      "id": "c94921a0-5427-43da-bfb0-022d44e29194",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 545,
+        "width": 456,
+        "height": 48,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" ត្រូវទទួលបន្ទុកលើសោហ៊ុយចំណាយផ្សេងទៀត​ រួមមាន  សោហ៊ុយមេធាវីក្នុងការរៀបចំកិច្ចសន្យាចំនួន ................  សោហ៊ុយវាយតម្លៃទ្រព្យធានាចំនួន  ...............................  សោហ៊ុយចុះបន្ទុកទ្រព្យធានាចំនួន ......................... និង  សោហ៊ុយដោះបន្ទុកទ្រព្យធានាចំនួន ...............................  និង ......................... ដែលភាគី \"ខ\" ត្រូវបង់ទៅឱ្យភាគីពាក់ព័ន្ធ។",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" ត្រូវទទួលបន្ទុកលើសោហ៊ុយចំណាយផ្សេងទៀត​ រួមមាន  សោហ៊ុយមេធាវីក្នុងការរៀបចំកិច្ចសន្យាចំនួន ................ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": " សោហ៊ុយវាយតម្លៃទ្រព្យធានាចំនួន ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": " ............................... ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": " សោហ៊ុយចុះបន្ទុកទ្រព្យធានាចំនួន ......................... និង ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": " សោហ៊ុយដោះបន្ទុកទ្រព្យធានាចំនួន ...............................  និង ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "......................... ដែលភាគី \"ខ\" ត្រូវបង់ទៅឱ្យភាគីពាក់ព័ន្ធ។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6b20ca14-3b12-4d91-b958-fe3a49edbdd8": {
+      "id": "6b20ca14-3b12-4d91-b958-fe3a49edbdd8",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 547,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៣.៣.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៣.៣.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "fb415832-c940-4137-b2df-a5a3e05b58d0": {
+      "id": "fb415832-c940-4137-b2df-a5a3e05b58d0",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 598,
+        "width": 176,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ៤. ការទូទាត់សងឥណទាន  ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ៤. ការទូទាត់សងឥណទាន  ",
+          "style": {
+            "fontFamily": "Khmer OS Moul"
+          }
+        }
+      ]
+    },
+    "496b0dca-2dbf-4849-a0a3-23aa253ed967": {
+      "id": "496b0dca-2dbf-4849-a0a3-23aa253ed967",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 617,
+        "width": 456,
+        "height": 48,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\"​ ត្រូវទូទាត់សងឥណទានទៅតាមចំនួន និងឱ្យបានទៀងទាត់តាមកាលបរិច្ឆេទ ដូចមានកំណត់នៅក្នុងតារាងកាលវិភាគទូទាត់សងប្រាក់ ដែលបានផ្តល់ឱ្យដោយភាគី \"ក\"។",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\"​ ត្រូវទូទាត់សងឥណទានទៅតាមចំនួន និងឱ្យបានទៀងទាត់តាមកាលបរិច្ឆេទ ដូចមានកំណត់នៅក្នុងតារាងកាលវិភាគទូទាត់សងប្រាក់ ដែលបានផ្តល់ឱ្យដោយភាគី \"ក\"។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "a9db0be4-4a79-4db0-af37-e923b8418440": {
+      "id": "a9db0be4-4a79-4db0-af37-e923b8418440",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 652,
+        "width": 24,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៤.២.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៤.២.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6f01b626-7c56-40cf-b64c-07f13a278e7f": {
+      "id": "6f01b626-7c56-40cf-b64c-07f13a278e7f",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 617,
+        "width": 48,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៤.១.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៤.១.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "b9caa71c-db5e-4e57-90ba-22a4015ef2e3": {
+      "id": "b9caa71c-db5e-4e57-90ba-22a4015ef2e3",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 48,
+        "y": 649,
+        "width": 528,
+        "height": 48,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក.  ប្រសិនបើ ភាគី \"ខ\" ធ្វើការទូទាត់សងឥណទាន ដោយផ្នែក ឬទាំងស្រុងមុនកាលកំណត់ ក្នុងរយៈពេលហាមឃាត់ ពោលគឺរយៈពេលមួយ ដែលស្ថិតក្នុងអំឡុងពេល ពាក់កណ្តាល (1/2) នៃរយៈពេលឥណទាន ប៉ុន្តែមិនត្រូវឱ្យលើសពីរយៈពេល២៤ខែ គិតចាប់ពីកាលបរិច្ឆេទនៃការបញ្ចេញឥណទានលើកទី១ (\"រយៈពេលហាមឃាត់\") នោះភាគី \"ខ\" ត្រូវ៖",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក.  ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "ប្រសិនបើ ភាគី \"ខ\" ធ្វើការទូទាត់សងឥណទាន ដោយផ្នែក ឬទាំងស្រុងមុនកាលកំណត់ ក្នុងរយៈពេលហាមឃាត់ ពោលគឺរយៈពេលមួយ ដែលស្ថិតក្នុងអំឡុងពេល ពាក់កណ្តាល (1/2) នៃរយៈពេលឥណទាន ប៉ុន្តែមិនត្រូវឱ្យលើសពីរយៈពេល២៤ខែ គិតចាប់ពីកាលបរិច្ឆេទនៃការបញ្ចេញឥណទានលើកទី១ (",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\"រយៈពេលហាមឃាត់\"",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700,
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "text": ") នោះភាគី \"ខ\" ត្រូវ៖",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "a869396a-3592-4ef7-a020-3d730e8485f4": {
+      "id": "a869396a-3592-4ef7-a020-3d730e8485f4",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 64,
+        "y": 701,
+        "width": 456,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "(i).​   ជូនដំណឹងជាលាយលក្ខណ៍អក្សរទៅ ធនាគារ យ៉ាងតិច ៣០ថ្ងៃ​នៃ ថ្ងៃប្រតិទិនជាមុន។ ",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "(i).​   ជូនដំណឹងជាលាយលក្ខណ៍អក្សរទៅ ធនាគារ យ៉ាងតិច ៣០ថ្ងៃ​នៃ ថ្ងៃប្រតិទិនជាមុន។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "b6e22cab-0ebf-4bd5-920e-e6012e86cece": {
+      "id": "b6e22cab-0ebf-4bd5-920e-e6012e86cece",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 63,
+        "y": 717,
+        "width": 456,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "(ii).  បង់សោហ៊ុយសងមុនកាលកំណត់ស្មើនឹង [៣%] នៃចំនួនទឹកប្រាក់ដើមដែលត្រូវទូទាត់សងមុនកាលកំណត់។",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "(ii).  បង់សោហ៊ុយសងមុនកាលកំណត់ស្មើនឹង [៣%] នៃចំនួនទឹកប្រាក់ដើមដែលត្រូវទូទាត់សងមុនកាលកំណត់។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "0b076b31-be3d-4a02-b923-7e7e6e28ee90": {
+      "id": "0b076b31-be3d-4a02-b923-7e7e6e28ee90",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 47,
+        "y": 734,
+        "width": 528,
+        "height": 48,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ខ.   ប្រសិនបើ ភាគី \"ខ\" ធ្វើការទូទាត់សងឥណទាន ដោយផ្នែក ឬទាំងស្រុងមុនកាលកំណត់ បន្ទាប់ពីផុតរយៈពេលហាមឃាត់ ភាគី \"ខ\" ត្រូវជូនដំណឹងជាលាយលក្ខណ៍អក្សរទៅ [ធនាគារ/គ្រឹះស្ថាន] យ៉ាងតិច ៣០ថ្ងៃ នៃថ្ងៃប្រតិទិនជាមុន។ ក្នុងករណីមិនបានជូនដំណឹងមុនដូចបានតម្រូវនេះ ភាគី \"ខ\" ត្រូវបង់សោហ៊ុយស្មើនឹង [១%] នៃចំនួនទឹកប្រាក់ដើមដែលត្រូវទូទាត់សងមុនកាល កំណត់។ ",
+      "style": {
+        "fontFamily": "Wingdings 2",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ខ.",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "   ប្រសិនបើ ភាគី \"ខ\" ធ្វើការទូទាត់សងឥណទាន ដោយផ្នែក ឬទាំងស្រុងមុនកាលកំណត់ បន្ទាប់ពីផុតរយៈពេលហាមឃាត់ ភាគី \"ខ\" ត្រូវជូនដំណឹងជាលាយលក្ខណ៍អក្សរទៅ [ធនាគារ/គ្រឹះស្ថាន] យ៉ាងតិច ៣០ថ្ងៃ នៃថ្ងៃប្រតិទិនជាមុន។ ក្នុងករណីមិនបានជូនដំណឹងមុនដូចបានតម្រូវនេះ ភាគី \"ខ\" ត្រូវបង់សោហ៊ុយស្មើនឹង [១%] នៃចំនួនទឹកប្រាក់ដើមដែលត្រូវទូទាត់សងមុនកាល កំណត់។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "38b94148-cbd1-44bf-bb3f-09072a4cbf62": {
+      "id": "38b94148-cbd1-44bf-bb3f-09072a4cbf62",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 60,
+        "y": 708,
+        "width": 504,
+        "height": 88,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" ត្រូវផ្តល់ និងធ្វើបច្ចុប្បន្នភាពនូវព័ត៌មាននិងឯកសារនានាទាក់ទងនឹងប្រតិបត្តិការខ្ចីប្រាក់តាមតម្រូវការពី ភាគី \"ក\" ហើយ ភាគី \"ខ\" តាមរយៈនេះ ក៏យល់ព្រម និងអនុញ្ញាត ផងដែរថា ដរាបណាឥណទាននៅតែមានបន្តហើយបំណុលនៅតែមិនទាន់សង ឬតាមច្បាប់តម្រូវ ភាគី \"ក\" តាមយៈនេះ អាចលាតត្រដាង ឬបញ្ចេញ ទិន្នន័យ ឬ ព័ត៌មានទាំងអស់ ឬមួយផ្នែក រួមទាំង គណនីបច្ចុប្បន្ន ឬអនាគត និងរបាយការណ៍ ឬឯកសារដែលបានផ្តល់ជាប្រចាំ ទាក់ទងនឹងឥណទាន ឬអាជីវកម្មរបស់ភាគី \"ខ\" ទៅធនាគារជាតិនៃកម្ពុជា ការិយាល័យព័ត៌មានឥណទានកម្ពុជា ស្នងការគណនេយ្យ អ្នកជម្រះបញ្ជី ឬអាជ្ញាធរមានសមត្ថកិច្ចពាក់ព័ន្ធផ្សេងទៀត ឬទៅក្រុមហ៊ុនសម្ព័ន្ធញាតិ ដៃគូ ឬភ្នាក់ងារ របស់ភាគី \"ក\" ឬយោងតាមដីកាតុលាការ នីតិវិធីច្បាប់ បណ្តឹង ឬដំណើរការនីតិវិធីលើឥណទាន។ \n\n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" ត្រូវផ្តល់ និងធ្វើបច្ចុប្បន្នភាពនូវព័ត៌មាននិងឯកសារនានាទាក់ទងនឹងប្រតិបត្តិការខ្ចីប្រាក់តាមតម្រូវការពី ភាគី \"ក\" ហើយ ភាគី \"ខ\" តាមរយៈនេះ ក៏យល់ព្រម និងអនុញ្ញាត ផងដែរថា ដរាបណាឥណទាននៅតែមានបន្តហើយបំណុលនៅតែមិនទាន់សង ឬតាមច្បាប់តម្រូវ ភាគី \"ក\" តាមយៈនេះ អាចលាតត្រដាង ឬបញ្ចេញ ទិន្នន័យ ឬ ព័ត៌មានទាំងអស់ ឬមួយផ្នែក រួមទាំង គណនីបច្ចុប្បន្ន ឬអនាគត និងរបាយការណ៍ ឬឯកសារដែលបានផ្តល់ជាប្រចាំ ទាក់ទងនឹងឥណទាន ឬអាជីវកម្មរបស់ភាគី \"ខ\" ទៅធនាគារជាតិនៃកម្ពុជា ការិយាល័យព័ត៌មានឥណទានកម្ពុជា ស្នងការគណនេយ្យ អ្នកជម្រះបញ្ជី ឬអាជ្ញាធរមានសមត្ថកិច្ចពាក់ព័ន្ធផ្សេងទៀត ឬទៅក្រុមហ៊ុនសម្ព័ន្ធញាតិ ដៃគូ ឬភ្នាក់ងារ របស់ភាគី \"ក\" ឬយោងតាមដីកាតុលាការ នីតិវិធីច្បាប់ បណ្តឹង ឬដំណើរការនីតិវិធីលើឥណទាន។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n\n"
+        }
+      ]
+    },
+    "bed033ba-593e-46a7-b72d-842e45495dcf": {
+      "id": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "parentId": null,
+      "children": [
+        "5a7c2239-9c71-4218-b5fa-5ea4eaab3763",
+        "3fbfaa97-1249-4996-959d-5eeaa8410621",
+        "e2cd1599-fb46-492d-9c42-c5293307fb45",
+        "bdfeac69-a0f9-4f0e-bd39-911e47a7f045",
+        "61de43a0-f01d-4044-ac8c-1990e836ca26",
+        "ae010262-eb47-4d7a-914d-94c323c03563"
+      ],
+      "name": "Page",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 595.28,
+        "height": 841.89,
+        "rotation": 0
+      },
+      "type": "page",
+      "paper": {
+        "preset": "A4",
+        "orientation": "portrait"
+      },
+      "margin": {
+        "top": 48,
+        "right": 48,
+        "bottom": 48,
+        "left": 48
+      },
+      "background": "#ffffff"
+    },
+    "f1f2d4b1-1422-4802-8a03-5552eb47bc6c": {
+      "id": "f1f2d4b1-1422-4802-8a03-5552eb47bc6c",
+      "parentId": null,
+      "children": [
+        "5aa2f8c3-5f1a-4a6a-93d0-5f6626328569"
+      ],
+      "name": "Page",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 595.28,
+        "height": 841.89,
+        "rotation": 0
+      },
+      "type": "page",
+      "paper": {
+        "preset": "A4",
+        "orientation": "portrait"
+      },
+      "margin": {
+        "top": 48,
+        "right": 48,
+        "bottom": 48,
+        "left": 48
+      },
+      "background": "#ffffff"
+    },
+    "5a7c2239-9c71-4218-b5fa-5ea4eaab3763": {
+      "id": "5a7c2239-9c71-4218-b5fa-5ea4eaab3763",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 56,
+        "y": 48,
+        "width": 512,
+        "height": 128,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក.   កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានគ្រប់គ្រង និងបកស្រាយស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា។ \nខ.   ក្នុងករណីមានការជំទាស់ ឬបណ្តឹងតវ៉ាពាក់ព័ន្ធនឹងឥណទាន/កម្ចីនេះ ភាគី \"ខ\" អាចទាក់ទងមក ធនាគារ តាមរយៈ​លេខទូរសព្ទដោះស្រាយ​បណ្តឹង​អតិថិជនលេខ ០២៣​ ៩៩៩ ៩៨៩ / ០១២ ៩៩៩ ៤៨៩ ឬមកក្រុមការងារដោះស្រាយបណ្តឹងអតិថិជនរបស់សមាគមធនាគារនៅកម្ពុជាតាមរយៈលេខទូរសព្ទ (០២៣ ២៣៨ ៧៦០ /០៩២ ៧៧១ ៨៨១) ឬមកក្រុមការងារដោះស្រាយ បណ្តឹងអតិថិជនរបស់សមាគមមីក្រូហិរញ្ញវត្ថុកម្ពុជាតាមរយៈលេខទូរសព្ទ (0១៥ ៣៦៥ ២២២)។ \nគ.   ភាគីទាំងអស់ ខិតខំប្រឹងប្រែងដោះស្រាយការខ្វែងគំនិត ឬភាពមិនចុះសម្រុងគ្នាទាក់ទងនឹងការបកស្រាយ និងការអនុវត្ដនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ ដោយភាពយោគយល់គ្នា និងក្រៅប្រព័ន្ធតុលាការ។ ទោះបីជាយ៉ាងណាក៏ដោយ ក្នុងករណីដែលមិនអាចដោះស្រាយបាន ភាគីណាមួយអាចបញ្ជូនវិវាទនោះទៅដោះស្រាយនៅតុលាការមានសមត្ថកិច្ចនៃព្រះរាជាណាចក្រកម្ពុជា​។ រាល់​សោ​ហ៊ុយ​ចំណាយលើ​ការ​ដោះស្រាយវិវាទ​​​តាម​ផ្លូវ​ច្បាប់​​ជា​​បន្ទុក​របស់ភាគី​ដែលបាន​បំពាន​កាតព្វ​កិច្ច​។ \n\n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក.   កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានគ្រប់គ្រង និងបកស្រាយស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "ខ.   ក្នុងករណីមានការជំទាស់ ឬបណ្តឹងតវ៉ាពាក់ព័ន្ធនឹងឥណទាន/កម្ចីនេះ ភាគី \"ខ\" អាចទាក់ទងមក ធនាគារ តាមរយៈ​លេខទូរសព្ទដោះស្រាយ​បណ្តឹង​អតិថិជនលេខ ០២៣​ ៩៩៩ ៩៨៩ / ០១២ ៩៩៩ ៤៨៩ ឬមកក្រុមការងារដោះស្រាយបណ្តឹងអតិថិជនរបស់សមាគមធនាគារនៅកម្ពុជាតាមរយៈលេខទូរសព្ទ (០២៣ ២៣៨ ៧៦០ /០៩២ ៧៧១ ៨៨១) ឬមកក្រុមការងារដោះស្រាយ បណ្តឹងអតិថិជនរបស់សមាគមមីក្រូហិរញ្ញវត្ថុកម្ពុជាតាមរយៈលេខទូរសព្ទ (0១៥ ៣៦៥ ២២២)។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "គ.   ភាគីទាំងអស់ ខិតខំប្រឹងប្រែងដោះស្រាយការខ្វែងគំនិត ឬភាពមិនចុះសម្រុងគ្នាទាក់ទងនឹងការបកស្រាយ និងការអនុវត្ដនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ ដោយភាពយោគយល់គ្នា និងក្រៅប្រព័ន្ធតុលាការ។ ទោះបីជាយ៉ាងណាក៏ដោយ ក្នុងករណីដែលមិនអាចដោះស្រាយបាន ភាគីណាមួយអាចបញ្ជូនវិវាទនោះទៅដោះស្រាយនៅតុលាការមានសមត្ថកិច្ចនៃព្រះរាជាណាចក្រកម្ពុជា​។ រាល់​សោ​ហ៊ុយ​ចំណាយលើ​ការ​ដោះស្រាយវិវាទ​​​តាម​ផ្លូវ​ច្បាប់​​ជា​​បន្ទុក​របស់ភាគី​ដែលបាន​បំពាន​កាតព្វ​កិច្ច​។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n\n"
+        }
+      ]
+    },
+    "3fbfaa97-1249-4996-959d-5eeaa8410621": {
+      "id": "3fbfaa97-1249-4996-959d-5eeaa8410621",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 56,
+        "y": 278,
+        "width": 504,
+        "height": 152,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវមានអានុភាពភ្ជាប់កាតព្វកិច្ចចំពោះ​អ្នកទទួល​សិទិ្ធ និងអ្នកស្នងសិទ្ធិរបស់ភាគី \"ក\" និងចំពោះទាយាទ និងអ្នកស្នងសិទ្ធិរបស់ភាគី \"ខ\"។ \n៦.៦.​\tកិច្ចសន្យាទាំងមូល \nតារាងកាលវិភាគទូទាត់សងប្រាក់ ឧបសម្ព័ន្ធ និងឯកសារផ្សេងទៀត ដែលពាក់ព័ន្ធនឹងប្រាក់កម្ចី/ឥណទាន ត្រូវទុកជាផ្នែកមួយនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ \n៦.៧.\tស្វ័យភាពនៃបញ្ញត្តិ \nរាល់បញ្ញត្តិនានានៃកិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបកស្រាយទៅតាម​លទ្ធភាព​ដែល​អាចឱ្យវាមានសុពលភាព និងប្រសិទ្ធភាពស្របតាមបញ្ញត្តិច្បាប់ដែលមានជាធរមាន។ ក្នុង​ករណីដែលបញ្ញត្តិណាមួយនៃ កិច្ចសន្យាខ្ចីបរិភោគនេះមិនអាចអនុវត្តបាន ឬគ្មានសុពលភាពស្រប​តាម​ច្បាប់ជាធរមាន អសុពលភាព ឬភាពគ្មានប្រសិទ្ធភាពនៃបញ្ញត្តិនោះមិនប៉ះពាល់ដល់បញ្ញត្តិ​ដទៃទៀត​នៃកិច្ចសន្យាខ្ចីបរិភោគនេះឡើយ ហើយបញ្ញត្តិដទៃទៀត នៅតែបន្តអនុវត្ត និងមានសុពលភាពពេញ​លេញរវាង គូភាគីនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវមានអានុភាពភ្ជាប់កាតព្វកិច្ចចំពោះ​អ្នកទទួល​សិទិ្ធ និងអ្នកស្នងសិទ្ធិរបស់ភាគី \"ក\" និងចំពោះទាយាទ និងអ្នកស្នងសិទ្ធិរបស់ភាគី \"ខ\"។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "៦.៦.​\tកិច្ចសន្យាទាំងមូល ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "តារាងកាលវិភាគទូទាត់សងប្រាក់ ឧបសម្ព័ន្ធ និងឯកសារផ្សេងទៀត ដែលពាក់ព័ន្ធនឹងប្រាក់កម្ចី/ឥណទាន ត្រូវទុកជាផ្នែកមួយនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "៦.៧.\tស្វ័យភាពនៃបញ្ញត្តិ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "រាល់បញ្ញត្តិនានានៃកិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបកស្រាយទៅតាម​លទ្ធភាព​ដែល​អាចឱ្យវាមានសុពលភាព និងប្រសិទ្ធភាពស្របតាមបញ្ញត្តិច្បាប់ដែលមានជាធរមាន។ ក្នុង​ករណីដែលបញ្ញត្តិណាមួយនៃ កិច្ចសន្យាខ្ចីបរិភោគនេះមិនអាចអនុវត្តបាន ឬគ្មានសុពលភាពស្រប​តាម​ច្បាប់ជាធរមាន អសុពលភាព ឬភាពគ្មានប្រសិទ្ធភាពនៃបញ្ញត្តិនោះមិនប៉ះពាល់ដល់បញ្ញត្តិ​ដទៃទៀត​នៃកិច្ចសន្យាខ្ចីបរិភោគនេះឡើយ ហើយបញ្ញត្តិដទៃទៀត នៅតែបន្តអនុវត្ត និងមានសុពលភាពពេញ​លេញរវាង គូភាគីនៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "e2cd1599-fb46-492d-9c42-c5293307fb45": {
+      "id": "e2cd1599-fb46-492d-9c42-c5293307fb45",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 56,
+        "y": 228,
+        "width": 504,
+        "height": 32,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "រាល់ការកែប្រែ ឬវិសោធនកម្មណាមួយទៅលើកិច្ចសន្យាខ្ចីបរិភោគនេះ មិនអាចមានសុពលភាពបានទេ ប្រសិនបើមិនត្រូវបានធ្វើឡើងជាលាយលក្ខណ៍អក្សរ និងចុះហត្ថលេខា/ផ្តិតស្នាមមេដៃ​ ដោយភាគីទាំងអស់។ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "រាល់ការកែប្រែ ឬវិសោធនកម្មណាមួយទៅលើកិច្ចសន្យាខ្ចីបរិភោគនេះ មិនអាចមានសុពលភាពបានទេ ប្រសិនបើមិនត្រូវបានធ្វើឡើងជាលាយលក្ខណ៍អក្សរ និងចុះហត្ថលេខា/ផ្តិតស្នាមមេដៃ​ ដោយភាគីទាំងអស់។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "bdfeac69-a0f9-4f0e-bd39-911e47a7f045": {
+      "id": "bdfeac69-a0f9-4f0e-bd39-911e47a7f045",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 24,
+        "y": 212,
+        "width": 128,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៦.៤.   ការកែប្រែ ឬវិសោធនកម្ម \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៦.៤.   ការកែប្រែ ឬវិសោធនកម្ម ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "0d787d9d-5f6a-4a71-bf09-122fa49ec574": {
+      "id": "0d787d9d-5f6a-4a71-bf09-122fa49ec574",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 18,
+        "y": 24,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៤.៣.   \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៤.៣.   ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "587eb97e-6e5a-4624-bb50-2ec7ddaf4673": {
+      "id": "587eb97e-6e5a-4624-bb50-2ec7ddaf4673",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 50,
+        "y": 24,
+        "width": 520,
+        "height": 28,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក្នុងករណីដែលការទូទាត់ណាមួយទទួលបានដោយ ភាគី \"ក\" មានចំនួនតិចជាងចំនួនត្រូវទូទាត់សង ភាគី \"ក\" អាចប្រើប្រាស់ចំនួននោះ ដើម្បីទូទាត់តាមលំដាប់ដូចតទៅ៖  (១) សោហ៊ុយ (២) ការប្រាក់យឺតយ៉ាវ  (៣) ការប្រាក់ថេរ និង (៤) ប្រាក់ដើម។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក្នុងករណីដែលការទូទាត់ណាមួយទទួលបានដោយ ភាគី \"ក\" មានចំនួនតិចជាងចំនួនត្រូវទូទាត់សង ភាគី \"ក\" អាចប្រើប្រាស់ចំនួននោះ ដើម្បីទូទាត់តាមលំដាប់ដូចតទៅ៖  (១) សោហ៊ុយ (២) ការប្រាក់យឺតយ៉ាវ  (៣) ការប្រាក់ថេរ និង (៤) ប្រាក់ដើម។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6cc259be-3b2b-442e-b313-49ab825c4f01": {
+      "id": "6cc259be-3b2b-442e-b313-49ab825c4f01",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 49,
+        "y": 58,
+        "width": 520,
+        "height": 28,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក្នុងករណីដែលការទូទាត់ណាមួយទទួលបានដោយ ភាគី \"ក\" មានចំនួនតិចជាងចំនួនត្រូវទូទាត់សង ភាគី \"ក\" អាចប្រើប្រាស់ចំនួននោះ ដើម្បីទូទាត់តាមលំដាប់ដូចតទៅ៖  (១) សោហ៊ុយ (២) ការប្រាក់យឺតយ៉ាវ  (៣) ការប្រាក់ថេរ និង (៤) ប្រាក់ដើម។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក្នុងករណីដែលការទូទាត់ណាមួយទទួលបានដោយ ភាគី \"ក\" មានចំនួនតិចជាងចំនួនត្រូវទូទាត់សង ភាគី \"ក\" អាចប្រើប្រាស់ចំនួននោះ ដើម្បីទូទាត់តាមលំដាប់ដូចតទៅ៖  (១) សោហ៊ុយ (២) ការប្រាក់យឺតយ៉ាវ  (៣) ការប្រាក់ថេរ និង (៤) ប្រាក់ដើម។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "62d26ac8-fc53-410e-9f23-e97ab63e818f": {
+      "id": "62d26ac8-fc53-410e-9f23-e97ab63e818f",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 18,
+        "y": 58,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៤.៣.   \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៤.៣.   ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "398e7d08-e97e-4634-8f8f-654f2b3dca77": {
+      "id": "398e7d08-e97e-4634-8f8f-654f2b3dca77",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 49,
+        "y": 92,
+        "width": 520,
+        "height": 42,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" យល់ព្រមផ្តល់ការកំណត់បញ្ជា ដែលមិនអាចកែប្រែបាន ដើម្បីផ្តល់សិទិ្ធដល់ភាគី \"ក\" ក្នុងការកាត់យកពីគណនីសន្សំ ឬគណនីចរន្ត របស់ភាគី \"ខ\" សម្រាប់ការបំពេញកាតព្វកិច្ចរបស់ខ្លួនក្នុងការទូទាត់ឥណទានដែលត្រូវសង និង ដល់កំណត់ លើកលែងតែមានចែងជាក់លាក់ផ្សេងពីនេះនៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" យល់ព្រមផ្តល់ការកំណត់បញ្ជា ដែលមិនអាចកែប្រែបាន ដើម្បីផ្តល់សិទិ្ធដល់ភាគី \"ក\" ក្នុងការកាត់យកពីគណនីសន្សំ ឬគណនីចរន្ត របស់ភាគី \"ខ\" សម្រាប់ការបំពេញកាតព្វកិច្ចរបស់ខ្លួនក្នុងការទូទាត់ឥណទានដែលត្រូវសង និង ដល់កំណត់ លើកលែងតែមានចែងជាក់លាក់ផ្សេងពីនេះនៅក្នុងឧបសម្ព័ន្ធ១ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "0403b152-0d23-40ab-911f-52a2eb2a5b3e": {
+      "id": "0403b152-0d23-40ab-911f-52a2eb2a5b3e",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 18,
+        "y": 92,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៤.៤. ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៤.៤. ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "385daa77-f024-4f87-8a89-f6586c93f989": {
+      "id": "385daa77-f024-4f87-8a89-f6586c93f989",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 144,
+        "width": 160,
+        "height": 14,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ៥. ករណីបំពានកាតព្វកិច្ច \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ៥. ករណីបំពានកាតព្វកិច្ច ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "e2c4bbf5-66fa-4fef-b252-3605ce224554": {
+      "id": "e2c4bbf5-66fa-4fef-b252-3605ce224554",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 162,
+        "width": 520,
+        "height": 29,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ករណីបំពានកាតព្វកិច្ច មានន័យថាការបំពានកិច្ចសន្យា ឬការមិនអនុវត្តកាតព្វកិច្ចណាមួយ ដោយភាគី \"ខ\" និង/ឬភាគីផ្តល់ប្រាតិភោគ/កិច្ចធានា ស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ដោយរាប់បញ្ចូលករណីណាមួយដូចខាងក្រោម៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ករណីបំពានកាតព្វកិច្ច មានន័យថាការបំពានកិច្ចសន្យា ឬការមិនអនុវត្តកាតព្វកិច្ចណាមួយ ដោយភាគី \"ខ\" និង/ឬភាគីផ្តល់ប្រាតិភោគ/កិច្ចធានា ស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ដោយរាប់បញ្ចូលករណីណាមួយដូចខាងក្រោម៖ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "c8954a88-ad2a-4226-beba-33f254437a69": {
+      "id": "c8954a88-ad2a-4226-beba-33f254437a69",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 162,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៥.១.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៥.១.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "e9ed8823-c922-454a-a0a1-b25239078232": {
+      "id": "e9ed8823-c922-454a-a0a1-b25239078232",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 196,
+        "width": 472,
+        "height": 84,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក.  ឥណទានមិនត្រូវបានប្រើប្រាស់ក្នុងគោលបំណងដូចបានចែងក្នុងប្រការ១ នៃកិច្ចសន្យានេះ។ \nខ.  ការប្រើប្រាស់ឥណទានរបស់ភាគី \"ខ\" បានធ្វើឱ្យប៉ះពាល់ដល់បរិស្ថាន និងសង្គម ឬឥណទានត្រូវបានប្រើប្រាស់សម្រាប់គាំទ្រអាជីវកម្មដែលហាមឃាត់ដោយច្បាប់។\nគ.  ភាគី \"ខ\"​ ខកខានមិនបានទូទាត់សងប្រាក់ដើម ការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយ ដែលមានចែងក្នុងកិច្ចសន្យាខ្ចីបរិភោគនេះ នៅកាលបរិច្ឆេទ​ដល់កំណត់ត្រូវសង។\nឃ.  ភាគី \"ខ\" ត្រូវបានផ្តន្ទាទោសពីបទព្រហ្មទណ្ឌ (មានសាលក្រមពីតុលាការ)។ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក.  ឥណទានមិនត្រូវបានប្រើប្រាស់ក្នុងគោលបំណងដូចបានចែងក្នុងប្រការ១ នៃកិច្ចសន្យានេះ។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "ខ.  ការប្រើប្រាស់ឥណទានរបស់ភាគី \"ខ\" បានធ្វើឱ្យប៉ះពាល់ដល់បរិស្ថាន និងសង្គម ឬឥណទានត្រូវបានប្រើប្រាស់សម្រាប់គាំទ្រអាជីវកម្មដែលហាមឃាត់ដោយច្បាប់។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "គ.  ភាគី \"ខ\"​ ខកខានមិនបានទូទាត់សងប្រាក់ដើម ការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយ ដែលមានចែងក្នុងកិច្ចសន្យាខ្ចីបរិភោគនេះ នៅកាលបរិច្ឆេទ​ដល់កំណត់ត្រូវសង។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "ឃ.  ភាគី \"ខ\" ត្រូវបានផ្តន្ទាទោសពីបទព្រហ្មទណ្ឌ (មានសាលក្រមពីតុលាការ)។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "b25a2d72-b1ff-4179-8355-80ffe5cbc346": {
+      "id": "b25a2d72-b1ff-4179-8355-80ffe5cbc346",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 302,
+        "width": 320,
+        "height": 17,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក្នុងករណីដែលមានករណីបំពានកាតព្វកិច្ច ណាមួយដូចមានរៀបរាប់ខាងលើកើតឡើងនោះ ៖",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក្នុងករណីដែលមានករណីបំពានកាតព្វកិច្ច ណាមួយដូចមានរៀបរាប់ខាងលើកើតឡើងនោះ ៖",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "7cc25c6b-d231-441d-a66f-443d55a65137": {
+      "id": "7cc25c6b-d231-441d-a66f-443d55a65137",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 302,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៥.២.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៥.២.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "86e8c687-d86b-4372-9368-745643dc748f": {
+      "id": "86e8c687-d86b-4372-9368-745643dc748f",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 320,
+        "width": 528,
+        "height": 128,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក.  ភាគី \"ក\" តាមឆន្ទានុសិទ្ធិរបស់ខ្លួន អាចតម្រូវថាឥណទានដល់ពេលកំណត់ទូទាត់សងភ្លាមៗ និងត្រូវទូទាត់សងទាំងស្រុង ឬមួយផ្នែក ព្រមជាមួយនឹងការប្រាក់ និងប្រាក់ដែលនៅជំពាក់ទាំងអស់ ក្រោមកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ប្រសិនបើ ភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ខ\" នឹងត្រូវបង់ការប្រាក់ក្នុងករណីយឺតយ៉ាវ ក្នុងអត្រាការប្រាក់យឺតយ៉ាវលើចំនួនដែលខកខាន ឬយឺតយ៉ាវនោះដូចដែលមានចែងក្នុងប្រការ ៣.២ បន្ថែមពីលើអត្រាការប្រាក់ថេរដែលមានកំណត់ក្នុងប្រការ១ ខាងលើ រហូតដល់ពេលភាគី \"ក\" ទទួលបានការទូទាត់សងគ្រប់ចំនួន។ \nខ.   ក្នុងករណីភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ក\" មានសិទ្ធិចុះទៅជួប ភាគី \"ខ\" ដល់លំនៅឋាន ឬកន្លែងប្រកបអាជីវកម្ម ឬទីកន្លែងណាមួយដែលអាចធ្វើទៅបាន ដើម្បីជជែករកដំណោះស្រាយសមស្រប។ \nគ.   ភាគី \"ក\" មានសិទ្ធិអនុវត្តវិធានការសង្គ្រោះទាំងអស់ ឬមួយផ្នែក រួមទាំងការអនុវត្តដោយបង្ខំ ដែលស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ឬដោយច្បាប់ ក្នុងពេលព្រមគ្នា ឬបន្តបន្ទាប់គ្នា។ គ្មានការយឺតយ៉ាវណាមួយក្នុងការអនុវត្តវិធានការសង្គ្រោះត្រូវបានចាត់ទុកថាជាការលះបង់នូវការអនុវត្តសិទ្ធិរបស់ភាគី \"ក\" នោះទេ។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក.  ភាគី \"ក\" តាមឆន្ទានុសិទ្ធិរបស់ខ្លួន អាចតម្រូវថាឥណទានដល់ពេលកំណត់ទូទាត់សងភ្លាមៗ និងត្រូវទូទាត់សងទាំងស្រុង ឬមួយផ្នែក ព្រមជាមួយនឹងការប្រាក់ និងប្រាក់ដែលនៅជំពាក់ទាំងអស់ ក្រោមកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ប្រសិនបើ ភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ខ\" នឹងត្រូវបង់ការប្រាក់ក្នុងករណីយឺតយ៉ាវ ក្នុងអត្រាការប្រាក់យឺតយ៉ាវលើចំនួនដែលខកខាន ឬយឺតយ៉ាវនោះដូចដែលមានចែងក្នុងប្រការ ៣.២ បន្ថែមពីលើអត្រាការប្រាក់ថេរដែលមានកំណត់ក្នុងប្រការ១ ខាងលើ រហូតដល់ពេលភាគី \"ក\" ទទួលបានការទូទាត់សងគ្រប់ចំនួន។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "ខ.   ក្នុងករណីភាគី \"ខ\" ខកខាន ឬយឺតយ៉ាវក្នុងការទូទាត់សងនូវចំនួនទឹកប្រាក់ណាមួយ ភាគី \"ក\" មានសិទ្ធិចុះទៅជួប ភាគី \"ខ\" ដល់លំនៅឋាន ឬកន្លែងប្រកបអាជីវកម្ម ឬទីកន្លែងណាមួយដែលអាចធ្វើទៅបាន ដើម្បីជជែករកដំណោះស្រាយសមស្រប។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        },
+        {
+          "text": "គ.   ភាគី \"ក\" មានសិទ្ធិអនុវត្តវិធានការសង្គ្រោះទាំងអស់ ឬមួយផ្នែក រួមទាំងការអនុវត្តដោយបង្ខំ ដែលស្របតាមកិច្ចសន្យាខ្ចីបរិភោគនេះ ឬដោយច្បាប់ ក្នុងពេលព្រមគ្នា ឬបន្តបន្ទាប់គ្នា។ គ្មានការយឺតយ៉ាវណាមួយក្នុងការអនុវត្តវិធានការសង្គ្រោះត្រូវបានចាត់ទុកថាជាការលះបង់នូវការអនុវត្តសិទ្ធិរបស់ភាគី \"ក\" នោះទេ។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "17d58858-03af-4d49-bdf5-6f0769f9e519": {
+      "id": "17d58858-03af-4d49-bdf5-6f0769f9e519",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 502,
+        "width": 520,
+        "height": 28,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" ត្រូវទូទាត់សងពេញលេញមក ភាគី \"ក\" ចំពោះការចំណាយ ការខាតបង់ ការខូចខាតណាមួយដែល ភាគី \"ក\" ទទួលរង បណ្តាលមកពីការកើតឡើងនូវករណីបំពានកាតព្វកិច្ច ដែលទាក់ទងនឹងកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" ត្រូវទូទាត់សងពេញលេញមក ភាគី \"ក\" ចំពោះការចំណាយ ការខាតបង់ ការខូចខាតណាមួយដែល ភាគី \"ក\" ទទួលរង បណ្តាលមកពីការកើតឡើងនូវករណីបំពានកាតព្វកិច្ច ដែលទាក់ទងនឹងកិច្ចសន្យាខ្ចីបរិភោគនេះ។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "49e810c2-00c9-4aca-812d-5e1c1021e9a6": {
+      "id": "49e810c2-00c9-4aca-812d-5e1c1021e9a6",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 502,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៥.៣. ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៥.៣. ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "b1909b59-9580-49a6-8940-291ffc28d5d8": {
+      "id": "b1909b59-9580-49a6-8940-291ffc28d5d8",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 534,
+        "width": 520,
+        "height": 28,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ក\" អាចធ្វើមូលធនកម្ម ដោយគិតបញ្ចូលការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយផ្សេងៗទៀតទៅជាប្រាក់ដើមតាមច្បាប់ ក្នុងករណីភាគី \"ខ\" ខកខានមិនបានបង់ការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយផ្សេងៗតាមការទាមទារ និងតាមពេលកំណត់។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ក\" អាចធ្វើមូលធនកម្ម ដោយគិតបញ្ចូលការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយផ្សេងៗទៀតទៅជាប្រាក់ដើមតាមច្បាប់ ក្នុងករណីភាគី \"ខ\" ខកខានមិនបានបង់ការប្រាក់ ការប្រាក់យឺតយ៉ាវ និង/ឬសោហ៊ុយផ្សេងៗតាមការទាមទារ និងតាមពេលកំណត់។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "6712ddfb-e655-420c-924d-5134ff11f948": {
+      "id": "6712ddfb-e655-420c-924d-5134ff11f948",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 534,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៥.៤.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៥.៤.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "00ee41c1-fad5-4a6b-b637-251753562dbf": {
+      "id": "00ee41c1-fad5-4a6b-b637-251753562dbf",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 566,
+        "width": 32,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៥.៥.",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៥.៥.",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "2fd02318-a837-4c25-8b7f-e88cbcb60787": {
+      "id": "2fd02318-a837-4c25-8b7f-e88cbcb60787",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 52,
+        "y": 566,
+        "width": 520,
+        "height": 44,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ក្នុងករណីដែលមានករណីបំពានកាតព្វកិច្ចណាមួយដូចមានរៀបរាប់ខាងលើកើតឡើងនោះ គូភាគីយល់ព្រម និងទទួលស្គាល់ថា នៅគ្រប់ពេលវេលាទាំងអស់ ភាគី \"ក\" មានសិទ្ធិចាត់ចែងភ្លាមៗក្នុងការបង្កក ឬកាត់យកប្រាក់ពីគណនីណាមួយ ឬច្រើនរបស់ភាគី \"ខ\" ដែលមានជាមួយ ភាគី \"ក\" (ឧ. គណនីចរន្ត និង/ឬគណនីសន្សំ និង/ឬគណនីសន្សំមានកាលកំណត់ជាដើម) ដើម្បីធ្វើការទូទាត់​សង​បំណុល។",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ក្នុងករណីដែលមានករណីបំពានកាតព្វកិច្ចណាមួយដូចមានរៀបរាប់ខាងលើកើតឡើងនោះ គូភាគីយល់ព្រម និងទទួលស្គាល់ថា នៅគ្រប់ពេលវេលាទាំងអស់ ភាគី \"ក\" មានសិទ្ធិចាត់ចែងភ្លាមៗក្នុងការបង្កក ឬកាត់យកប្រាក់ពីគណនីណាមួយ ឬច្រើនរបស់ភាគី \"ខ\" ដែលមានជាមួយ ភាគី \"ក\" (ឧ. គណនីចរន្ត និង/ឬគណនីសន្សំ និង/ឬគណនីសន្សំមានកាលកំណត់ជាដើម) ដើម្បីធ្វើការទូទាត់​សង​បំណុល។",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "9e2e3e0d-b200-469c-b186-2ea10a9d6f52": {
+      "id": "9e2e3e0d-b200-469c-b186-2ea10a9d6f52",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 20,
+        "y": 620,
+        "width": 160,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ប្រការ ៦. បញ្ញត្តិផ្សេងៗ \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ប្រការ ៦. បញ្ញត្តិផ្សេងៗ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": " ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "b79c70f9-2791-4bca-af31-e9665862a5f7": {
+      "id": "b79c70f9-2791-4bca-af31-e9665862a5f7",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 28,
+        "y": 690,
+        "width": 384,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៦.២.   ការផ្តល់ព័ត៌មាន និងការបញ្ចេញព័ត៌មាន \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៦.២.   ការផ្តល់ព័ត៌មាន និងការបញ្ចេញព័ត៌មាន ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "52a884df-899c-4582-9679-680c0f89b7b9": {
+      "id": "52a884df-899c-4582-9679-680c0f89b7b9",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 56,
+        "y": 655,
+        "width": 520,
+        "height": 32,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ភាគី \"ខ\" ត្រូវគោរពគោលការណ៍ការពារបរិស្ថាន សង្គម និងអភិបាលកិច្ច និងគោលការណ៍ការពារអតិថិជន ដូចដែលមានកំណត់ក្នុង ឧបសម្ព័ន្ធ២ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ភាគី \"ខ\" ត្រូវគោរពគោលការណ៍ការពារបរិស្ថាន សង្គម និងអភិបាលកិច្ច និងគោលការណ៍ការពារអតិថិជន ដូចដែលមានកំណត់ក្នុង ឧបសម្ព័ន្ធ២ នៃកិច្ចសន្យាខ្ចីបរិភោគនេះ។ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "a39616b9-d781-4820-9a0f-26054a338cf3": {
+      "id": "a39616b9-d781-4820-9a0f-26054a338cf3",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 29,
+        "y": 639,
+        "width": 384,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៦.១.   ការគោរពគោលការណ៍ការពារបរិស្ថាន សង្គម និងអភិបាលកិច្ច និងគោលការណ៍ការពារអតិថិជន \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៦.១.   ការគោរពគោលការណ៍ការពារបរិស្ថាន សង្គម និងអភិបាលកិច្ច និងគោលការណ៍ការពារអតិថិជន ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "61de43a0-f01d-4044-ac8c-1990e836ca26": {
+      "id": "61de43a0-f01d-4044-ac8c-1990e836ca26",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 24,
+        "y": 24,
+        "width": 320,
+        "height": 14,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៦.៣.    ច្បាប់គ្រប់គ្រង​ ការដោះស្រាយវិវាទ និងយុត្តាធិការ \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៦.៣.    ច្បាប់គ្រប់គ្រង​ ការដោះស្រាយវិវាទ និងយុត្តាធិការ ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    },
+    "9b1f40d2-6288-4502-8391-78fd38efc5ce": {
+      "id": "9b1f40d2-6288-4502-8391-78fd38efc5ce",
+      "parentId": "e0a79551-7e0a-44fb-b08b-50fc021f63ff",
+      "children": [],
+      "name": "Line",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 16,
+        "y": 824,
+        "width": 560,
+        "height": 0,
+        "rotation": 0
+      },
+      "type": "line",
+      "x1": 0,
+      "y1": 0,
+      "x2": 560,
+      "y2": 0,
+      "stroke": {
+        "color": "#000000",
+        "width": 0.5,
+        "dash": [
+          2,
+          2
+        ]
+      }
+    },
+    "ae010262-eb47-4d7a-914d-94c323c03563": {
+      "id": "ae010262-eb47-4d7a-914d-94c323c03563",
+      "parentId": "bed033ba-593e-46a7-b72d-842e45495dcf",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 24,
+        "y": 262,
+        "width": 192,
+        "height": 16,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "៦.៥.   អានុភាពភ្ជាប់កាតព្វកិច្ច \n",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "៦.៥.   អានុភាពភ្ជាប់កាតព្វកិច្ច ",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        },
+        {
+          "text": "\n"
+        }
+      ]
+    }
+  },
+  "assets": {
+    "a7e02395-8976-4737-8788-cf96e68456b2": {
+      "id": "a7e02395-8976-4737-8788-cf96e68456b2",
+      "kind": "image",
+      "url": "https://tinypng.com/_next/static/media/panda_with_cord.8abd0b4f.webp"
+    }
+  },
+  "fonts": {},
+  "bindingData": {
+    "national_id": "00005108",
+    "disbursed_date": {
+      "day": "1",
+      "month": "06",
+      "year": "2026"
+    },
+    "customer": {
+      "name": "PMO Test Phirom",
+      "gender": "male",
+      "national": "Khmer",
+      "dob": {
+        "day": "11",
+        "month": "06",
+        "year": "1999"
+      },
+      "ay": true
+    },
+    "monthly_interest_fee": "1.50% ក្នុង១ខែ",
+    "tenure": "ក្នុង១ខែ",
+    "amount_processing_fee": "10.00 ដុល្លារ",
+    "amount_upfront_fee": "10.00 ដុល្លារ"
+  }
+}
