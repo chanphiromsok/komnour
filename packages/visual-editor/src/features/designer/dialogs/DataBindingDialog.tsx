@@ -3,7 +3,7 @@ import { useDesignerStore } from "#/features/designer/store/reportStore";
 import { DialogShell } from "./DialogShell";
 
 export function DataBindingDialog({ onClose }: { onClose: () => void }) {
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const setBindingData = useDesignerStore((s) => s.setBindingData);
 	const [text, setText] = useState(() =>
 		bindingData ? JSON.stringify(bindingData, null, 2) : "",

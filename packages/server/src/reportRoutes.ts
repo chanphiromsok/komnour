@@ -47,6 +47,10 @@ function extractExportRequest(body: unknown): ExportRequest {
 export function registerReportRoutes(app: FastifyInstance) {
 	// POST /report/export/pdf
 	// body: { document, data? } OR a bare document as the plain JSON body → application/pdf
+	// `data` is optional: a document posted with its own `bindingData` field
+	// set is self-contained and needs nothing else, but an explicit `data`
+	// here still overrides it (e.g. previewing the same document against
+	// different sample data without mutating it).
 	app.post("/report/export/pdf", async (req, reply) => {
 		const { document, data } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
@@ -55,12 +59,13 @@ export function registerReportRoutes(app: FastifyInstance) {
 				.status(400)
 				.send({ error: "Invalid document", issues: parsed.error.issues });
 		}
+		const effectiveData = data ?? parsed.data.bindingData ?? undefined;
 		try {
 			await ensureReportFontsRegistered();
 			const { renderDocumentToPdf } = await import(
 				"@komnour/report/src/render/exportPdf.server"
 			);
-			const buffer = await renderDocumentToPdf(parsed.data, data);
+			const buffer = await renderDocumentToPdf(parsed.data, effectiveData);
 			reply.header("Content-Type", "application/pdf");
 			reply.header("Content-Disposition", 'attachment; filename="report.pdf"');
 			return reply.send(buffer);
@@ -71,6 +76,7 @@ export function registerReportRoutes(app: FastifyInstance) {
 
 	// POST /report/export/png
 	// body: { document, data?, pageIndex? } OR a bare document as the plain JSON body → image/png
+	// See the pdf route above for why `data` falls back to document.bindingData.
 	app.post("/report/export/png", async (req, reply) => {
 		const { document, data, pageIndex } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
@@ -79,12 +85,13 @@ export function registerReportRoutes(app: FastifyInstance) {
 				.status(400)
 				.send({ error: "Invalid document", issues: parsed.error.issues });
 		}
+		const effectiveData = data ?? parsed.data.bindingData ?? undefined;
 		try {
 			await ensureReportFontsRegistered();
 			const { renderPageToPng } = await import(
 				"@komnour/report/src/render/exportPng.server"
 			);
-			const buffer = await renderPageToPng(parsed.data, pageIndex ?? 0, data);
+			const buffer = await renderPageToPng(parsed.data, pageIndex ?? 0, effectiveData);
 			reply.header("Content-Type", "image/png");
 			return reply.send(buffer);
 		} catch (err: any) {

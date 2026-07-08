@@ -50,13 +50,19 @@ export interface DesignerState {
 	zoom: number;
 	pan: { x: number; y: number };
 	history: { past: HistoryEntry[]; future: HistoryEntry[] };
-	/** JSON data used to resolve `{{path}}` bindings in text nodes (preview + exports). */
-	bindingData: Record<string, unknown> | null;
 	/** Editor chrome theme (paper stays white in both). */
 	theme: Theme;
 
 	toggleTheme: () => void;
 	setActivePageId: (pageId: NodeId) => void;
+	/**
+	 * JSON data used to resolve `{{path}}` bindings (preview + exports). Lives
+	 * on `document.bindingData` — not a separate field — so it's part of the
+	 * document's own JSON tree: downloading/copying/importing the document,
+	 * or posting it to the server, carries its bound data automatically
+	 * without a second payload alongside it. Routed through `commit()` so
+	 * changing it is undoable like any other document edit.
+	 */
 	setBindingData: (data: Record<string, unknown> | null) => void;
 	/** Replaces the whole document (e.g. JSON import) and resets selection/history/view. */
 	loadDocument: (document: ReportDocument) => void;
@@ -141,7 +147,6 @@ export const useDesignerStore = create<DesignerState>()(
 		zoom: 1,
 		pan: { x: 0, y: 0 },
 		history: { past: [], future: [] },
-		bindingData: null,
 		theme: "light",
 		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
@@ -149,7 +154,11 @@ export const useDesignerStore = create<DesignerState>()(
 		toggleTheme: () =>
 			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
-		setBindingData: (data) => set({ bindingData: data }),
+		setBindingData: (data) => {
+			commit((draft) => {
+				draft.bindingData = data;
+			});
+		},
 		loadDocument: (document) =>
 			set({
 				document,
@@ -396,13 +405,15 @@ export const useDesignerStore = create<DesignerState>()(
 			if (state.verify.pngDataUrl) URL.revokeObjectURL(state.verify.pngDataUrl);
 			set({ verify: { status: "loading", pngDataUrl: null } });
 			try {
+				// bindingData travels inside `document` itself — no separate `data`
+				// field needed; the server falls back to document.bindingData when
+				// one isn't explicitly given.
 				const response = await fetch(`${API_BASE_URL}/report/export/png`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						document: state.document,
 						pageIndex,
-						data: state.bindingData ?? undefined,
 					}),
 				});
 				if (!response.ok) {
@@ -448,7 +459,6 @@ export const useDesignerStore = create<DesignerState>()(
 			// session-only and reset on reload.
 			partialize: (state) => ({
 				document: state.document,
-				bindingData: state.bindingData,
 				activePageId: state.activePageId,
 				theme: state.theme,
 			}),
@@ -459,6 +469,7 @@ export const useDesignerStore = create<DesignerState>()(
 				const saved = persisted as
 					| {
 							document?: unknown;
+							/** Pre-migration shape: bindingData lived beside `document`, not inside it. */
 							bindingData?: Record<string, unknown> | null;
 							activePageId?: NodeId | null;
 							theme?: Theme;
@@ -468,6 +479,10 @@ export const useDesignerStore = create<DesignerState>()(
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
 				if (!parsed.success) return { ...current, theme };
 				const document = parsed.data as ReportDocument;
+				// Fold in the old sibling-field shape so upgrading doesn't drop it.
+				if (document.bindingData === undefined && saved?.bindingData !== undefined) {
+					document.bindingData = saved.bindingData;
+				}
 				const activePageId =
 					saved?.activePageId && document.nodes[saved.activePageId]
 						? saved.activePageId
@@ -475,7 +490,6 @@ export const useDesignerStore = create<DesignerState>()(
 				return {
 					...current,
 					document,
-					bindingData: saved?.bindingData ?? null,
 					activePageId,
 					theme,
 				};

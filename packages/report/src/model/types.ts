@@ -195,4 +195,11 @@ export interface ReportDocument {
 	nodes: Record<NodeId, ReportNode>;
 	assets: Record<AssetId, Asset>;
 	fonts: Record<FontId, FontDefinition>;
+	/**
+	 * Sample/actual values for the document's `{{path}}` bindings, carried as
+	 * part of the tree itself so a single exported/posted document JSON is
+	 * self-contained — no separate `data` payload has to travel alongside it.
+	 * Optional so documents saved before this field existed still validate.
+	 */
+	bindingData?: Record<string, unknown> | null;
 }

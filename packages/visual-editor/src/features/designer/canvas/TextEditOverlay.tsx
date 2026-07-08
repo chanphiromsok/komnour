@@ -69,7 +69,7 @@ export function TextEditOverlay({
 	const committedRef = useRef(false);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
 
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const allBindingPaths = useMemo(
 		() => flattenBindingPaths(bindingData),
 		[bindingData],

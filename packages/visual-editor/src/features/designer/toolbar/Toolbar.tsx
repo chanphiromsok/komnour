@@ -60,7 +60,7 @@ export function Toolbar() {
 	const verify = useDesignerStore((s) => s.verify);
 	const runVerifyRender = useDesignerStore((s) => s.runVerifyRender);
 	const clearVerify = useDesignerStore((s) => s.clearVerify);
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const theme = useDesignerStore((s) => s.theme);
 	const toggleTheme = useDesignerStore((s) => s.toggleTheme);
 
@@ -88,13 +88,12 @@ export function Toolbar() {
 		setExportingPdf(true);
 		setExportError(null);
 		try {
+			// bindingData travels inside `document.bindingData` — no separate
+			// `data` field needed; the server falls back to it automatically.
 			const response = await fetch(`${API_BASE_URL}/report/export/pdf`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					document: reportDocument,
-					data: bindingData ?? undefined,
-				}),
+				body: JSON.stringify({ document: reportDocument }),
 			});
 			if (!response.ok) {
 				throw new Error(`Export failed: ${response.status}`);

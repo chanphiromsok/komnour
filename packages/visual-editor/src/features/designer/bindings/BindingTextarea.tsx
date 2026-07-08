@@ -39,7 +39,7 @@ export function BindingTextarea({
 	textareaRef,
 	...rest
 }: BindingTextareaProps) {
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const allPaths = useMemo(
 		() => flattenBindingPaths(bindingData),
 		[bindingData],

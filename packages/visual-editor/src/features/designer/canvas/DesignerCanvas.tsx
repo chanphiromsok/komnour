@@ -131,7 +131,7 @@ export function DesignerCanvas() {
 	const tool = useDesignerStore((s) => s.tool);
 	const zoom = useDesignerStore((s) => s.zoom);
 	const pan = useDesignerStore((s) => s.pan);
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const setActivePageId = useDesignerStore((s) => s.setActivePageId);
 	const setSelection = useDesignerStore((s) => s.setSelection);
 	const toggleSelection = useDesignerStore((s) => s.toggleSelection);

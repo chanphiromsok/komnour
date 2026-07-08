@@ -175,4 +175,5 @@ export const ReportDocumentSchema = z.object({
 	nodes: z.record(z.string(), ReportNodeSchema),
 	assets: z.record(z.string(), AssetSchema),
 	fonts: z.record(z.string(), FontDefinitionSchema),
+	bindingData: z.record(z.string(), z.unknown()).nullable().optional(),
 });
