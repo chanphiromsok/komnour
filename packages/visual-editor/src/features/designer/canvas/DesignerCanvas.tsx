@@ -849,6 +849,11 @@ function PageCanvas({
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const surfaceRef = useRef<Surface | null>(null);
 	const adapterRef = useRef<CanvasAdapter | null>(null);
+	// A single offscreen canvas reused for the lifetime of this PageCanvas,
+	// never recreated per resize — see the comment above buildAndSwap's
+	// MakeCanvasSurface call for why creating a fresh one on every zoom used
+	// to leak WebGL contexts.
+	const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	// A monotonically increasing counter, not a boolean: when settledZoom (or
 	// engine/width/height) changes, the surface-creation effect's cleanup
 	// fires and then its body re-runs in the same batch — a boolean toggled
@@ -898,7 +903,27 @@ function PageCanvas({
 			// the finished result onto the visible one in one uninterrupted
 			// synchronous step means the visible canvas only ever goes directly
 			// from "old frame" to "new, complete frame" — never through blank.
-			const offscreenEl = window.document.createElement("canvas");
+			//
+			// The offscreen canvas element itself is created once and reused
+			// across every resize (just like the visible canvas below), rather
+			// than via document.createElement on every call. CanvasKit's WebGL
+			// backend is a single Emscripten GL module shared by every context
+			// it creates; each fresh canvas meant a fresh WebGL context, and
+			// browsers cap how many of those can be alive at once (commonly ~16
+			// in Chrome) — exceeding it forces the browser to silently lose the
+			// OLDEST live context, which could be a different, still-visible
+			// page's context, leaving it permanently blank. (Explicitly calling
+			// WEBGL_lose_context on the offscreen context after each use was
+			// tried and rejected — it corrupts that shared GL module state,
+			// crashing the *next* MakeCanvasSurface call with a null-deref deep
+			// in CanvasKit's GL capability probing.) Resizing a canvas element's
+			// width/height keeps its existing WebGL context, so reusing the
+			// element bounds the offscreen context count at one for the whole
+			// component lifetime, same as the visible canvas already does.
+			if (!offscreenCanvasRef.current) {
+				offscreenCanvasRef.current = window.document.createElement("canvas");
+			}
+			const offscreenEl = offscreenCanvasRef.current;
 			offscreenEl.width = width * scale;
 			offscreenEl.height = height * scale;
 			const offscreenSurface = engine.canvasKit.MakeCanvasSurface(offscreenEl);
@@ -948,6 +973,8 @@ function PageCanvas({
 			surface.flush();
 			paint.delete();
 			snapshot.delete();
+			// Only the Skia-side surface is freed here — the offscreen canvas
+			// element and its WebGL context are kept alive and reused next time.
 			offscreenSurface.delete();
 
 			ownSurface = surface;
@@ -972,6 +999,10 @@ function PageCanvas({
 				if (surfaceRef.current === ownSurface) surfaceRef.current = null;
 				adapterRef.current = null;
 			}
+			// Neither the visible nor the offscreen canvas's WebGL context is
+			// released here — both elements are reused across every resize for
+			// the lifetime of this component, so there's nothing to free until
+			// the canvases themselves are garbage-collected on unmount.
 		};
 	}, [engine, width, height, onError, settledZoom]);
 
