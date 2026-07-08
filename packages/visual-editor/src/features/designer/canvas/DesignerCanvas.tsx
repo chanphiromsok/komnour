@@ -104,38 +104,59 @@ interface RenderEngine {
 }
 
 /**
- * Computes the resized frame for a drag of `edge` by (dx, dy) document points.
- * East/south edges grow width/height; west/north edges move x/y and grow the
- * opposite way while keeping the far edge pinned. Each moving edge snaps to the
- * grid and every side stays at least MIN_SIZE apart.
+ * Computes the resized frame for a drag of `edge` by (dx, dy) document points,
+ * where (dx, dy) must already be in the node's LOCAL (unrotated) axes — the
+ * caller rotates the pointer delta by -rotation first, so dragging the "e"
+ * handle of a rotated rectangle stretches it along its own rotated edge
+ * instead of the screen's x axis. East/south edges grow width/height; west/
+ * north edges move x/y and grow the opposite way while keeping the far edge
+ * pinned. Each moving edge snaps to the grid and every side stays at least
+ * `minSize` apart — MIN_SIZE for shapes, but 0 for lines, whose bounding box
+ * is legitimately zero-thick (a horizontal line dragged vertical and back
+ * must be able to return to height 0, not get stuck at MIN_SIZE).
  */
 function resizeFrame(
 	original: Frame,
 	edge: ResizeEdge,
 	dx: number,
 	dy: number,
+	minSize: number = MIN_SIZE,
 ): Partial<Frame> {
 	const result: Partial<Frame> = {};
 	const right = original.x + original.width;
 	const bottom = original.y + original.height;
 
 	if (edge.includes("e")) {
-		result.width = Math.max(MIN_SIZE, snapToGrid(original.width + dx));
+		result.width = Math.max(minSize, snapToGrid(original.width + dx));
 	}
 	if (edge.includes("w")) {
-		const newLeft = Math.min(snapToGrid(original.x + dx), right - MIN_SIZE);
+		const newLeft = Math.min(snapToGrid(original.x + dx), right - minSize);
 		result.x = newLeft;
 		result.width = right - newLeft;
 	}
 	if (edge.includes("s")) {
-		result.height = Math.max(MIN_SIZE, snapToGrid(original.height + dy));
+		result.height = Math.max(minSize, snapToGrid(original.height + dy));
 	}
 	if (edge.includes("n")) {
-		const newTop = Math.min(snapToGrid(original.y + dy), bottom - MIN_SIZE);
+		const newTop = Math.min(snapToGrid(original.y + dy), bottom - minSize);
 		result.y = newTop;
 		result.height = bottom - newTop;
 	}
 	return result;
+}
+
+/** Rotates a pointer delta by -degrees, mapping a page-space drag onto a rotated node's own axes. */
+function rotateDelta(
+	dx: number,
+	dy: number,
+	degrees: number,
+): { dx: number; dy: number } {
+	if (!degrees) return { dx, dy };
+	const rad = (-degrees * Math.PI) / 180;
+	return {
+		dx: dx * Math.cos(rad) - dy * Math.sin(rad),
+		dy: dx * Math.sin(rad) + dy * Math.cos(rad),
+	};
 }
 
 export function DesignerCanvas() {
@@ -539,13 +560,20 @@ export function DesignerCanvas() {
 			};
 			setGuides(computeAlignmentGuides(siblingFrames, draggedAbsolute));
 		} else if (interaction.kind === "resize") {
-			const dx = x - interaction.startX;
-			const dy = y - interaction.startY;
+			const node = document.nodes[interaction.nodeId];
+			// Map the page-space drag onto the node's own (possibly rotated) axes
+			// so handles stretch along the shape's edges, not the screen's.
+			const local = rotateDelta(
+				x - interaction.startX,
+				y - interaction.startY,
+				interaction.originalFrame.rotation,
+			);
 			const newFrame = resizeFrame(
 				interaction.originalFrame,
 				interaction.edge,
-				dx,
-				dy,
+				local.dx,
+				local.dy,
+				node?.type === "line" ? 0 : MIN_SIZE,
 			);
 			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
 		} else if (interaction.kind === "marquee") {

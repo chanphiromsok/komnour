@@ -44,25 +44,33 @@ export function SelectionOverlay({
 				if (!node) return null;
 				const frame = getAbsoluteFrame(document, nodeId);
 				const showHandles = selection.length === 1;
+				const rotation = node.frame.rotation;
 
 				return (
-					<div key={nodeId}>
-						<div
-							className="pointer-events-none absolute border-2 border-blue-500"
-							style={{
-								left: frame.x,
-								top: frame.y,
-								width: frame.width,
-								height: frame.height,
-							}}
-						/>
+					// Outline + handles live in one wrapper rotated around the frame's
+					// center — the same pivot the renderer draws with — so the
+					// selection chrome tracks the shape exactly instead of staying
+					// axis-aligned around a rotated node.
+					<div
+						key={nodeId}
+						className="pointer-events-none absolute"
+						style={{
+							left: frame.x,
+							top: frame.y,
+							width: frame.width,
+							height: frame.height,
+							transform: rotation ? `rotate(${rotation}deg)` : undefined,
+							transformOrigin: "center",
+						}}
+					>
+						<div className="pointer-events-none absolute inset-0 border-2 border-blue-500" />
 						{showHandles &&
 							HANDLES.map((handle) => (
 								<ResizeHandle
 									key={handle.edge}
 									cursor={handle.cursor}
-									x={frame.x + frame.width * handle.fx}
-									y={frame.y + frame.height * handle.fy}
+									x={frame.width * handle.fx}
+									y={frame.height * handle.fy}
 									zoom={zoom}
 									onPointerDown={(event) =>
 										onHandlePointerDown(nodeId, handle.edge, event)

@@ -61,7 +61,18 @@ async function drawNode(
 
 	adapter.save();
 	adapter.translate(node.frame.x, node.frame.y);
-	if (node.frame.rotation) adapter.rotate(node.frame.rotation);
+	if (node.frame.rotation) {
+		// Rotate around the frame's center, not its top-left origin — pivoting
+		// on the corner swings the shape away from where it sits instead of
+		// spinning it in place, which is never what a rotation control means
+		// in a design tool. The selection overlay and hit-testing mirror this
+		// same center pivot.
+		const cx = node.frame.width / 2;
+		const cy = node.frame.height / 2;
+		adapter.translate(cx, cy);
+		adapter.rotate(node.frame.rotation);
+		adapter.translate(-cx, -cy);
+	}
 	if (node.opacity < 1) adapter.setOpacity(node.opacity);
 
 	await drawNodeContent(doc, node, adapter, options);
