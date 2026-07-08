@@ -71,33 +71,33 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 type Interaction =
 	| {
-			kind: "move";
-			nodeId: NodeId;
-			startX: number;
-			startY: number;
-			originalFrame: Frame;
-	  }
+		kind: "move";
+		nodeId: NodeId;
+		startX: number;
+		startY: number;
+		originalFrame: Frame;
+	}
 	| {
-			kind: "resize";
-			nodeId: NodeId;
-			edge: ResizeEdge;
-			startX: number;
-			startY: number;
-			originalFrame: Frame;
-	  }
+		kind: "resize";
+		nodeId: NodeId;
+		edge: ResizeEdge;
+		startX: number;
+		startY: number;
+		originalFrame: Frame;
+	}
 	| {
-			kind: "marquee";
-			startX: number;
-			startY: number;
-			currentX: number;
-			currentY: number;
-	  }
+		kind: "marquee";
+		startX: number;
+		startY: number;
+		currentX: number;
+		currentY: number;
+	}
 	| {
-			kind: "pan";
-			startClientX: number;
-			startClientY: number;
-			originalPan: { x: number; y: number };
-	  };
+		kind: "pan";
+		startClientX: number;
+		startClientY: number;
+		originalPan: { x: number; y: number };
+	};
 
 interface RenderEngine {
 	canvasKit: CanvasKit;
@@ -573,10 +573,10 @@ export function DesignerCanvas() {
 			const draggedNode = document.nodes[interaction.nodeId];
 			const siblingIds = draggedNode
 				? Object.values(document.nodes).reduce<NodeId[]>((ids, n) => {
-						if (n.parentId === draggedNode.parentId && n.id !== interaction.nodeId)
-							ids.push(n.id);
-						return ids;
-					}, [])
+					if (n.parentId === draggedNode.parentId && n.id !== interaction.nodeId)
+						ids.push(n.id);
+					return ids;
+				}, [])
 				: [];
 			const siblingFrames = siblingIds.map((id) =>
 				getAbsoluteFrame(document, id),
@@ -926,7 +926,11 @@ function PageCanvas({
 			const offscreenEl = offscreenCanvasRef.current;
 			offscreenEl.width = width * scale;
 			offscreenEl.height = height * scale;
-			const offscreenSurface = engine.canvasKit.MakeCanvasSurface(offscreenEl);
+			if (!engine) {
+				console.warn("engine.canvasKit is null");
+				return
+			}
+			const offscreenSurface = engine.canvasKit.MakeWebGLCanvasSurface(offscreenEl);
 			if (!offscreenSurface) {
 				onError("Failed to create CanvasKit surface");
 				return;
@@ -958,9 +962,13 @@ function PageCanvas({
 			}
 
 			const snapshot = offscreenSurface.makeImageSnapshot();
+			if (!canvasEl) {
+				console.warn("canvasEl is null")
+				return
+			}
 			canvasEl.width = width * scale;
 			canvasEl.height = height * scale;
-			const surface = engine.canvasKit.MakeCanvasSurface(canvasEl);
+			const surface = engine.canvasKit.MakeWebGLCanvasSurface(canvasEl);
 			if (!surface) {
 				snapshot.delete();
 				offscreenSurface.delete();
@@ -1028,11 +1036,10 @@ function PageCanvas({
 			width={width}
 			height={height}
 			style={{ width, height }}
-			className={`bg-white shadow-lg ${
-				isActive
+			className={`bg-white shadow-lg ${isActive
 					? "ring-2 ring-blue-400"
 					: "ring-1 ring-neutral-300 dark:ring-neutral-700"
-			}`}
+				}`}
 		/>
 	);
 }
