@@ -26,7 +26,7 @@ import type {
 enablePatches();
 
 const API_BASE_URL: string =
-	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+	import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export type Tool = "select" | "pan";
 export type Theme = "light" | "dark";

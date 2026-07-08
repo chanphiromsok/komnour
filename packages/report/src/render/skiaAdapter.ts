@@ -33,6 +33,8 @@ export class SkiaAdapter implements RendererAdapter {
 	private canvas: Canvas | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
 
+	constructor(private readonly pixelRatio = 1) {}
+
 	private get context(): CanvasRenderingContext2D {
 		if (!this.ctx)
 			throw new Error("SkiaAdapter: beginPage() must be called before drawing");
@@ -43,11 +45,18 @@ export class SkiaAdapter implements RendererAdapter {
 
 	beginPage(size: { width: number; height: number }, background: string): void {
 		if (!this.canvas) {
-			this.canvas = new Canvas(size.width, size.height);
+			this.canvas = new Canvas(
+				size.width * this.pixelRatio,
+				size.height * this.pixelRatio,
+			);
 			this.ctx = this.canvas.getContext("2d");
 		} else {
-			this.ctx = this.canvas.newPage(size.width, size.height);
+			this.ctx = this.canvas.newPage(
+				size.width * this.pixelRatio,
+				size.height * this.pixelRatio,
+			);
 		}
+		if (this.pixelRatio !== 1) this.ctx.scale(this.pixelRatio, this.pixelRatio);
 		this.ctx.fillStyle = background;
 		this.ctx.fillRect(0, 0, size.width, size.height);
 	}

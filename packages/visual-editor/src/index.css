@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* Load symbol fonts as CSS faces too, so the HTML glyph picker can render each
-   candidate character as its actual symbol (CanvasKit loads the same file
-   separately for the canvas). Keep family names identical to FONT_MANIFEST. */
+   candidate character as its actual symbol. Keep family names identical to
+   FONT_MANIFEST so skia-canvas export/preview font matching stays aligned. */
 @font-face {
 	font-family: "Wingdings 2";
 	src: url("/fonts/Wingdings2.ttf") format("truetype");

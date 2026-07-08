@@ -24,6 +24,7 @@ interface ExportRequest {
 	document: unknown;
 	data?: Record<string, unknown>;
 	pageIndex?: number;
+	scale?: number;
 }
 
 /**
@@ -39,6 +40,7 @@ function extractExportRequest(body: unknown): ExportRequest {
 			document: wrapped.document,
 			data: wrapped.data,
 			pageIndex: wrapped.pageIndex,
+			scale: wrapped.scale,
 		};
 	}
 	return { document: body };
@@ -75,10 +77,10 @@ export function registerReportRoutes(app: FastifyInstance) {
 	});
 
 	// POST /report/export/png
-	// body: { document, data?, pageIndex? } OR a bare document as the plain JSON body → image/png
+	// body: { document, data?, pageIndex?, scale? } OR a bare document as the plain JSON body → image/png
 	// See the pdf route above for why `data` falls back to document.bindingData.
 	app.post("/report/export/png", async (req, reply) => {
-		const { document, data, pageIndex } = extractExportRequest(req.body);
+		const { document, data, pageIndex, scale } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {
 			return reply
@@ -86,12 +88,21 @@ export function registerReportRoutes(app: FastifyInstance) {
 				.send({ error: "Invalid document", issues: parsed.error.issues });
 		}
 		const effectiveData = data ?? parsed.data.bindingData ?? undefined;
+		const renderScale =
+			typeof scale === "number" && Number.isFinite(scale)
+				? Math.min(Math.max(scale, 0.1), 4)
+				: 1;
 		try {
 			await ensureReportFontsRegistered();
 			const { renderPageToPng } = await import(
 				"@komnour/report/src/render/exportPng.server"
 			);
-			const buffer = await renderPageToPng(parsed.data, pageIndex ?? 0, effectiveData);
+			const buffer = await renderPageToPng(
+				parsed.data,
+				pageIndex ?? 0,
+				effectiveData,
+				{ scale: renderScale },
+			);
 			reply.header("Content-Type", "image/png");
 			return reply.send(buffer);
 		} catch (err: any) {
