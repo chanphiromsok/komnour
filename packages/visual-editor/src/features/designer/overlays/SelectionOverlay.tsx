@@ -8,6 +8,7 @@ interface SelectionOverlayProps {
 	document: ReportDocument;
 	selection: NodeId[];
 	zoom: number;
+	editingNodeId?: NodeId | null;
 	onHandlePointerDown: (
 		nodeId: NodeId,
 		edge: ResizeEdge,
@@ -46,6 +47,7 @@ export function SelectionOverlay({
 	document,
 	selection,
 	zoom,
+	editingNodeId,
 	onHandlePointerDown,
 	onRotatePointerDown,
 }: SelectionOverlayProps) {
@@ -55,7 +57,8 @@ export function SelectionOverlay({
 				const node = document.nodes[nodeId];
 				if (!node) return null;
 				const frame = getAbsoluteFrame(document, nodeId);
-				const showHandles = selection.length === 1;
+				const isEditing = nodeId === editingNodeId;
+				const showHandles = selection.length === 1 && !isEditing;
 				const handles = node.type === "line" ? LINE_HANDLES : HANDLES;
 				const rotation = node.frame.rotation;
 
@@ -76,7 +79,11 @@ export function SelectionOverlay({
 							transformOrigin: "center",
 						}}
 					>
-						<div className="pointer-events-none absolute inset-0 border-2 border-blue-500" />
+						<div
+							className={`pointer-events-none absolute inset-0 border-2 border-blue-500 ${
+								isEditing ? "ring-4 ring-blue-500/15" : ""
+							}`}
+						/>
 						{showHandles && (
 							<RotateHandle
 								x={frame.width / 2}

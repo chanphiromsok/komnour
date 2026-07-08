@@ -11,9 +11,11 @@ import type {
  * without React reconciling the editable subtree (which fights contentEditable).
  *
  * Encoding: a run with inline overrides becomes a <span data-style="{json}">;
- * an unstyled run is a bare text node; "\n" becomes <br>. The JSON in
- * data-style is the source of truth on the way back out, so the visual inline
- * CSS on the span is purely cosmetic and never re-parsed.
+ * an unstyled run is a bare text node. Tabs and newlines stay as real text
+ * characters (rendered by CSS white-space: pre-wrap) so focus/edit mode uses
+ * the same string shape as the Skia renderer. The JSON in data-style is the
+ * source of truth on the way back out, so the visual inline CSS on the span is
+ * purely cosmetic and never re-parsed.
  */
 
 
@@ -58,21 +60,17 @@ export function renderRunsToElement(el: HTMLElement, runs: TextRun[]): void {
 	el.textContent = "";
 	for (const run of runs) {
 		const style = cleanStyle(run.style);
-		// A run's text can contain newlines; each becomes a <br>.
-		const segments = run.text.split("\n");
-		segments.forEach((segment, index) => {
-			if (index > 0) el.appendChild(document.createElement("br"));
-			if (segment.length === 0) return;
-			if (style) {
-				const span = document.createElement("span");
-				span.dataset.style = JSON.stringify(style);
-				applyInlineCss(span, style);
-				span.textContent = segment;
-				el.appendChild(span);
-			} else {
-				el.appendChild(document.createTextNode(segment));
-			}
-		});
+		const text = run.text.replace(/\r\n?/g, "\n");
+		if (text.length === 0) continue;
+		if (style) {
+			const span = document.createElement("span");
+			span.dataset.style = JSON.stringify(style);
+			applyInlineCss(span, style);
+			span.textContent = text;
+			el.appendChild(span);
+		} else {
+			el.appendChild(document.createTextNode(text));
+		}
 	}
 	// contentEditable needs at least a <br> to hold a caret when empty.
 	if (el.childNodes.length === 0) el.appendChild(document.createElement("br"));
@@ -367,7 +365,8 @@ export function baseEditorStyle(style: TextStyle): CSSProperties {
 		letterSpacing: style.letterSpacing,
 		textAlign: style.align,
 		textDecoration: style.decoration === "none" ? undefined : style.decoration,
+		whiteSpace: "pre-wrap",
+		tabSize: 8,
 		padding: 0,
 	};
 }
-

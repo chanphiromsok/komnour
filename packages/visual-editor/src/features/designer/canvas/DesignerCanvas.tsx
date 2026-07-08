@@ -875,12 +875,12 @@ export function DesignerCanvas() {
 	return (
 		<div
 			ref={viewportRef}
-			className="relative flex-1 overflow-auto bg-neutral-200 dark:bg-neutral-950"
+			className="relative flex-1 overflow-auto bg-[#e9eaec] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.08)_1px,transparent_0)] [background-size:24px_24px] dark:bg-neutral-950 dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)]"
 			onPointerDown={handleViewportPointerDown}
 			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
 		>
-			<div className="min-h-full min-w-full p-16">
+			<div className="min-h-full min-w-full p-12">
 				<div
 					ref={stageRef}
 					className="relative flex w-max flex-col items-start"
@@ -949,6 +949,7 @@ export function DesignerCanvas() {
 											document={effectiveDocument}
 											selection={selection}
 											zoom={zoom}
+											editingNodeId={editingNodeId}
 											onHandlePointerDown={handleHandlePointerDown}
 											onRotatePointerDown={handleRotatePointerDown}
 										/>
@@ -958,6 +959,7 @@ export function DesignerCanvas() {
 											editingFrame && (
 												<TextEditOverlay
 													frame={editingFrame}
+													rotation={editingNode.frame.rotation}
 													style={editingNode.style}
 													initialRuns={resolveRuns(editingNode)}
 													onCommit={({ text, runs }) => {
@@ -1111,9 +1113,9 @@ function PageCanvas({
 	return (
 		<div
 			style={{ width, height }}
-			className={`bg-white shadow-lg ${isActive
-					? "ring-2 ring-blue-400"
-					: "ring-1 ring-neutral-300 dark:ring-neutral-700"
+			className={`overflow-hidden bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${isActive
+					? "ring-2 ring-blue-500"
+					: "ring-1 ring-black/10 dark:ring-white/10"
 				}`}
 		>
 			{previewUrl ? (

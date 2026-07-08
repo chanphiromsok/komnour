@@ -127,8 +127,15 @@ export function Toolbar() {
 	}
 
 	return (
-		<div className="flex h-12 shrink-0 items-center gap-1 border-neutral-200 border-b bg-white px-2 dark:border-neutral-800 dark:bg-neutral-900">
-			<div className="flex items-center gap-1">
+		<div className="flex h-11 shrink-0 items-center gap-1 border-neutral-800 border-b bg-[#1f1f23] px-2 text-neutral-200 shadow-sm">
+			<div className="mr-2 flex h-7 items-center gap-2 rounded-md bg-white/5 px-2">
+				<div className="h-3 w-3 rounded-sm bg-blue-500" />
+				<span className="font-semibold text-[11px] text-white tracking-wide">
+					Komnour
+				</span>
+			</div>
+
+			<div className="flex max-w-[28rem] items-center gap-1 overflow-x-auto rounded-lg bg-black/15 p-0.5">
 				{reportDocument.pages.map((pageId, index) => (
 					<button
 						key={pageId}
@@ -137,10 +144,10 @@ export function Toolbar() {
 							setActivePageId(pageId);
 							setSelection([pageId]);
 						}}
-						className={`rounded px-2 py-1 text-xs ${
+						className={`h-7 max-w-32 truncate rounded-md px-2 font-medium text-[11px] transition-colors ${
 							pageId === activePageId
-								? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
-								: "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+								? "bg-white text-neutral-950 shadow-sm"
+								: "text-neutral-400 hover:bg-white/10 hover:text-neutral-100"
 						}`}
 					>
 						{reportDocument.nodes[pageId]?.name || `Page ${index + 1}`}
@@ -161,6 +168,7 @@ export function Toolbar() {
 
 			<Divider />
 
+			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton
 				active={tool === "select"}
 				label="Select"
@@ -175,9 +183,11 @@ export function Toolbar() {
 			>
 				<Hand size={16} />
 			</ToolbarButton>
+			</div>
 
 			<Divider />
 
+			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton
 				label="Add text"
 				onClick={() => addNode(createTextNode(activePageId), activePageId)}
@@ -214,18 +224,22 @@ export function Toolbar() {
 			>
 				<CheckSquare size={16} />
 			</ToolbarButton>
+			</div>
 
 			<Divider />
 
+			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton label="Undo" disabled={!canUndo} onClick={() => undo()}>
 				<Undo2 size={16} />
 			</ToolbarButton>
 			<ToolbarButton label="Redo" disabled={!canRedo} onClick={() => redo()}>
 				<Redo2 size={16} />
 			</ToolbarButton>
+			</div>
 
 			<Divider />
 
+			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton
 				label="Duplicate"
 				disabled={selection.length === 0}
@@ -240,6 +254,7 @@ export function Toolbar() {
 			>
 				<Trash2 size={16} />
 			</ToolbarButton>
+			</div>
 
 			<Divider />
 
@@ -326,30 +341,34 @@ export function Toolbar() {
 
 			<div className="flex-1" />
 
+			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton
 				label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
 				onClick={toggleTheme}
 			>
 				{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
 			</ToolbarButton>
+			</div>
 
 			<Divider />
 
+			<div className="flex items-center gap-1 rounded-lg bg-black/15 p-0.5">
 			<ToolbarButton label="Zoom out" onClick={() => setZoom(zoom - 0.1)}>
 				<ZoomOut size={16} />
 			</ToolbarButton>
-			<span className="w-12 text-center text-neutral-600 text-sm tabular-nums dark:text-neutral-400">
+			<span className="w-12 text-center font-medium text-neutral-200 text-xs tabular-nums">
 				{Math.round(zoom * 100)}%
 			</span>
 			<ToolbarButton label="Zoom in" onClick={() => setZoom(zoom + 0.1)}>
 				<ZoomIn size={16} />
 			</ToolbarButton>
+			</div>
 		</div>
 	);
 }
 
 function Divider() {
-	return <div className="mx-1 h-6 w-px bg-neutral-200 dark:bg-neutral-800" />;
+	return <div className="mx-1 h-6 w-px bg-white/10" />;
 }
 
 function ToolbarButton({
@@ -372,11 +391,11 @@ function ToolbarButton({
 			aria-label={label}
 			disabled={disabled}
 			onClick={onClick}
-			className={`flex h-8 w-8 items-center justify-center rounded transition-colors ${
+			className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
 				active
-					? "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300"
-					: "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-			} disabled:cursor-not-allowed disabled:opacity-40`}
+					? "bg-blue-500 text-white shadow-sm"
+					: "text-neutral-300 hover:bg-white/10 hover:text-white"
+			} disabled:cursor-not-allowed disabled:text-neutral-600 disabled:opacity-60`}
 		>
 			{children}
 		</button>

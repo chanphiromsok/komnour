@@ -40,6 +40,7 @@ const FONT_FAMILIES = [
 
 interface TextEditOverlayProps {
 	frame: AbsoluteFrame;
+	rotation: number;
 	style: TextStyle;
 	initialRuns: TextRun[];
 	onCommit: (result: { text: string; runs: TextRun[] }) => void;
@@ -57,6 +58,7 @@ interface TextEditOverlayProps {
  */
 export function TextEditOverlay({
 	frame,
+	rotation,
 	style,
 	initialRuns,
 	onCommit,
@@ -67,6 +69,7 @@ export function TextEditOverlay({
 	const runsRef = useRef<TextRun[]>(initialRuns);
 	const lastRangeRef = useRef<{ start: number; end: number } | null>(null);
 	const committedRef = useRef(false);
+	const blurCommitFrameRef = useRef<number | null>(null);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
 
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
@@ -113,6 +116,14 @@ export function TextEditOverlay({
 		const handler = () => syncActive();
 		document.addEventListener("selectionchange", handler);
 		return () => document.removeEventListener("selectionchange", handler);
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (blurCommitFrameRef.current !== null) {
+				cancelAnimationFrame(blurCommitFrameRef.current);
+			}
+		};
 	}, []);
 
 	function syncActive() {
@@ -268,6 +279,22 @@ export function TextEditOverlay({
 		onCommit({ text: runsToText(runs), runs });
 	}
 
+	function cancelPendingBlurCommit() {
+		if (blurCommitFrameRef.current === null) return;
+		cancelAnimationFrame(blurCommitFrameRef.current);
+		blurCommitFrameRef.current = null;
+	}
+
+	function scheduleBlurCommit() {
+		cancelPendingBlurCommit();
+		blurCommitFrameRef.current = requestAnimationFrame(() => {
+			blurCommitFrameRef.current = null;
+			const activeElement = document.activeElement;
+			if (activeElement && containerRef.current?.contains(activeElement)) return;
+			commit();
+		});
+	}
+
 	const isBold = (active.fontWeight ?? style.fontWeight) >= 600;
 	const isItalic = (active.fontStyle ?? style.fontStyle) === "italic";
 	const isUnderline = (active.decoration ?? style.decoration) === "underline";
@@ -351,6 +378,7 @@ export function TextEditOverlay({
 				aria-multiline="true"
 				tabIndex={0}
 				onInput={syncActive}
+				onFocus={cancelPendingBlurCommit}
 				onKeyDown={(event) => {
 					event.stopPropagation();
 					if (bindingOpen) {
@@ -381,6 +409,10 @@ export function TextEditOverlay({
 						event.preventDefault();
 						committedRef.current = true;
 						onCancel();
+					} else if (event.key === "Tab") {
+						event.preventDefault();
+						document.execCommand("insertText", false, "\t");
+						syncActive();
 					} else if (event.key === "Enter" && !event.shiftKey) {
 						event.preventDefault();
 						commit();
@@ -389,13 +421,19 @@ export function TextEditOverlay({
 				onBlur={(event) => {
 					// Focus moving to a toolbar control (font select, color picker)
 					// isn't the end of editing — only commit when focus leaves the
-					// whole overlay.
+					// whole overlay. Some browser/OS controls report relatedTarget as
+					// null during focus handoff, so defer one frame and inspect the
+					// settled activeElement instead of committing synchronously.
 					const next = event.relatedTarget as Node | null;
 					if (next && containerRef.current?.contains(next)) return;
-					commit();
+					scheduleBlurCommit();
 				}}
-				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border border-blue-500 bg-white/95 outline-none"
-				style={baseEditorStyle(style)}
+				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
+				style={{
+					...baseEditorStyle(style),
+					transform: rotation ? `rotate(${rotation}deg)` : undefined,
+					transformOrigin: "center",
+				}}
 			/>
 
 			{/* `{{path}}` binding autocomplete — anchored below the text box, same
