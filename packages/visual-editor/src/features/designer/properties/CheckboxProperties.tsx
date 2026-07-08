@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import {
 	flattenBindingPaths,
 	filterSuggestions,
@@ -15,13 +15,23 @@ export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 	const updateNode = useDesignerStore((s) => s.updateNode);
 	const allPaths = useMemo(() => flattenBindingPaths(bindingData), [bindingData]);
 	const [pathInputFocused, setPathInputFocused] = useState(false);
+	const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+	const suggestions = filterSuggestions(allPaths, node?.checkedBinding ?? "");
+	useLayoutEffect(() => {
+		if (activeSuggestionIndex >= suggestions.length) setActiveSuggestionIndex(0);
+	}, [activeSuggestionIndex, suggestions.length]);
 
 	if (!node || node.type !== "checkbox") return null;
 
 	const isBound = Boolean(node.checkedBinding);
-	const suggestions = filterSuggestions(allPaths, node.checkedBinding ?? "");
 	const showSuggestions = pathInputFocused && allPaths.length > 0;
 	const currentStroke = node.stroke ?? { color: "#999999", width: 1 };
+
+	function applySuggestion(path: string) {
+		updateNode(nodeId, { checkedBinding: path });
+		setPathInputFocused(false);
+	}
+
 	// Merge into the existing stroke so editing color or width never drops the other.
 	function updateStroke(patch: Partial<{ color: string; width: number }>) {
 		updateNode(nodeId, { stroke: { ...currentStroke, ...patch } });
@@ -53,30 +63,58 @@ export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 					type="text"
 					value={node.checkedBinding ?? ""}
 					placeholder="e.g. loan.rateType.fixed"
-					onChange={(event) =>
+					onChange={(event) => {
 						updateNode(nodeId, {
 							checkedBinding: event.target.value || undefined,
-						})
-					}
+						});
+						setActiveSuggestionIndex(0);
+					}}
 					onFocus={() => setPathInputFocused(true)}
 					// Delay so a mousedown on a suggestion row can fire first.
 					onBlur={() => window.setTimeout(() => setPathInputFocused(false), 120)}
+					onKeyDown={(event) => {
+						if (!showSuggestions || suggestions.length === 0) return;
+						if (event.key === "ArrowDown") {
+							event.preventDefault();
+							setActiveSuggestionIndex((i) => (i + 1) % suggestions.length);
+						} else if (event.key === "ArrowUp") {
+							event.preventDefault();
+							setActiveSuggestionIndex(
+								(i) => (i - 1 + suggestions.length) % suggestions.length,
+							);
+						} else if (event.key === "Enter" || event.key === "Tab") {
+							event.preventDefault();
+							applySuggestion(suggestions[activeSuggestionIndex].path);
+						} else if (event.key === "Escape") {
+							event.preventDefault();
+							setPathInputFocused(false);
+						}
+					}}
 					className="rounded border border-neutral-300 px-2 py-1 font-mono text-neutral-900 text-sm"
 				/>
 				{showSuggestions && suggestions.length > 0 && (
 					<ul className="absolute top-full left-0 z-10 mt-1 max-h-56 w-full overflow-auto rounded border border-neutral-300 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
-						{suggestions.map((suggestion) => (
+						{suggestions.map((suggestion, index) => (
 							<li key={suggestion.path}>
 								<button
 									type="button"
 									onMouseDown={(event) => {
 										event.preventDefault();
-										updateNode(nodeId, { checkedBinding: suggestion.path });
-										setPathInputFocused(false);
+										applySuggestion(suggestion.path);
 									}}
-									className="flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs hover:bg-blue-50 dark:hover:bg-blue-500/20"
+									onMouseEnter={() => setActiveSuggestionIndex(index)}
+									className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs ${
+										index === activeSuggestionIndex
+											? "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+											: "text-neutral-700 hover:bg-blue-50 dark:text-neutral-300 dark:hover:bg-blue-500/20"
+									}`}
 								>
-									<span className="truncate font-mono">{suggestion.path}</span>
+									<span className="truncate font-mono">
+										{suggestion.path}
+										{suggestion.isBranch && (
+											<span className="text-neutral-400">.</span>
+										)}
+									</span>
 									<span className="shrink-0 truncate text-neutral-400">
 										{suggestion.preview}
 									</span>

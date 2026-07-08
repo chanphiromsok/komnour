@@ -13,6 +13,7 @@ interface SelectionOverlayProps {
 		edge: ResizeEdge,
 		event: React.PointerEvent,
 	) => void;
+	onRotatePointerDown: (nodeId: NodeId, event: React.PointerEvent) => void;
 }
 
 /** Visible dot size, in screen px (kept constant across zoom). */
@@ -31,11 +32,22 @@ const HANDLES: { edge: ResizeEdge; fx: number; fy: number; cursor: string }[] = 
 	{ edge: "w", fx: 0, fy: 0.5, cursor: "ew-resize" },
 ];
 
+const LINE_HANDLES: {
+	edge: ResizeEdge;
+	fx: number;
+	fy: number;
+	cursor: string;
+}[] = [
+	{ edge: "nw", fx: 0, fy: 0, cursor: "move" },
+	{ edge: "se", fx: 1, fy: 1, cursor: "move" },
+];
+
 export function SelectionOverlay({
 	document,
 	selection,
 	zoom,
 	onHandlePointerDown,
+	onRotatePointerDown,
 }: SelectionOverlayProps) {
 	return (
 		<div className="pointer-events-none absolute inset-0">
@@ -44,6 +56,7 @@ export function SelectionOverlay({
 				if (!node) return null;
 				const frame = getAbsoluteFrame(document, nodeId);
 				const showHandles = selection.length === 1;
+				const handles = node.type === "line" ? LINE_HANDLES : HANDLES;
 				const rotation = node.frame.rotation;
 
 				return (
@@ -64,8 +77,18 @@ export function SelectionOverlay({
 						}}
 					>
 						<div className="pointer-events-none absolute inset-0 border-2 border-blue-500" />
+						{showHandles && (
+							<RotateHandle
+								x={frame.width / 2}
+								y={-28 / zoom}
+								zoom={zoom}
+								onPointerDown={(event) =>
+									onRotatePointerDown(nodeId, event)
+								}
+							/>
+						)}
 						{showHandles &&
-							HANDLES.map((handle) => (
+							handles.map((handle) => (
 								<ResizeHandle
 									key={handle.edge}
 									cursor={handle.cursor}
@@ -80,6 +103,40 @@ export function SelectionOverlay({
 					</div>
 				);
 			})}
+		</div>
+	);
+}
+
+function RotateHandle({
+	x,
+	y,
+	zoom,
+	onPointerDown,
+}: {
+	x: number;
+	y: number;
+	zoom: number;
+	onPointerDown: (event: React.PointerEvent) => void;
+}) {
+	return (
+		<div
+			className="pointer-events-auto absolute flex items-center justify-center"
+			style={{
+				left: x,
+				top: y,
+				width: HIT_SIZE,
+				height: HIT_SIZE,
+				marginLeft: -HIT_SIZE / 2,
+				marginTop: -HIT_SIZE / 2,
+				cursor: "grab",
+				transform: `scale(${1 / zoom})`,
+			}}
+			onPointerDown={onPointerDown}
+		>
+			<div
+				className="rounded-full border-2 border-blue-500 bg-white"
+				style={{ width: HANDLE_SIZE + 2, height: HANDLE_SIZE + 2 }}
+			/>
 		</div>
 	);
 }

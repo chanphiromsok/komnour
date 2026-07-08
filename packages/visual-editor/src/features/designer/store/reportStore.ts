@@ -15,6 +15,7 @@ import {
 	removeNode as removeNodeFromTree,
 } from "@komnour/report/src/model/tree";
 import type {
+	Asset,
 	Frame,
 	NodeId,
 	ReportDocument,
@@ -92,7 +93,11 @@ export interface DesignerState {
 	) => void;
 	updateNodeStyle: (id: NodeId, style: Partial<TextStyle>) => void;
 	updateNode: (id: NodeId, patch: ReportNodePatch) => void;
-	setImageAsset: (nodeId: NodeId, url: string) => void;
+	setImageAsset: (
+		nodeId: NodeId,
+		url: string,
+		metadata?: Pick<Asset, "width" | "height">,
+	) => void;
 	addNode: (node: ReportNode, parentId: NodeId | null) => void;
 	removeNodes: (ids: NodeId[]) => void;
 	duplicateNodes: (ids: NodeId[]) => void;
@@ -232,12 +237,12 @@ export const useDesignerStore = create<DesignerState>()(
 			});
 		},
 
-		setImageAsset: (nodeId, url) => {
+		setImageAsset: (nodeId, url, metadata) => {
 			commit((draft) => {
 				const node = draft.nodes[nodeId];
 				if (!node || node.type !== "image") return;
 				const assetId = node.assetId || crypto.randomUUID();
-				draft.assets[assetId] = { id: assetId, kind: "image", url };
+				draft.assets[assetId] = { id: assetId, kind: "image", url, ...metadata };
 				node.assetId = assetId;
 			});
 		},

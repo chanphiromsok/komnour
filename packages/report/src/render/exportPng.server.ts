@@ -2,6 +2,7 @@ import { registerServerFonts } from "../fonts/registerServer";
 import { extractPageDocument } from "../model/tree";
 import type { ReportDocument } from "../model/types";
 import { renderDocument } from "./renderer";
+import { resolveAssetServer } from "./resolveAssetServer";
 import { SkiaAdapter } from "./skiaAdapter";
 
 export async function renderPageToPng(
@@ -15,6 +16,8 @@ export async function renderPageToPng(
 
 	registerServerFonts();
 	const adapter = new SkiaAdapter(options.scale ?? 1);
-	await renderDocument(extractPageDocument(doc, pageId), adapter, data);
+	await renderDocument(extractPageDocument(doc, pageId), adapter, data, {
+		resolveAsset: resolveAssetServer,
+	});
 	return Buffer.from(await adapter.currentPageToPng());
 }

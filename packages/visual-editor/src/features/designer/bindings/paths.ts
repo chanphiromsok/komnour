@@ -45,6 +45,8 @@ export function flattenBindingPaths(
 export interface BindingContext {
 	/** Index of the `{{` opener in the text. */
 	openIndex: number;
+	/** Optional binding namespace typed before the path, e.g. "checkbox:". */
+	prefix: string;
 	/** Text typed between the opener and the caret (already trimmed of a leading space). */
 	query: string;
 }
@@ -64,10 +66,12 @@ export function bindingContextAt(
 	const inner = before.slice(openIndex + 2);
 	// A closed binding (contains "}}") means the caret is past it, not inside.
 	if (inner.includes("}}")) return null;
-	// Only offer completion for path-like partials — bail on anything with
-	// characters that can't appear in a dot path so normal `{{` text isn't hijacked.
-	if (!/^\s*[\w.]*$/.test(inner)) return null;
-	return { openIndex, query: inner.trimStart() };
+	// Only offer completion for path-like partials — with the optional
+	// `checkbox:` namespace used by inline checkbox tokens — so normal `{{`
+	// text isn't hijacked.
+	const match = inner.match(/^\s*(?:(checkbox:)?([\w.]*)?)$/);
+	if (!match) return null;
+	return { openIndex, prefix: match[1] ?? "", query: match[2] ?? "" };
 }
 
 export function filterSuggestions(

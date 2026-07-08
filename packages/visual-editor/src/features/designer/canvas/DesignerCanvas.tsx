@@ -10,10 +10,15 @@ import {
 import {
 	createCheckboxNode,
 	createCircleNode,
+	createImageNode,
 	createLineNode,
 	createRectNode,
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
+import {
+	imageFileToAsset,
+	isImageFile,
+} from "#/features/designer/assets/imageFiles";
 import {
 	GRID_SIZE,
 	snapToGrid,
@@ -46,6 +51,9 @@ const MIN_SIZE = 8;
 const MAX_RENDER_SCALE = 4;
 /** How long a zoom change must stay put before the canvas resizes to match it. */
 const ZOOM_RESIZE_DEBOUNCE_MS = 150;
+/** Wheel zoom sensitivity; roughly 10% per common mouse-wheel notch. */
+const WHEEL_ZOOM_SPEED = 0.001;
+const DROPPED_IMAGE_MAX_SIZE = 240;
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 /**
@@ -77,6 +85,14 @@ type Interaction =
 		edge: ResizeEdge;
 		startX: number;
 		startY: number;
+		originalFrame: Frame;
+	}
+	| {
+		kind: "rotate";
+		nodeId: NodeId;
+		centerX: number;
+		centerY: number;
+		startAngle: number;
 		originalFrame: Frame;
 	}
 	| {
@@ -149,6 +165,73 @@ function rotateDelta(
 	};
 }
 
+function angleBetween(centerX: number, centerY: number, x: number, y: number) {
+	return (Math.atan2(y - centerY, x - centerX) * 180) / Math.PI;
+}
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable) return true;
+	return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
+
+function wheelDeltaInPixels(event: WheelEvent): { x: number; y: number } {
+	const unit =
+		event.deltaMode === WheelEvent.DOM_DELTA_LINE
+			? 16
+			: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+				? window.innerHeight
+				: 1;
+	return { x: event.deltaX * unit, y: event.deltaY * unit };
+}
+
+function firstImageFile(files: FileList): File | null {
+	return Array.from(files).find(isImageFile) ?? null;
+}
+
+function dragContainsImage(event: React.DragEvent): boolean {
+	return Array.from(event.dataTransfer.items).some(
+		(item) => item.kind === "file" && item.type.startsWith("image/"),
+	);
+}
+
+function fitDroppedImageFrame({
+	naturalWidth,
+	naturalHeight,
+	pageWidth,
+	pageHeight,
+	x,
+	y,
+}: {
+	naturalWidth: number;
+	naturalHeight: number;
+	pageWidth: number;
+	pageHeight: number;
+	x: number;
+	y: number;
+}): Frame {
+	const fallbackWidth = 160;
+	const fallbackHeight = 120;
+	const sourceWidth = naturalWidth > 0 ? naturalWidth : fallbackWidth;
+	const sourceHeight = naturalHeight > 0 ? naturalHeight : fallbackHeight;
+	const scale = Math.min(
+		1,
+		DROPPED_IMAGE_MAX_SIZE / sourceWidth,
+		DROPPED_IMAGE_MAX_SIZE / sourceHeight,
+	);
+	const width = Math.max(MIN_SIZE, Math.round(sourceWidth * scale));
+	const height = Math.max(MIN_SIZE, Math.round(sourceHeight * scale));
+	const maxX = Math.max(0, pageWidth - width);
+	const maxY = Math.max(0, pageHeight - height);
+	return {
+		x: snapToGrid(Math.min(Math.max(0, x - width / 2), maxX)),
+		y: snapToGrid(Math.min(Math.max(0, y - height / 2), maxY)),
+		width,
+		height,
+		rotation: 0,
+	};
+}
+
 export function DesignerCanvas() {
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<HTMLDivElement>(null);
@@ -184,6 +267,7 @@ export function DesignerCanvas() {
 	const setZoom = useDesignerStore((s) => s.setZoom);
 	const setTool = useDesignerStore((s) => s.setTool);
 	const addNode = useDesignerStore((s) => s.addNode);
+	const setImageAsset = useDesignerStore((s) => s.setImageAsset);
 	const moveNodeToPage = useDesignerStore((s) => s.moveNodeToPage);
 	const copyNodes = useDesignerStore((s) => s.copyNodes);
 	const pasteNodes = useDesignerStore((s) => s.pasteNodes);
@@ -269,33 +353,39 @@ export function DesignerCanvas() {
 		if (!viewportEl) return;
 
 		function onWheel(event: WheelEvent) {
-			if (!(event.ctrlKey || event.metaKey)) return;
+			if (isTextInputTarget(event.target)) return;
 			const stageEl = stageRef.current;
 			if (!stageEl) return;
 			event.preventDefault();
 
 			const { zoom: zoomOld, pan: panOld } = useDesignerStore.getState();
-			const rect = stageEl.getBoundingClientRect();
-			// Cursor position relative to the stage's current (pre-zoom-change)
-			// rendered box — since screenX = rect.left + docX * zoomOld, this is
-			// exactly `docX * zoomOld`, which is what the zoom-to-cursor pan
-			// correction below needs (see the derivation in the plan doc).
-			const cursorX = event.clientX - rect.left;
-			const cursorY = event.clientY - rect.top;
+			const delta = wheelDeltaInPixels(event);
 
-			// ~10% zoom change per typical wheel notch (deltaY ~100); trackpad
-			// pinch gestures send many small deltas that compound smoothly.
-			const zoomFactor = Math.exp(-event.deltaY * 0.001);
+			if (!(event.ctrlKey || event.metaKey)) {
+				setPan({
+					x: panOld.x - (event.shiftKey ? delta.y : delta.x),
+					y: panOld.y - (event.shiftKey ? 0 : delta.y),
+				});
+				return;
+			}
+
+			const rect = stageEl.getBoundingClientRect();
+			const docXUnderCursor = (event.clientX - rect.left) / zoomOld;
+			const docYUnderCursor = (event.clientY - rect.top) / zoomOld;
+
+			const zoomFactor = Math.exp(-delta.y * WHEEL_ZOOM_SPEED);
 			const zoomNew = Math.min(
 				MAX_ZOOM,
 				Math.max(MIN_ZOOM, zoomOld * zoomFactor),
 			);
-			const scaleRatio = zoomNew / zoomOld;
+			if (zoomNew === zoomOld) return;
+			const stageBaseX = rect.left - panOld.x;
+			const stageBaseY = rect.top - panOld.y;
 
 			setZoom(zoomNew);
 			setPan({
-				x: panOld.x + cursorX * (1 - scaleRatio),
-				y: panOld.y + cursorY * (1 - scaleRatio),
+				x: event.clientX - stageBaseX - docXUnderCursor * zoomNew,
+				y: event.clientY - stageBaseY - docYUnderCursor * zoomNew,
 			});
 		}
 
@@ -305,9 +395,7 @@ export function DesignerCanvas() {
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			const target = event.target as HTMLElement | null;
-			if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-				return;
+			if (isTextInputTarget(event.target)) return;
 			if (editingNodeId) return;
 
 			const isMeta = event.metaKey || event.ctrlKey;
@@ -370,15 +458,12 @@ export function DesignerCanvas() {
 					if (!node) continue;
 					updateNodeFrame(id, { x: node.frame.x + dx, y: node.frame.y + dy });
 				}
-			} else if (
-				!isMeta &&
-				!event.altKey &&
-				event.key === " " &&
-				!event.repeat
-			) {
+			} else if (!isMeta && !event.altKey && event.key === " ") {
 				event.preventDefault();
-				toolBeforeSpaceRef.current = tool;
-				setTool("pan");
+				if (!event.repeat && !toolBeforeSpaceRef.current) {
+					toolBeforeSpaceRef.current = tool;
+					setTool("pan");
+				}
 			} else if (!isMeta && !event.altKey && !event.repeat && activePageId) {
 				if (key === "v") setTool("select");
 				else if (key === "h") setTool("pan");
@@ -396,6 +481,10 @@ export function DesignerCanvas() {
 		}
 
 		function onKeyUp(event: KeyboardEvent) {
+			if (isTextInputTarget(event.target)) return;
+			if (event.key === " ") {
+				event.preventDefault();
+			}
 			if (event.key === " " && toolBeforeSpaceRef.current) {
 				setTool(toolBeforeSpaceRef.current);
 				toolBeforeSpaceRef.current = null;
@@ -453,6 +542,26 @@ export function DesignerCanvas() {
 			edge,
 			startX: x,
 			startY: y,
+			originalFrame: { ...node.frame },
+		};
+		(event.target as Element).setPointerCapture(event.pointerId);
+	}
+
+	function handleRotatePointerDown(nodeId: NodeId, event: React.PointerEvent) {
+		event.stopPropagation();
+		event.preventDefault();
+		const node = document.nodes[nodeId];
+		if (!node) return;
+		const { x, y } = toDocPoint(event.clientX, event.clientY);
+		const frame = getAbsoluteFrame(document, nodeId);
+		const centerX = frame.x + frame.width / 2;
+		const centerY = frame.y + frame.height / 2;
+		interactionRef.current = {
+			kind: "rotate",
+			nodeId,
+			centerX,
+			centerY,
+			startAngle: angleBetween(centerX, centerY, x, y),
 			originalFrame: { ...node.frame },
 		};
 		(event.target as Element).setPointerCapture(event.pointerId);
@@ -524,6 +633,54 @@ export function DesignerCanvas() {
 		}
 	}
 
+	function handleSheetDragOver(event: React.DragEvent<HTMLDivElement>) {
+		if (!dragContainsImage(event)) return;
+		event.preventDefault();
+		event.dataTransfer.dropEffect = "copy";
+	}
+
+	async function handleSheetDrop(
+		pageId: NodeId,
+		event: React.DragEvent<HTMLDivElement>,
+	) {
+		const file = firstImageFile(event.dataTransfer.files);
+		if (!file) return;
+		event.preventDefault();
+		event.stopPropagation();
+
+		const pageNode = document.nodes[pageId];
+		if (!pageNode || pageNode.type !== "page") return;
+		const sheetRect = event.currentTarget.getBoundingClientRect();
+		const point = {
+			x: (event.clientX - sheetRect.left) / zoom,
+			y: (event.clientY - sheetRect.top) / zoom,
+		};
+		const pageSize = resolvePaperSize(pageNode.paper);
+
+		try {
+			setError(null);
+			const imageAsset = await imageFileToAsset(file);
+			const imageNode = createImageNode(pageId);
+			imageNode.name = file.name.replace(/\.[^.]+$/, "") || "Image";
+			imageNode.frame = fitDroppedImageFrame({
+				naturalWidth: imageAsset.width,
+				naturalHeight: imageAsset.height,
+				pageWidth: pageSize.width,
+				pageHeight: pageSize.height,
+				x: point.x,
+				y: point.y,
+			});
+			if (pageId !== activePageId) setActivePageId(pageId);
+			addNode(imageNode, pageId);
+			setImageAsset(imageNode.id, imageAsset.url, {
+				width: imageAsset.width,
+				height: imageAsset.height,
+			});
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	}
+
 	function handlePointerMove(event: React.PointerEvent) {
 		const interaction = interactionRef.current;
 		if (!interaction || !activePageId) return;
@@ -572,6 +729,21 @@ export function DesignerCanvas() {
 				node?.type === "line" ? 0 : MIN_SIZE,
 			);
 			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+		} else if (interaction.kind === "rotate") {
+			const currentAngle = angleBetween(
+				interaction.centerX,
+				interaction.centerY,
+				x,
+				y,
+			);
+			const rawRotation =
+				interaction.originalFrame.rotation +
+				currentAngle -
+				interaction.startAngle;
+			const rotation = event.shiftKey
+				? Math.round(rawRotation / 15) * 15
+				: Math.round(rawRotation);
+			setDragPreview({ nodeId: interaction.nodeId, frame: { rotation } });
 		} else if (interaction.kind === "marquee") {
 			interactionRef.current = { ...interaction, currentX: x, currentY: y };
 			setMarqueeRect({
@@ -640,19 +812,42 @@ export function DesignerCanvas() {
 			}
 		}
 
-		if (interaction.kind === "move" || interaction.kind === "resize") {
+		if (
+			interaction.kind === "move" ||
+			interaction.kind === "resize" ||
+			interaction.kind === "rotate"
+		) {
 			if (dragPreview) {
-				if ("x" in dragPreview.frame || "y" in dragPreview.frame) {
+				if (
+					interaction.kind !== "rotate" &&
+					("x" in dragPreview.frame || "y" in dragPreview.frame)
+				) {
 					updateNodeFrame(interaction.nodeId, {
 						x: dragPreview.frame.x ?? interaction.originalFrame.x,
 						y: dragPreview.frame.y ?? interaction.originalFrame.y,
 					});
 				}
-				if ("width" in dragPreview.frame || "height" in dragPreview.frame) {
+				if (
+					interaction.kind !== "rotate" &&
+					("width" in dragPreview.frame || "height" in dragPreview.frame)
+				) {
 					updateNodeFrame(interaction.nodeId, {
 						width: dragPreview.frame.width ?? interaction.originalFrame.width,
 						height:
 							dragPreview.frame.height ?? interaction.originalFrame.height,
+					});
+				}
+				if (
+					interaction.kind === "rotate" &&
+					"rotation" in dragPreview.frame
+				) {
+					updateNode(interaction.nodeId, {
+						frame: {
+							...interaction.originalFrame,
+							rotation:
+								dragPreview.frame.rotation ??
+								interaction.originalFrame.rotation,
+						},
 					});
 				}
 			}
@@ -691,7 +886,7 @@ export function DesignerCanvas() {
 					className="relative flex w-max flex-col items-start"
 					style={{
 						gap: PAGE_GAP,
-						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+						transform: `matrix(${zoom}, 0, 0, ${zoom}, ${pan.x}, ${pan.y})`,
 						transformOrigin: "top left",
 					}}
 				>
@@ -717,13 +912,15 @@ export function DesignerCanvas() {
 								onPointerDown={(event) =>
 									handleSheetPointerDown(pageId, event)
 								}
+								onDragOver={handleSheetDragOver}
+								onDrop={(event) => handleSheetDrop(pageId, event)}
 								onDoubleClick={isActive ? handleSheetDoubleClick : undefined}
 							>
 								<div className="pointer-events-none absolute -top-6 left-0 select-none text-neutral-500 text-xs dark:text-neutral-400">
 									{pageNode.name || `Page ${index + 1}`}
 								</div>
 								<PageCanvas
-									document={effectiveDocument}
+									document={previewDocument}
 									pageId={pageId}
 									width={pageSize.width}
 									height={pageSize.height}
@@ -743,11 +940,17 @@ export function DesignerCanvas() {
 												className="pointer-events-none absolute top-0 left-0 opacity-50 mix-blend-difference"
 											/>
 										)}
+										<DragPreviewOverlay
+											document={effectiveDocument}
+											pageId={pageId}
+											nodeId={dragPreview?.nodeId ?? null}
+										/>
 										<SelectionOverlay
 											document={effectiveDocument}
 											selection={selection}
 											zoom={zoom}
 											onHandlePointerDown={handleHandlePointerDown}
+											onRotatePointerDown={handleRotatePointerDown}
 										/>
 										<AlignmentGuides guides={guides} pageSize={pageSize} />
 										{editingNode &&
@@ -783,6 +986,42 @@ export function DesignerCanvas() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function DragPreviewOverlay({
+	document,
+	pageId,
+	nodeId,
+}: {
+	document: ReportDocument;
+	pageId: NodeId;
+	nodeId: NodeId | null;
+}) {
+	if (!nodeId) return null;
+	const node = document.nodes[nodeId];
+	if (!node || node.type !== "image" || node.parentId !== pageId) return null;
+	const asset = document.assets[node.assetId];
+	if (!asset?.url) return null;
+	const frame = getAbsoluteFrame(document, nodeId);
+	return (
+		<img
+			src={asset.url}
+			alt=""
+			draggable={false}
+			className="pointer-events-none absolute select-none opacity-90"
+			style={{
+				left: frame.x,
+				top: frame.y,
+				width: frame.width,
+				height: frame.height,
+				objectFit: node.fit,
+				transform: node.frame.rotation
+					? `rotate(${node.frame.rotation}deg)`
+					: undefined,
+				transformOrigin: "center",
+			}}
+		/>
 	);
 }
 

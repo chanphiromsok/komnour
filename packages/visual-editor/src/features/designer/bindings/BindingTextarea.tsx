@@ -74,8 +74,8 @@ export function BindingTextarea({
 		// A branch path keeps the binding open (trailing dot) so the user can
 		// drill deeper; a leaf closes it with `}}`.
 		const insert = suggestion.isBranch
-			? `{{${suggestion.path}.`
-			: `{{${suggestion.path}}}`;
+			? `{{${context.prefix}${suggestion.path}.`
+			: `{{${context.prefix}${suggestion.path}}}`;
 		const nextValue = before + insert + after;
 		const nextCaret = before.length + insert.length;
 		onValueChange(nextValue);

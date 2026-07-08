@@ -79,6 +79,7 @@ export function TextEditOverlay({
 	// (stepBack) instead of needing a document-wide linear offset.
 	const [bindingQuery, setBindingQuery] = useState<{
 		distanceFromCaret: number;
+		prefix: string;
 		query: string;
 	} | null>(null);
 	const [bindingActiveIndex, setBindingActiveIndex] = useState(0);
@@ -137,7 +138,11 @@ export function TextEditOverlay({
 			const ctx = bindingContextAt(before, before.length);
 			setBindingQuery(
 				ctx
-					? { distanceFromCaret: before.length - ctx.openIndex, query: ctx.query }
+					? {
+						distanceFromCaret: before.length - ctx.openIndex,
+						prefix: ctx.prefix,
+						query: ctx.query,
+					}
 					: null,
 			);
 			return;
@@ -170,8 +175,8 @@ export function TextEditOverlay({
 		// drill deeper; a leaf closes it with `}}` — same convention as the
 		// properties-panel BindingTextarea.
 		const insertText = suggestion.isBranch
-			? `{{${suggestion.path}.`
-			: `{{${suggestion.path}}}`;
+			? `{{${bindingQuery.prefix}${suggestion.path}.`
+			: `{{${bindingQuery.prefix}${suggestion.path}}}`;
 
 		const deleteRange = document.createRange();
 		deleteRange.setStart(openPos.node, openPos.offset);
