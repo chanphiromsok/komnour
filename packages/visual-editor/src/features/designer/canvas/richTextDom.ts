@@ -139,6 +139,112 @@ export function styleAtCaret(
 	return {};
 }
 
+/**
+ * Text immediately before (container, offset), walking backward through
+ * preceding siblings/ancestors up to `maxChars` characters or the editor
+ * root, whichever comes first. Used for `{{path}}` binding autocomplete,
+ * which only ever needs to see a short local window to find an unclosed
+ * `{{` — bounded like this, it's cheap to call on every keystroke regardless
+ * of total document length (same reasoning as `styleAtCaret` above).
+ */
+export function textBeforeCaret(
+	el: HTMLElement,
+	container: Node,
+	offset: number,
+	maxChars = 300,
+): string {
+	const parts: string[] = [];
+	let collected = 0;
+
+	function pushText(text: string) {
+		parts.unshift(text);
+		collected += text.length;
+	}
+
+	if (container.nodeType === Node.TEXT_NODE) {
+		pushText((container.textContent ?? "").slice(0, offset));
+	}
+
+	let sibling: Node | null =
+		container.nodeType === Node.TEXT_NODE
+			? container.previousSibling
+			: (container.childNodes[offset - 1] ?? null);
+	let ancestor: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+
+	while (ancestor && collected < maxChars) {
+		while (sibling && collected < maxChars) {
+			pushText(sibling.nodeName === "BR" ? "\n" : (sibling.textContent ?? ""));
+			sibling = sibling.previousSibling;
+		}
+		if (ancestor === el) break;
+		sibling = ancestor.previousSibling;
+		ancestor = ancestor.parentNode;
+	}
+
+	const joined = parts.join("");
+	return joined.length > maxChars
+		? joined.slice(joined.length - maxChars)
+		: joined;
+}
+
+/**
+ * DOM position `count` characters before (container, offset) — the inverse of
+ * `textBeforeCaret`'s walk. Used to find where a `{{` opener starts so it (and
+ * the partial path after it) can be replaced when a binding suggestion is
+ * applied. Bounded the same way: only ever walks back as far as `count`
+ * requires, not the whole document.
+ */
+export function stepBack(
+	el: HTMLElement,
+	container: Node,
+	offset: number,
+	count: number,
+): { node: Node; offset: number } {
+	let remaining = count;
+
+	if (container.nodeType === Node.TEXT_NODE) {
+		if (remaining <= offset) return { node: container, offset: offset - remaining };
+		remaining -= offset;
+	}
+
+	let sibling: Node | null =
+		container.nodeType === Node.TEXT_NODE
+			? container.previousSibling
+			: (container.childNodes[offset - 1] ?? null);
+	let ancestor: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+
+	while (ancestor) {
+		while (sibling) {
+			const isBr = sibling.nodeName === "BR";
+			const len = isBr ? 1 : (sibling.textContent ?? "").length;
+			if (remaining <= len) {
+				if (sibling.nodeType === Node.TEXT_NODE) {
+					return { node: sibling, offset: len - remaining };
+				}
+				// A styled <span> (single text child, per renderRunsToElement) or a
+				// <br> — descend into the span's text, or land at the sibling's own
+				// boundary if there's nothing to descend into.
+				const textChild = sibling.firstChild;
+				if (!isBr && textChild?.nodeType === Node.TEXT_NODE) {
+					return {
+						node: textChild,
+						offset: (textChild.textContent ?? "").length - remaining,
+					};
+				}
+				return { node: sibling, offset: 0 };
+			}
+			remaining -= len;
+			sibling = sibling.previousSibling;
+		}
+		if (ancestor === el) return { node: el, offset: 0 };
+		sibling = ancestor.previousSibling;
+		ancestor = ancestor.parentNode;
+	}
+	return { node: el, offset: 0 };
+}
+
 /** Current selection as linear character offsets within the editor, or null if none/outside. */
 export function getSelectionOffsets(
 	el: HTMLElement,
