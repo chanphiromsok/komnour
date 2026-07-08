@@ -793,7 +793,15 @@ function PageCanvas({
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const surfaceRef = useRef<Surface | null>(null);
 	const adapterRef = useRef<CanvasAdapter | null>(null);
-	const [ready, setReady] = useState(false);
+	// A monotonically increasing counter, not a boolean: when settledZoom (or
+	// engine/width/height) changes, the surface-creation effect's cleanup
+	// fires and then its body re-runs in the same batch — a boolean toggled
+	// false-then-true nets out to "unchanged" from React's dependency
+	// comparison, so the render effect below would never re-fire against the
+	// newly created surface (this is exactly what made zooming show a blank
+	// page). A counter can't cancel itself out this way, since it never
+	// revisits the same value.
+	const [surfaceGeneration, setSurfaceGeneration] = useState(0);
 
 	// The stage (all page sheets) is scaled on-screen via a CSS transform, not
 	// by re-rendering — so a canvas sized only for devicePixelRatio stays a
@@ -827,9 +835,8 @@ function PageCanvas({
 			engine.fontMgr,
 			scale,
 		);
-		setReady(true);
+		setSurfaceGeneration((generation) => generation + 1);
 		return () => {
-			setReady(false);
 			surface.delete();
 			surfaceRef.current = null;
 			adapterRef.current = null;
@@ -837,7 +844,7 @@ function PageCanvas({
 	}, [engine, width, height, onError, settledZoom]);
 
 	useEffect(() => {
-		if (!ready || !adapterRef.current) return;
+		if (surfaceGeneration === 0 || !adapterRef.current) return;
 		let cancelled = false;
 		const pageDocument = extractPageDocument(document, pageId);
 		renderDocument(pageDocument, adapterRef.current, bindingData ?? undefined, {
@@ -850,7 +857,7 @@ function PageCanvas({
 		return () => {
 			cancelled = true;
 		};
-	}, [ready, document, pageId, bindingData, onError]);
+	}, [surfaceGeneration, document, pageId, bindingData, onError]);
 
 	return (
 		<canvas
