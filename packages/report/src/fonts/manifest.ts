@@ -62,6 +62,18 @@ export const FONT_MANIFEST: FontDefinition[] = [
 		style: "normal",
 		source: "/fonts/NotoSansKhmer[wdth,wght].ttf",
 	},
+	// Ships (and is named internally) as "Khmer OS Moul" — the "Muol Light"
+	// filename is this font's common name in the wild, but `family` has to
+	// match the name baked into the font file's own name table, since that's
+	// what both CanvasKit (browser) and skia-canvas (server) key their font
+	// matching on.
+	{
+		id: "khmer-os-moul-400",
+		family: "Khmer OS Moul",
+		weight: 400,
+		style: "normal",
+		source: "/fonts/KhmerOSMuolLight.ttf",
+	},
 	// Symbol/dingbat font: each Latin character renders as a symbol. Pick glyphs
 	// via the properties-panel glyph picker (shown when this family is selected).
 	{

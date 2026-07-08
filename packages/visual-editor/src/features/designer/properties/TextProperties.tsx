@@ -10,6 +10,7 @@ const FONT_FAMILIES = [
 	"Roboto",
 	"Battambang",
 	"Noto Sans Khmer",
+	"Khmer OS Moul",
 	"Wingdings 2",
 ];
 const ALIGNS: TextNode["style"]["align"][] = ["left", "center", "right"];
