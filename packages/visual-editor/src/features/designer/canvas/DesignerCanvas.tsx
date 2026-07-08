@@ -21,6 +21,7 @@ import {
 } from "#/features/designer/store/reportStore";
 import { loadBrowserFontMgr } from "@komnour/report/src/fonts/registerBrowser";
 import { resolvePaperSize } from "@komnour/report/src/layout/paper";
+import { resolveRuns } from "@komnour/report/src/model/runs";
 import { extractPageDocument } from "@komnour/report/src/model/tree";
 import type {
 	Frame,
@@ -704,9 +705,9 @@ export function DesignerCanvas() {
 												<TextEditOverlay
 													frame={editingFrame}
 													style={editingNode.style}
-													initialValue={editingNode.text}
-													onCommit={(value) => {
-														updateNode(editingNode.id, { text: value });
+													initialRuns={resolveRuns(editingNode)}
+													onCommit={({ text, runs }) => {
+														updateNode(editingNode.id, { text, runs });
 														setEditingNodeId(null);
 													}}
 													onCancel={() => setEditingNodeId(null)}

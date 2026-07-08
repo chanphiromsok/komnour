@@ -79,10 +79,46 @@ export interface TextStyle {
 	wrap: boolean;
 }
 
+/**
+ * The subset of TextStyle that can vary between runs within one paragraph.
+ * Block-level properties (align, lineHeight, verticalAlign, wrap) stay on the
+ * node's base `style` — they apply to the whole paragraph, not a span of it.
+ */
+export type InlineTextStyle = Pick<
+	TextStyle,
+	| "fontFamily"
+	| "fontSize"
+	| "fontWeight"
+	| "fontStyle"
+	| "color"
+	| "letterSpacing"
+	| "decoration"
+>;
+
+/**
+ * A contiguous span of text sharing one set of inline style overrides. Fields
+ * present in `style` override the node's base TextStyle for this span; omitted
+ * fields inherit it. This is what makes "select a word, make it bold" possible.
+ */
+export interface TextRun {
+	text: string;
+	style?: Partial<InlineTextStyle>;
+}
+
 export interface TextNode extends BaseNode {
 	type: "text";
+	/**
+	 * Full plain text. Always kept equal to the concatenation of `runs` when
+	 * runs are present. Used for bindings and as the sole content when `runs`
+	 * is absent (the common, unstyled case).
+	 */
 	text: string;
 	style: TextStyle;
+	/**
+	 * Optional inline styled spans. Absent — or a single run with no overrides —
+	 * means the whole text renders in the base `style`.
+	 */
+	runs?: TextRun[];
 }
 
 export interface ImageNode extends BaseNode {

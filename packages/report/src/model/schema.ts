@@ -75,11 +75,30 @@ export const TextStyleSchema = z.object({
 	wrap: z.boolean(),
 });
 
+/** Inline overrides a run may carry — the per-span subset of TextStyle (all optional). */
+export const InlineTextStyleSchema = z
+	.object({
+		fontFamily: z.string(),
+		fontSize: z.number(),
+		fontWeight: z.number(),
+		fontStyle: z.enum(["normal", "italic"]),
+		color: z.string(),
+		letterSpacing: z.number(),
+		decoration: z.enum(["none", "underline", "line-through"]),
+	})
+	.partial();
+
+export const TextRunSchema = z.object({
+	text: z.string(),
+	style: InlineTextStyleSchema.optional(),
+});
+
 export const TextNodeSchema = z.object({
 	...baseNodeShape,
 	type: z.literal("text"),
 	text: z.string(),
 	style: TextStyleSchema,
+	runs: z.array(TextRunSchema).optional(),
 });
 
 export const ImageNodeSchema = z.object({

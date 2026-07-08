@@ -8,7 +8,13 @@ import type {
 } from "canvaskit-wasm";
 import { fitRect } from "../layout/fitRect";
 import { verticalAlignOffset } from "../layout/verticalAlign";
-import type { Paint, Stroke, TextStyle } from "../model/types";
+import type {
+	InlineTextStyle,
+	Paint,
+	Stroke,
+	TextRun,
+	TextStyle,
+} from "../model/types";
 import type {
 	CircleOptions,
 	PathOptions,
@@ -201,11 +207,11 @@ export class CanvasAdapter implements RendererAdapter {
 	}
 
 	measureTextBlock(
-		text: string,
+		runs: TextRun[],
 		style: TextStyle,
 		maxWidth: number,
 	): TextBlockMetrics {
-		const paragraph = this.buildParagraph(text, style, maxWidth);
+		const paragraph = this.buildParagraph(runs, style, maxWidth);
 		const metrics: TextBlockMetrics = {
 			width: paragraph.getMaxWidth(),
 			height: paragraph.getHeight(),
@@ -216,11 +222,11 @@ export class CanvasAdapter implements RendererAdapter {
 	}
 
 	drawTextBlock(
-		text: string,
+		runs: TextRun[],
 		style: TextStyle,
 		box: { width: number; height: number },
 	): void {
-		const paragraph = this.buildParagraph(text, style, box.width);
+		const paragraph = this.buildParagraph(runs, style, box.width);
 		const yOffset = verticalAlignOffset(
 			box.height,
 			paragraph.getHeight(),
@@ -230,34 +236,64 @@ export class CanvasAdapter implements RendererAdapter {
 		paragraph.delete();
 	}
 
-	private buildParagraph(text: string, style: TextStyle, maxWidth: number) {
+	/**
+	 * Builds a CanvasKit paragraph from styled runs. The paragraph's default
+	 * text style is the node's base style; each run is emitted with pushStyle
+	 * over the base merged with the run's inline overrides, so a mixed-style
+	 * paragraph is still shaped and wrapped as one unit by CanvasKit (correct
+	 * bidi/Khmer line-breaking across style boundaries).
+	 */
+	private buildParagraph(runs: TextRun[], style: TextStyle, maxWidth: number) {
 		const paragraphStyle = new this.canvasKit.ParagraphStyle({
 			textAlign: textAlignFor(this.canvasKit, style.align),
-			textStyle: {
-				color: this.canvasKit.parseColorString(style.color),
-				fontFamilies: [style.fontFamily],
-				fontSize: style.fontSize,
-				fontStyle: {
-					weight: { value: style.fontWeight } as FontWeight,
-					slant:
-						style.fontStyle === "italic"
-							? this.canvasKit.FontSlant.Italic
-							: this.canvasKit.FontSlant.Upright,
-				},
-				heightMultiplier: style.lineHeight,
-				letterSpacing: style.letterSpacing,
-				decoration: decorationFor(this.canvasKit, style.decoration),
-			},
+			textStyle: this.textStyleFields(style),
 		});
 		const builder = this.canvasKit.ParagraphBuilder.Make(
 			paragraphStyle,
 			this.fontMgr,
 		);
-		builder.addText(text);
+		for (const run of runs) {
+			const textStyle = new this.canvasKit.TextStyle(
+				this.textStyleFields(style, run.style),
+			);
+			builder.pushStyle(textStyle);
+			builder.addText(run.text);
+			builder.pop();
+		}
 		const paragraph = builder.build();
 		paragraph.layout(style.wrap ? maxWidth : Number.POSITIVE_INFINITY);
 		builder.delete();
 		return paragraph;
+	}
+
+	/** Base style merged with a run's inline overrides, as CanvasKit TextStyle fields. */
+	private textStyleFields(
+		base: TextStyle,
+		override?: Partial<InlineTextStyle>,
+	) {
+		const fontFamily = override?.fontFamily ?? base.fontFamily;
+		const fontSize = override?.fontSize ?? base.fontSize;
+		const fontWeight = override?.fontWeight ?? base.fontWeight;
+		const fontStyle = override?.fontStyle ?? base.fontStyle;
+		const color = override?.color ?? base.color;
+		const letterSpacing = override?.letterSpacing ?? base.letterSpacing;
+		const decoration = override?.decoration ?? base.decoration;
+		return {
+			color: this.canvasKit.parseColorString(color),
+			fontFamilies: [fontFamily],
+			fontSize,
+			fontStyle: {
+				weight: { value: fontWeight } as FontWeight,
+				slant:
+					fontStyle === "italic"
+						? this.canvasKit.FontSlant.Italic
+						: this.canvasKit.FontSlant.Upright,
+			},
+			// lineHeight is block-level, always from the base style.
+			heightMultiplier: base.lineHeight,
+			letterSpacing,
+			decoration: decorationFor(this.canvasKit, decoration),
+		};
 	}
 
 	private makeFillPaint(fill: Paint): SkPaint {

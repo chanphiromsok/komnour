@@ -1,4 +1,4 @@
-import type { Paint, Stroke, TextStyle } from "../model/types";
+import type { Paint, Stroke, TextRun, TextStyle } from "../model/types";
 
 export interface ResolvedAsset {
 	bytes: Uint8Array;
@@ -65,13 +65,18 @@ export interface RendererAdapter {
 		fit: "contain" | "cover" | "fill",
 	): void | Promise<void>;
 
+	/**
+	 * Text is passed as styled runs (see resolveRuns): `style` is the paragraph's
+	 * base/block style and each run's optional `style` overrides it for that span.
+	 * An unstyled node is a single run with no overrides.
+	 */
 	measureTextBlock(
-		text: string,
+		runs: TextRun[],
 		style: TextStyle,
 		maxWidth: number,
 	): TextBlockMetrics;
 	drawTextBlock(
-		text: string,
+		runs: TextRun[],
 		style: TextStyle,
 		box: { width: number; height: number },
 	): void;

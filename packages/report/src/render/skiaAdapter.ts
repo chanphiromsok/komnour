@@ -6,7 +6,13 @@ import {
 } from "skia-canvas";
 import { fitRect } from "../layout/fitRect";
 import { verticalAlignOffset } from "../layout/verticalAlign";
-import type { Stroke, TextStyle } from "../model/types";
+import { runsToText } from "../model/runs";
+import type {
+	InlineTextStyle,
+	Stroke,
+	TextRun,
+	TextStyle,
+} from "../model/types";
 import type {
 	CircleOptions,
 	PathOptions,
@@ -177,40 +183,166 @@ export class SkiaAdapter implements RendererAdapter {
 	}
 
 	measureTextBlock(
-		text: string,
+		runs: TextRun[],
 		style: TextStyle,
 		maxWidth: number,
 	): TextBlockMetrics {
-		const ctx = this.context;
-		this.applyTextStyle(style);
-		const metrics = ctx.measureText(text, style.wrap ? maxWidth : undefined);
+		if (isUniform(runs)) {
+			const ctx = this.context;
+			this.applyTextStyle(style);
+			const metrics = ctx.measureText(
+				runsToText(runs),
+				style.wrap ? maxWidth : undefined,
+			);
+			return {
+				width: metrics.width,
+				height: contentHeightOf(metrics),
+				lineCount: metrics.lines.length,
+			};
+		}
+		const lines = this.layoutStyledRuns(runs, style, maxWidth);
 		return {
-			width: metrics.width,
-			height: contentHeightOf(metrics),
-			lineCount: metrics.lines.length,
+			width: Math.max(0, ...lines.map((l) => l.width)),
+			height: lines.reduce((sum, l) => sum + l.advance, 0),
+			lineCount: lines.length,
 		};
 	}
 
 	drawTextBlock(
-		text: string,
+		runs: TextRun[],
+		style: TextStyle,
+		box: { width: number; height: number },
+	): void {
+		// Fast path: an unstyled node (every existing document) is one uniform
+		// run — shape it with skia-canvas's native wrap exactly as before, no
+		// behavior change and no hand-rolled layout.
+		if (isUniform(runs)) {
+			const ctx = this.context;
+			this.applyTextStyle(style);
+			const metrics = ctx.measureText(
+				runsToText(runs),
+				style.wrap ? box.width : undefined,
+			);
+			const yOffset = verticalAlignOffset(
+				box.height,
+				contentHeightOf(metrics),
+				style.verticalAlign,
+			);
+			const x =
+				style.align === "center"
+					? box.width / 2
+					: style.align === "right"
+						? box.width
+						: 0;
+			ctx.fillText(
+				runsToText(runs),
+				x,
+				yOffset,
+				style.wrap ? box.width : undefined,
+			);
+			return;
+		}
+		this.drawStyledRuns(runs, style, box);
+	}
+
+	/**
+	 * Manual layout for a paragraph with mixed inline styles — skia-canvas has
+	 * no rich-paragraph builder (unlike CanvasKit's ParagraphBuilder), so styled
+	 * runs are tokenized into words/whitespace, greedily wrapped, and drawn per
+	 * token at a shared baseline. Only reached when a node actually carries
+	 * inline overrides; uniform text never takes this path.
+	 */
+	private layoutStyledRuns(
+		runs: TextRun[],
+		style: TextStyle,
+		maxWidth: number,
+	): StyledLine[] {
+		const ctx = this.context;
+		const wrap = style.wrap;
+		const lines: StyledLine[] = [];
+		let current: StyledToken[] = [];
+
+		const flush = () => {
+			lines.push(makeLine(current));
+			current = [];
+		};
+
+		for (const run of runs) {
+			const merged = mergeInline(style, run.style);
+			// Tokens: a hard newline, a whitespace span, or a word.
+			const tokens = run.text.match(/\n|[^\S\n]+|\S+/g) ?? [];
+			for (const text of tokens) {
+				if (text === "\n") {
+					flush();
+					continue;
+				}
+				this.applyRunStyle(merged);
+				const m = ctx.measureText(text);
+				const token: StyledToken = {
+					text,
+					width: m.width,
+					ascent: m.fontBoundingBoxAscent,
+					descent: m.fontBoundingBoxDescent,
+					lineHeight: merged.fontSize * style.lineHeight,
+					style: merged,
+					isSpace: /^\s+$/.test(text),
+				};
+				const lineWidth = current.reduce((w, t) => w + t.width, 0);
+				if (
+					wrap &&
+					current.length > 0 &&
+					!token.isSpace &&
+					lineWidth + token.width > maxWidth
+				) {
+					flush();
+				}
+				current.push(token);
+			}
+		}
+		flush();
+		return lines;
+	}
+
+	private drawStyledRuns(
+		runs: TextRun[],
 		style: TextStyle,
 		box: { width: number; height: number },
 	): void {
 		const ctx = this.context;
-		this.applyTextStyle(style);
-		const metrics = ctx.measureText(text, style.wrap ? box.width : undefined);
-		const yOffset = verticalAlignOffset(
-			box.height,
-			contentHeightOf(metrics),
-			style.verticalAlign,
-		);
-		const x =
-			style.align === "center"
-				? box.width / 2
-				: style.align === "right"
-					? box.width
-					: 0;
-		ctx.fillText(text, x, yOffset, style.wrap ? box.width : undefined);
+		const lines = this.layoutStyledRuns(runs, style, box.width);
+		const totalHeight = lines.reduce((sum, l) => sum + l.advance, 0);
+		let y = verticalAlignOffset(box.height, totalHeight, style.verticalAlign);
+
+		for (const line of lines) {
+			const leading = line.advance - (line.ascent + line.descent);
+			const baseline = y + leading / 2 + line.ascent;
+			let x =
+				style.align === "center"
+					? (box.width - line.width) / 2
+					: style.align === "right"
+						? box.width - line.width
+						: 0;
+			for (const token of line.tokens) {
+				this.applyRunStyle(token.style);
+				ctx.fillText(token.text, x, baseline);
+				x += token.width;
+			}
+			y += line.advance;
+		}
+	}
+
+	/** Sets the 2D context up to draw one run's text (font, color, decoration). */
+	private applyRunStyle(style: ResolvedInline): void {
+		const ctx = this.context;
+		const lineHeightPx = style.fontSize * style.lineHeightMultiplier;
+		const italic = style.fontStyle === "italic" ? "italic " : "";
+		ctx.font = `${italic}${style.fontWeight} ${style.fontSize}px/${lineHeightPx}px ${style.fontFamily}`;
+		ctx.fillStyle = style.color;
+		ctx.textAlign = "left";
+		ctx.textBaseline = "alphabetic";
+		ctx.textWrap = false;
+		ctx.letterSpacing = `${style.letterSpacing}px`;
+		ctx.textDecoration = style.decoration === "none" ? "" : style.decoration;
 	}
 
 	private applyStroke(stroke: Stroke): void {
@@ -239,4 +371,75 @@ function contentHeightOf(metrics: {
 }): number {
 	const lastLine = metrics.lines.at(-1);
 	return lastLine ? lastLine.y + lastLine.height : 0;
+}
+
+/** A fully-resolved inline style (base merged with a run's overrides) for the styled-run path. */
+interface ResolvedInline {
+	fontFamily: string;
+	fontSize: number;
+	fontWeight: number;
+	fontStyle: "normal" | "italic";
+	color: string;
+	letterSpacing: number;
+	decoration: "none" | "underline" | "line-through";
+	/** Block-level line-height multiplier, always from the base style. */
+	lineHeightMultiplier: number;
+}
+
+interface StyledToken {
+	text: string;
+	width: number;
+	ascent: number;
+	descent: number;
+	lineHeight: number;
+	style: ResolvedInline;
+	isSpace: boolean;
+}
+
+interface StyledLine {
+	tokens: StyledToken[];
+	width: number;
+	ascent: number;
+	descent: number;
+	/** Vertical space this line occupies (baseline-to-baseline advance). */
+	advance: number;
+}
+
+function makeLine(tokens: StyledToken[]): StyledLine {
+	const ascent = Math.max(0, ...tokens.map((t) => t.ascent));
+	const descent = Math.max(0, ...tokens.map((t) => t.descent));
+	const naturalHeight = ascent + descent;
+	const requestedHeight = Math.max(0, ...tokens.map((t) => t.lineHeight));
+	return {
+		tokens,
+		width: tokens.reduce((w, t) => w + t.width, 0),
+		ascent,
+		descent,
+		advance: Math.max(naturalHeight, requestedHeight),
+	};
+}
+
+function mergeInline(
+	base: TextStyle,
+	override: Partial<InlineTextStyle> | undefined,
+): ResolvedInline {
+	return {
+		fontFamily: override?.fontFamily ?? base.fontFamily,
+		fontSize: override?.fontSize ?? base.fontSize,
+		fontWeight: override?.fontWeight ?? base.fontWeight,
+		fontStyle: override?.fontStyle ?? base.fontStyle,
+		color: override?.color ?? base.color,
+		letterSpacing: override?.letterSpacing ?? base.letterSpacing,
+		decoration: override?.decoration ?? base.decoration,
+		lineHeightMultiplier: base.lineHeight,
+	};
+}
+
+/** True when no run carries an inline override, so the fast native-wrap path applies. */
+function isUniform(runs: TextRun[]): boolean {
+	return runs.every(
+		(run) =>
+			!run.style ||
+			Object.values(run.style).every((value) => value === undefined),
+	);
 }

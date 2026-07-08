@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
-    "@komnour/core": "workspace:*",
     "@komnour/report": "workspace:*",
     "fastify": "^5.0.0",
     "sone": "^1.4.0"

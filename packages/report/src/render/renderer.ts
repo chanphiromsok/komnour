@@ -1,5 +1,6 @@
 import { resolveBindings } from "../data/bind";
 import { resolvePaperSize } from "../layout/paper";
+import { resolveRuns } from "../model/runs";
 import type {
 	Asset,
 	PageNode,
@@ -84,7 +85,7 @@ async function drawNodeContent(
 			return;
 		}
 		case "text":
-			adapter.drawTextBlock(node.text, node.style, {
+			adapter.drawTextBlock(resolveRuns(node), node.style, {
 				width: node.frame.width,
 				height: node.frame.height,
 			});

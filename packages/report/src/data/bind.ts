@@ -24,15 +24,25 @@ export function resolveBindings(
 ): ReportDocument {
 	let changed = false;
 	const nodes: ReportDocument["nodes"] = { ...doc.nodes };
-	for (const [id, node] of Object.entries(doc.nodes)) {
-		if (node.type !== "text") continue;
-		const text = node.text.replace(BINDING_PATTERN, (match, path: string) => {
+	const substitute = (input: string) =>
+		input.replace(BINDING_PATTERN, (match, path: string) => {
 			const value = lookupPath(data, path.trim());
 			if (value === undefined || value === null) return match;
 			return typeof value === "object" ? JSON.stringify(value) : String(value);
 		});
-		if (text !== node.text) {
-			nodes[id] = { ...node, text };
+
+	for (const [id, node] of Object.entries(doc.nodes)) {
+		if (node.type !== "text") continue;
+		const text = substitute(node.text);
+		// Inline runs carry their own text, so bindings inside a styled span must
+		// be resolved there too — keeping node.text in sync as the concatenation.
+		const runs = node.runs?.map((run) => {
+			const runText = substitute(run.text);
+			return runText === run.text ? run : { ...run, text: runText };
+		});
+		const runsChanged = runs?.some((run, i) => run !== node.runs?.[i]) ?? false;
+		if (text !== node.text || runsChanged) {
+			nodes[id] = runs ? { ...node, text, runs } : { ...node, text };
 			changed = true;
 		}
 	}

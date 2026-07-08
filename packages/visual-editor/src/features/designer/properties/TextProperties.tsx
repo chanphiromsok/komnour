@@ -28,10 +28,21 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 				Content
 				<BindingTextarea
 					value={node.text}
-					onValueChange={(text) => updateNode(nodeId, { text })}
+					// Editing the whole text here replaces it as one span — clearing
+					// any per-word inline styling. Inline styling is done on-canvas
+					// (double-click → select → toolbar); this field is for bulk text.
+					onValueChange={(text) =>
+						updateNode(nodeId, { text, runs: undefined })
+					}
 					rows={3}
 					className="w-full rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
 				/>
+				{node.runs && node.runs.length > 1 && (
+					<span className="text-[10px] text-neutral-400">
+						Has inline styles — double-click the text on the canvas to edit
+						them. Editing here resets them.
+					</span>
+				)}
 			</label>
 
 			<label className="flex flex-col gap-1 text-neutral-500 text-xs">
@@ -55,7 +66,10 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 				<GlyphPicker
 					fontFamily={node.style.fontFamily}
 					onInsert={(char) =>
-						updateNode(nodeId, { text: `${node.text}${char}` })
+						updateNode(nodeId, {
+							text: `${node.text}${char}`,
+							runs: undefined,
+						})
 					}
 				/>
 			)}
