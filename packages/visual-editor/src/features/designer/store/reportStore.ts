@@ -176,6 +176,18 @@ export const useDesignerStore = create<DesignerState>()(
 				const node = draft.nodes[id];
 				if (!node) return;
 				Object.assign(node.frame, patch);
+				// A line's endpoints are stored relative to its own frame (x1/y1 at
+				// the frame's origin, x2/y2 at its far corner) so the frame stays a
+				// real, hit-testable bounding box instead of always being 0×0.
+				// Moving only shifts frame.x/y, which the translate in renderer.ts
+				// already accounts for, but resizing changes frame.width/height and
+				// must re-sync x2/y2 or the line would stop matching its bbox.
+				if (node.type === "line") {
+					node.x1 = 0;
+					node.y1 = 0;
+					node.x2 = node.frame.width;
+					node.y2 = node.frame.height;
+				}
 			});
 		},
 

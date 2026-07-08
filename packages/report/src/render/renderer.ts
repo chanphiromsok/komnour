@@ -14,6 +14,17 @@ export type ReportData = Record<string, unknown>;
 export interface RenderOptions {
 	/** Resolves an asset id to its decoded bytes/dimensions. Required only if the document contains image nodes. */
 	resolveAsset?: (asset: Asset) => ResolvedAsset | Promise<ResolvedAsset>;
+	/**
+	 * Polled after every `await` point (asset resolution, node-to-node).
+	 * When it starts returning true, rendering stops issuing further draw
+	 * calls and returns early. Callers that fire off a new render on every
+	 * document change (e.g. an interactive canvas re-rendering on each
+	 * pointermove) should set this once a newer render has superseded this
+	 * one — otherwise the two calls race on the same shared canvas surface,
+	 * since an in-flight image fetch can resume and keep drawing stale
+	 * content on top of a newer, already-correct frame.
+	 */
+	shouldAbort?: () => boolean;
 }
 
 export async function renderDocument(
@@ -26,11 +37,13 @@ export async function renderDocument(
 
 	await adapter.beginDocument();
 	for (const pageId of resolved.pages) {
+		if (options?.shouldAbort?.()) return undefined;
 		const page = resolved.nodes[pageId] as PageNode;
 		const size = resolvePaperSize(page.paper);
 		adapter.beginPage(size, page.background);
 		for (const childId of page.children) {
 			await drawNode(resolved, childId, adapter, options);
+			if (options?.shouldAbort?.()) return undefined;
 		}
 		adapter.endPage();
 	}
@@ -53,9 +66,15 @@ async function drawNode(
 
 	await drawNodeContent(doc, node, adapter, options);
 
-	for (const childId of node.children) {
-		await drawNode(doc, childId, adapter, options);
+	if (!options?.shouldAbort?.()) {
+		for (const childId of node.children) {
+			await drawNode(doc, childId, adapter, options);
+			if (options?.shouldAbort?.()) break;
+		}
 	}
+	// Always restore, even when aborting mid-tree, so the canvas's
+	// save/restore (and CanvasAdapter's opacity-layer) stacks stay balanced
+	// for the next render that reuses this same adapter instance.
 	adapter.restore();
 }
 
@@ -102,6 +121,10 @@ async function drawNodeContent(
 				// the no-op behavior for an unresolved assetId above.
 				return;
 			}
+			// The asset resolution above is the one `await` most likely to
+			// outlive a superseded render (network/decode time); re-check here
+			// before drawing so a stale resolve can't paint over a newer frame.
+			if (options?.shouldAbort?.()) return;
 			await adapter.drawImage(
 				resolved,
 				node.frame.width,

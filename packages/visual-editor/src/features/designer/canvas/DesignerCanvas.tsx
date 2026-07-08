@@ -801,6 +801,7 @@ function PageCanvas({
 		const pageDocument = extractPageDocument(document, pageId);
 		renderDocument(pageDocument, adapterRef.current, bindingData ?? undefined, {
 			resolveAsset: resolveAssetBrowser,
+			shouldAbort: () => cancelled,
 		}).catch((err) => {
 			if (cancelled) return;
 			onError(err instanceof Error ? err.message : String(err));
