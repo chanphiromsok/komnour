@@ -183,10 +183,15 @@ async function drawNodeContent(
 			adapter.drawPath(node.d, { fill: node.fill, stroke: node.stroke });
 			return;
 		case "checkbox": {
-			// The box is a square filling the frame's height; frame.width covers
-			// the box plus the label (if any) — see CheckboxNode's doc comment.
-			const boxSize = node.frame.height;
-			adapter.drawRect(boxSize, boxSize, {
+			// With a label, the box is a square sized to the frame's height and
+			// frame.width covers the box plus the label together (see
+			// CheckboxNode's doc comment). Without one, there's nothing else to
+			// lay out, so the box fills the whole frame — a label-less checkbox
+			// resizes in both dimensions exactly like a Rect, instead of width
+			// silently doing nothing (which looked like it couldn't be resized).
+			const boxWidth = node.label ? node.frame.height : node.frame.width;
+			const boxHeight = node.frame.height;
+			adapter.drawRect(boxWidth, boxHeight, {
 				fill: node.fill,
 				stroke: node.stroke,
 				radius: node.cornerRadius,
@@ -194,32 +199,32 @@ async function drawNodeContent(
 			if (node.checked) {
 				const checkStroke = {
 					color: node.checkColor,
-					width: Math.max(1.5, boxSize * 0.12),
+					width: Math.max(1.5, Math.min(boxWidth, boxHeight) * 0.12),
 				};
 				adapter.drawLine(
-					boxSize * 0.2,
-					boxSize * 0.55,
-					boxSize * 0.42,
-					boxSize * 0.78,
+					boxWidth * 0.2,
+					boxHeight * 0.55,
+					boxWidth * 0.42,
+					boxHeight * 0.78,
 					checkStroke,
 				);
 				adapter.drawLine(
-					boxSize * 0.42,
-					boxSize * 0.78,
-					boxSize * 0.82,
-					boxSize * 0.22,
+					boxWidth * 0.42,
+					boxHeight * 0.78,
+					boxWidth * 0.82,
+					boxHeight * 0.22,
 					checkStroke,
 				);
 			}
 			if (node.label) {
-				const gap = boxSize * 0.4;
+				const gap = boxHeight * 0.4;
 				adapter.save();
-				adapter.translate(boxSize + gap, 0);
+				adapter.translate(boxWidth + gap, 0);
 				adapter.drawTextBlock(
 					[{ text: node.label }],
 					node.labelStyle ?? DEFAULT_CHECKBOX_LABEL_STYLE,
 					{
-						width: Math.max(0, node.frame.width - boxSize - gap),
+						width: Math.max(0, node.frame.width - boxWidth - gap),
 						height: node.frame.height,
 					},
 				);

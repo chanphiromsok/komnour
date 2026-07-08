@@ -5,6 +5,7 @@ import {
 } from "#/features/designer/bindings/paths";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
 import type { CheckboxNode, NodeId } from "@komnour/report/src/model/types";
+import { NumberField } from "./NumberField";
 
 export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 	const node = useDesignerStore(
@@ -20,6 +21,11 @@ export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 	const isBound = Boolean(node.checkedBinding);
 	const suggestions = filterSuggestions(allPaths, node.checkedBinding ?? "");
 	const showSuggestions = pathInputFocused && allPaths.length > 0;
+	const currentStroke = node.stroke ?? { color: "#999999", width: 1 };
+	// Merge into the existing stroke so editing color or width never drops the other.
+	function updateStroke(patch: Partial<{ color: string; width: number }>) {
+		updateNode(nodeId, { stroke: { ...currentStroke, ...patch } });
+	}
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -110,15 +116,26 @@ export function CheckboxProperties({ nodeId }: { nodeId: NodeId }) {
 				Box border
 				<input
 					type="color"
-					value={node.stroke?.color ?? "#999999"}
-					onChange={(event) =>
-						updateNode(nodeId, {
-							stroke: { color: event.target.value, width: node.stroke?.width ?? 1 },
-						})
-					}
+					value={currentStroke.color}
+					onChange={(event) => updateStroke({ color: event.target.value })}
 					className="h-8 w-full rounded border border-neutral-300"
 				/>
 			</label>
+
+			<div className="grid grid-cols-2 gap-2">
+				<NumberField
+					label="Border width"
+					value={currentStroke.width}
+					min={0}
+					onChange={(width) => updateStroke({ width })}
+				/>
+				<NumberField
+					label="Corner radius"
+					value={node.cornerRadius ?? 0}
+					min={0}
+					onChange={(cornerRadius) => updateNode(nodeId, { cornerRadius })}
+				/>
+			</div>
 
 			<label className="flex flex-col gap-1 text-neutral-500 text-xs">
 				Check color
