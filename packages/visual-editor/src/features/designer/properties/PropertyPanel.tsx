@@ -1,4 +1,5 @@
 import { useDesignerStore } from "#/features/designer/store/reportStore";
+import { CheckboxProperties } from "./CheckboxProperties";
 import { FrameProperties } from "./FrameProperties";
 import { ImageProperties } from "./ImageProperties";
 import { PageProperties } from "./PageProperties";
@@ -35,6 +36,7 @@ export function PropertyPanel() {
 					{(node.type === "rect" ||
 						node.type === "circle" ||
 						node.type === "line") && <ShapeProperties nodeId={node.id} />}
+					{node.type === "checkbox" && <CheckboxProperties nodeId={node.id} />}
 				</>
 			)}
 		</div>

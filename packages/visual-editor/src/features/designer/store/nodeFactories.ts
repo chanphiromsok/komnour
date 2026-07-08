@@ -1,5 +1,6 @@
 import { resolvePaperSize } from "@komnour/report/src/layout/paper";
 import type {
+	CheckboxNode,
 	CircleNode,
 	ImageNode,
 	LineNode,
@@ -92,6 +93,24 @@ export function createImageNode(parentId: NodeId | null): ImageNode {
 		frame: { x: 48, y: 48, width: 160, height: 120, rotation: 0 },
 		assetId: "",
 		fit: "contain",
+	};
+}
+
+export function createCheckboxNode(parentId: NodeId | null): CheckboxNode {
+	// frame.height is the box's side length; frame.width is the box plus the
+	// label — see CheckboxNode's doc comment for why the whole row is one
+	// frame instead of a frame just for the box.
+	return {
+		...baseNode(parentId, "Checkbox"),
+		type: "checkbox",
+		frame: { x: 48, y: 48, width: 160, height: 20, rotation: 0 },
+		checked: false,
+		fill: { color: "#ffffff" },
+		stroke: { color: "#999999", width: 1 },
+		checkColor: "#111111",
+		cornerRadius: 3,
+		label: "Checkbox",
+		labelStyle: { ...DEFAULT_TEXT_STYLE, fontSize: 14, verticalAlign: "middle" },
 	};
 }
 

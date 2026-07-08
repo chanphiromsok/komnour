@@ -32,18 +32,37 @@ export function resolveBindings(
 		});
 
 	for (const [id, node] of Object.entries(doc.nodes)) {
-		if (node.type !== "text") continue;
-		const text = substitute(node.text);
-		// Inline runs carry their own text, so bindings inside a styled span must
-		// be resolved there too — keeping node.text in sync as the concatenation.
-		const runs = node.runs?.map((run) => {
-			const runText = substitute(run.text);
-			return runText === run.text ? run : { ...run, text: runText };
-		});
-		const runsChanged = runs?.some((run, i) => run !== node.runs?.[i]) ?? false;
-		if (text !== node.text || runsChanged) {
-			nodes[id] = runs ? { ...node, text, runs } : { ...node, text };
-			changed = true;
+		if (node.type === "text") {
+			const text = substitute(node.text);
+			// Inline runs carry their own text, so bindings inside a styled span must
+			// be resolved there too — keeping node.text in sync as the concatenation.
+			const runs = node.runs?.map((run) => {
+				const runText = substitute(run.text);
+				return runText === run.text ? run : { ...run, text: runText };
+			});
+			const runsChanged = runs?.some((run, i) => run !== node.runs?.[i]) ?? false;
+			if (text !== node.text || runsChanged) {
+				nodes[id] = runs ? { ...node, text, runs } : { ...node, text };
+				changed = true;
+			}
+		} else if (node.type === "checkbox") {
+			let next = node;
+			// A plain dot path (not `{{}}`-wrapped) since this drives a boolean,
+			// not text substitution — see CheckboxNode's doc comment.
+			if (node.checkedBinding) {
+				const resolvedChecked = Boolean(lookupPath(data, node.checkedBinding));
+				if (resolvedChecked !== node.checked) {
+					next = { ...next, checked: resolvedChecked };
+				}
+			}
+			if (node.label) {
+				const label = substitute(node.label);
+				if (label !== node.label) next = { ...next, label };
+			}
+			if (next !== node) {
+				nodes[id] = next;
+				changed = true;
+			}
 		}
 	}
 	return changed ? { ...doc, nodes } : doc;

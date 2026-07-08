@@ -9,6 +9,7 @@ import {
 	SelectionOverlay,
 } from "#/features/designer/overlays/SelectionOverlay";
 import {
+	createCheckboxNode,
 	createCircleNode,
 	createLineNode,
 	createRectNode,
@@ -396,6 +397,8 @@ export function DesignerCanvas() {
 					addNode(createCircleNode(activePageId), activePageId);
 				else if (key === "l")
 					addNode(createLineNode(activePageId), activePageId);
+				else if (key === "c")
+					addNode(createCheckboxNode(activePageId), activePageId);
 			}
 		}
 

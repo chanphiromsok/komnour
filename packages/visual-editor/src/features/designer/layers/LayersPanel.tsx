@@ -1,4 +1,5 @@
 import {
+	CheckSquare,
 	Circle,
 	Image,
 	LayoutPanelTop,
@@ -22,6 +23,7 @@ const ICONS: Record<
 	circle: Circle,
 	line: Minus,
 	path: Spline,
+	checkbox: CheckSquare,
 };
 
 export function LayersPanel() {

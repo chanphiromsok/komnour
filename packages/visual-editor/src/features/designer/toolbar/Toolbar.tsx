@@ -1,6 +1,7 @@
 import {
 	Braces,
 	Check,
+	CheckSquare,
 	Circle,
 	ClipboardCopy,
 	Copy,
@@ -28,6 +29,7 @@ import { useRef, useState } from "react";
 import { DataBindingDialog } from "#/features/designer/dialogs/DataBindingDialog";
 import { ImportJsonDialog } from "#/features/designer/dialogs/ImportJsonDialog";
 import {
+	createCheckboxNode,
 	createCircleNode,
 	createImageNode,
 	createLineNode,
@@ -205,6 +207,12 @@ export function Toolbar() {
 				onClick={() => addNode(createImageNode(activePageId), activePageId)}
 			>
 				<Image size={16} />
+			</ToolbarButton>
+			<ToolbarButton
+				label="Add checkbox"
+				onClick={() => addNode(createCheckboxNode(activePageId), activePageId)}
+			>
+				<CheckSquare size={16} />
 			</ToolbarButton>
 
 			<Divider />

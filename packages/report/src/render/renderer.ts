@@ -6,10 +6,26 @@ import type {
 	PageNode,
 	ReportDocument,
 	ReportNode,
+	TextStyle,
 } from "../model/types";
 import type { RendererAdapter, ResolvedAsset } from "./adapter";
 
 export type ReportData = Record<string, unknown>;
+
+/** Used for a checkbox's label when the node doesn't specify its own labelStyle. */
+const DEFAULT_CHECKBOX_LABEL_STYLE: TextStyle = {
+	fontFamily: "Inter",
+	fontSize: 14,
+	fontWeight: 400,
+	fontStyle: "normal",
+	color: "#111111",
+	lineHeight: 1.3,
+	letterSpacing: 0,
+	align: "left",
+	verticalAlign: "middle",
+	decoration: "none",
+	wrap: false,
+};
 
 export interface RenderOptions {
 	/** Resolves an asset id to its decoded bytes/dimensions. Required only if the document contains image nodes. */
@@ -166,5 +182,50 @@ async function drawNodeContent(
 		case "path":
 			adapter.drawPath(node.d, { fill: node.fill, stroke: node.stroke });
 			return;
+		case "checkbox": {
+			// The box is a square filling the frame's height; frame.width covers
+			// the box plus the label (if any) — see CheckboxNode's doc comment.
+			const boxSize = node.frame.height;
+			adapter.drawRect(boxSize, boxSize, {
+				fill: node.fill,
+				stroke: node.stroke,
+				radius: node.cornerRadius,
+			});
+			if (node.checked) {
+				const checkStroke = {
+					color: node.checkColor,
+					width: Math.max(1.5, boxSize * 0.12),
+				};
+				adapter.drawLine(
+					boxSize * 0.2,
+					boxSize * 0.55,
+					boxSize * 0.42,
+					boxSize * 0.78,
+					checkStroke,
+				);
+				adapter.drawLine(
+					boxSize * 0.42,
+					boxSize * 0.78,
+					boxSize * 0.82,
+					boxSize * 0.22,
+					checkStroke,
+				);
+			}
+			if (node.label) {
+				const gap = boxSize * 0.4;
+				adapter.save();
+				adapter.translate(boxSize + gap, 0);
+				adapter.drawTextBlock(
+					[{ text: node.label }],
+					node.labelStyle ?? DEFAULT_CHECKBOX_LABEL_STYLE,
+					{
+						width: Math.max(0, node.frame.width - boxSize - gap),
+						height: node.frame.height,
+					},
+				);
+				adapter.restore();
+			}
+			return;
+		}
 	}
 }
