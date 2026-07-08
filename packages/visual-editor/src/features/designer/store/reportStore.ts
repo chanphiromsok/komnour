@@ -389,6 +389,11 @@ export const useDesignerStore = create<DesignerState>()(
 			const pageIndex = state.document.pages.indexOf(state.activePageId);
 			if (pageIndex === -1) return;
 
+			// An object URL pins its Blob in memory until explicitly revoked, even
+			// once nothing references the URL string — so any previous verify PNG
+			// must be revoked before it's replaced, not just left for the browser
+			// to garbage-collect (it won't).
+			if (state.verify.pngDataUrl) URL.revokeObjectURL(state.verify.pngDataUrl);
 			set({ verify: { status: "loading", pngDataUrl: null } });
 			try {
 				const response = await fetch(`${API_BASE_URL}/report/export/png`, {
@@ -404,6 +409,12 @@ export const useDesignerStore = create<DesignerState>()(
 					throw new Error(`Verify render failed: ${response.status}`);
 				}
 				const blob = await response.blob();
+				// Re-read current state rather than reusing the `state` captured at
+				// the top of this call — a second overlapping runVerifyRender (e.g.
+				// a rapid double-click before this one resolved) may have set a
+				// newer URL in the meantime, which must be revoked too, not clobbered.
+				const staleUrl = get().verify.pngDataUrl;
+				if (staleUrl) URL.revokeObjectURL(staleUrl);
 				set({
 					verify: {
 						status: "idle",

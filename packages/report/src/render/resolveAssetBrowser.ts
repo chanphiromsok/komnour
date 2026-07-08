@@ -8,8 +8,16 @@ import type { ResolvedAsset } from "./adapter";
  * redecode every image node's bytes on every frame, which both wastes
  * network/CPU and widens the async window in which overlapping renders can
  * race on the shared canvas surface (see DesignerCanvas's `shouldAbort`).
+ *
+ * Bounded LRU, not an unbounded cache: each entry pins a full decoded
+ * `ArrayBuffer` of the source image's raw bytes, so caching every distinct
+ * URL ever seen in a session (e.g. after swapping an image node's URL a few
+ * times while experimenting) would grow memory without limit. A `Map`
+ * preserves insertion order, so re-inserting a key on cache hit bumps it to
+ * the end and the oldest key is always the true least-recently-used one.
  */
 const assetCache = new Map<string, Promise<ResolvedAsset>>();
+const MAX_CACHED_ASSETS = 24;
 
 /**
  * Browser-only asset resolver: fetches the asset's URL and decodes both its
@@ -19,7 +27,11 @@ const assetCache = new Map<string, Promise<ResolvedAsset>>();
  */
 export function resolveAssetBrowser(asset: Asset): Promise<ResolvedAsset> {
 	const cached = assetCache.get(asset.url);
-	if (cached) return cached;
+	if (cached) {
+		assetCache.delete(asset.url);
+		assetCache.set(asset.url, cached);
+		return cached;
+	}
 
 	const promise = fetchAndDecode(asset).catch((err) => {
 		// A failed fetch shouldn't poison the cache forever (e.g. a transient
@@ -28,6 +40,11 @@ export function resolveAssetBrowser(asset: Asset): Promise<ResolvedAsset> {
 		throw err;
 	});
 	assetCache.set(asset.url, promise);
+	while (assetCache.size > MAX_CACHED_ASSETS) {
+		const oldestKey = assetCache.keys().next().value;
+		if (oldestKey === undefined) break;
+		assetCache.delete(oldestKey);
+	}
 	return promise;
 }
 
