@@ -17,6 +17,7 @@ import {
 	renderRunsToElement,
 	serializeElementToRuns,
 	setSelectionOffsets,
+	styleAtCaret,
 } from "./richTextDom";
 
 const FONT_FAMILIES = [
@@ -82,6 +83,21 @@ export function TextEditOverlay({
 	function syncActive() {
 		const el = editorRef.current;
 		if (!el) return;
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+		const range = selection.getRangeAt(0);
+		if (!el.contains(range.startContainer) || !el.contains(range.endContainer))
+			return;
+
+		// The common case while typing is a collapsed caret — read the style
+		// straight off the DOM at the caret instead of re-serializing the whole
+		// editor into runs on every keystroke, which used to make typing cost
+		// grow with the total text length instead of being O(1) per keystroke.
+		if (selection.isCollapsed) {
+			setActive(styleAtCaret(el, range.startContainer));
+			return;
+		}
+
 		const offsets = getSelectionOffsets(el);
 		const runs = normalizeRuns(serializeElementToRuns(el));
 		runsRef.current = runs;

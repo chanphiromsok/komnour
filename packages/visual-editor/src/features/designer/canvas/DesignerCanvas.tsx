@@ -118,8 +118,10 @@ export function DesignerCanvas() {
 	const stageRef = useRef<HTMLDivElement>(null);
 	const activeSheetRef = useRef<HTMLDivElement | null>(null);
 	// Every page sheet's DOM element, keyed by page id — used to hit-test which
-	// page the pointer is over when dropping a cross-page drag.
-	const sheetRefs = useRef<Map<NodeId, HTMLDivElement>>(new Map());
+	// page the pointer is over when dropping a cross-page drag. Lazily
+	// initialized so the Map is only ever constructed once, not on every render.
+	const sheetRefs = useRef<Map<NodeId, HTMLDivElement> | null>(null);
+	if (sheetRefs.current === null) sheetRefs.current = new Map();
 	const [engine, setEngine] = useState<RenderEngine | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
@@ -494,13 +496,13 @@ export function DesignerCanvas() {
 			};
 			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
 
-			const siblingIds = document.nodes[interaction.nodeId]
-				? Object.values(document.nodes)
-						.filter(
-							(n) => n.parentId === document.nodes[interaction.nodeId].parentId,
-						)
-						.filter((n) => n.id !== interaction.nodeId)
-						.map((n) => n.id)
+			const draggedNode = document.nodes[interaction.nodeId];
+			const siblingIds = draggedNode
+				? Object.values(document.nodes).reduce<NodeId[]>((ids, n) => {
+						if (n.parentId === draggedNode.parentId && n.id !== interaction.nodeId)
+							ids.push(n.id);
+						return ids;
+					}, [])
 				: [];
 			const siblingFrames = siblingIds.map((id) =>
 				getAbsoluteFrame(document, id),
@@ -543,7 +545,7 @@ export function DesignerCanvas() {
 
 	/** The page whose sheet is under the given client point, if any. */
 	function pageUnderPointer(clientX: number, clientY: number): NodeId | null {
-		for (const [pageId, el] of sheetRefs.current) {
+		for (const [pageId, el] of sheetRefs.current ?? []) {
 			const rect = el.getBoundingClientRect();
 			if (
 				clientX >= rect.left &&
@@ -569,7 +571,7 @@ export function DesignerCanvas() {
 		if (interaction.kind === "move") {
 			const targetPageId = pageUnderPointer(event.clientX, event.clientY);
 			if (targetPageId && targetPageId !== activePageId) {
-				const targetEl = sheetRefs.current.get(targetPageId);
+				const targetEl = sheetRefs.current?.get(targetPageId);
 				if (targetEl) {
 					const rect = targetEl.getBoundingClientRect();
 					const grabOffsetX = interaction.startX - interaction.originalFrame.x;
@@ -657,8 +659,8 @@ export function DesignerCanvas() {
 							<div
 								key={pageId}
 								ref={(el) => {
-									if (el) sheetRefs.current.set(pageId, el);
-									else sheetRefs.current.delete(pageId);
+									if (el) sheetRefs.current?.set(pageId, el);
+									else sheetRefs.current?.delete(pageId);
 									if (isActive) activeSheetRef.current = el;
 								}}
 								className="relative"

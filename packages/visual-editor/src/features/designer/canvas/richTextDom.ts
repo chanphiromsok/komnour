@@ -112,6 +112,33 @@ export function serializeElementToRuns(el: HTMLElement): TextRun[] {
 	return runs;
 }
 
+/**
+ * Inline style in effect at a collapsed caret, read directly off the DOM
+ * ancestor chain (data-style spans encode a run's overrides — see the module
+ * doc). O(caret depth), not O(document length): unlike `serializeElementToRuns`
+ * + `inlineStyleAt`, this doesn't walk the whole editor, so it's cheap enough
+ * to call on every keystroke while typing in a large text block.
+ */
+export function styleAtCaret(
+	el: HTMLElement,
+	container: Node,
+): Partial<InlineTextStyle> {
+	let node: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+	while (node) {
+		if (node instanceof HTMLElement && node.dataset.style) {
+			try {
+				return JSON.parse(node.dataset.style) as Partial<InlineTextStyle>;
+			} catch {
+				return {};
+			}
+		}
+		if (node === el) break;
+		node = node.parentElement;
+	}
+	return {};
+}
+
 /** Current selection as linear character offsets within the editor, or null if none/outside. */
 export function getSelectionOffsets(
 	el: HTMLElement,
