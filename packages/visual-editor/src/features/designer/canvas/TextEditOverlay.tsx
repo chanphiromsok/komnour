@@ -64,6 +64,7 @@ export function TextEditOverlay({
 }: TextEditOverlayProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<HTMLDivElement>(null);
+	const colorInputRef = useRef<HTMLInputElement>(null);
 	const runsRef = useRef<TextRun[]>(initialRuns);
 	const lastRangeRef = useRef<{ start: number; end: number } | null>(null);
 	const committedRef = useRef(false);
@@ -206,6 +207,30 @@ export function TextEditOverlay({
 		el.focus();
 		syncActive();
 	}
+	// Always-current ref so the native 'change' listener below never closes
+	// over a stale `applyInline` without needing it in a dependency array.
+	const applyInlineRef = useRef(applyInline);
+	applyInlineRef.current = applyInline;
+
+	// A native <input type="color"> fires its 'input' event continuously
+	// while the user drags across the picker's gradient — React's onChange
+	// maps to that same 'input' event, not the native 'change' (which fires
+	// once, when the picker closes). Since applyInline does a full
+	// serialize + DOM teardown/rebuild + re-selection, driving it off
+	// onChange meant every tick of a drag re-ran all of that: on a
+	// realistically sized selection this measured at 100+ ms per tick,
+	// so a one-second drag (dozens of ticks) froze the tab for several
+	// seconds. Committing on the native 'change' instead makes the color
+	// change apply exactly once, when the user actually finishes picking.
+	useEffect(() => {
+		const el = colorInputRef.current;
+		if (!el) return;
+		function handleChange(event: Event) {
+			applyInlineRef.current({ color: (event.target as HTMLInputElement).value });
+		}
+		el.addEventListener("change", handleChange);
+		return () => el.removeEventListener("change", handleChange);
+	}, []);
 
 	function commit() {
 		if (committedRef.current) return;
@@ -282,10 +307,15 @@ export function TextEditOverlay({
 					))}
 				</select>
 				<input
+					ref={colorInputRef}
 					type="color"
 					value={toHexColor(currentColor)}
 					title="Color of selection"
-					onChange={(event) => applyInline({ color: event.target.value })}
+					// Committing happens on the native 'change' listener above (once,
+					// when the picker closes) — this no-op keeps the input a
+					// React-controlled element (a `value` prop needs an onChange)
+					// without re-running applyInline on every drag tick.
+					onChange={() => {}}
 					className="h-7 w-7 rounded border border-neutral-200 dark:border-neutral-600"
 				/>
 			</div>
