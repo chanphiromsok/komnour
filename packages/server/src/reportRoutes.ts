@@ -47,13 +47,14 @@ function extractExportRequest(body: unknown): ExportRequest {
 }
 
 export function registerReportRoutes(app: FastifyInstance) {
+	ensureReportFontsRegistered();
 	// POST /report/export/pdf
 	// body: { document, data? } OR a bare document as the plain JSON body → application/pdf
 	// `data` is optional: a document posted with its own `bindingData` field
 	// set is self-contained and needs nothing else, but an explicit `data`
 	// here still overrides it (e.g. previewing the same document against
 	// different sample data without mutating it).
-	app.post("/report/export/pdf", async (req, reply) => {
+	app.post("/report/export/pdf", { bodyLimit: 1024 * 2 }, async (req, reply) => {
 		const { document, data } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {
@@ -63,7 +64,6 @@ export function registerReportRoutes(app: FastifyInstance) {
 		}
 		const effectiveData = data ?? parsed.data.bindingData ?? undefined;
 		try {
-			await ensureReportFontsRegistered();
 			const { renderDocumentToPdf } = await import(
 				"@komnour/report/src/render/exportPdf.server"
 			);
