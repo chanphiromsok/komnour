@@ -1099,6 +1099,10 @@ function PageCanvas({
 			});
 		}
 
+		if (!isActive) {
+			console.log("SKIP renderPreview")
+			return
+		}
 		renderPreview().catch((err) => {
 			if (err instanceof DOMException && err.name === "AbortError") return;
 			if (!cancelled) onError(err instanceof Error ? err.message : String(err));
@@ -1108,14 +1112,14 @@ function PageCanvas({
 			cancelled = true;
 			controller.abort();
 		};
-	}, [document, pageId, bindingData, onError, settledZoom]);
+	}, [document, pageId, bindingData, onError, settledZoom, isActive]);
 
 	return (
 		<div
 			style={{ width, height }}
 			className={`overflow-hidden bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${isActive
-					? "ring-2 ring-blue-500"
-					: "ring-1 ring-black/10 dark:ring-white/10"
+				? "ring-2 ring-blue-500"
+				: "ring-1 ring-black/10 dark:ring-white/10"
 				}`}
 		>
 			{previewUrl ? (
