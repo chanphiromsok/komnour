@@ -1061,6 +1061,7 @@ function PageCanvas({
 		};
 	}, []);
 
+	const loadOnceRef = useRef(false);
 	useEffect(() => {
 		const pageIndex = document.pages.indexOf(pageId);
 		if (pageIndex === -1) return;
@@ -1099,14 +1100,17 @@ function PageCanvas({
 			});
 		}
 
-		if (!isActive) {
+		if (!isActive && loadOnceRef.current) {
 			console.log("SKIP renderPreview")
 			return
 		}
 		renderPreview().catch((err) => {
 			if (err instanceof DOMException && err.name === "AbortError") return;
 			if (!cancelled) onError(err instanceof Error ? err.message : String(err));
-		});
+			loadOnceRef.current = false;
+		}).finally(()=>{
+			loadOnceRef.current = true
+		})
 
 		return () => {
 			cancelled = true;
