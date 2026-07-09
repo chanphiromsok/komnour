@@ -54,7 +54,8 @@ export function registerReportRoutes(app: FastifyInstance) {
 	// set is self-contained and needs nothing else, but an explicit `data`
 	// here still overrides it (e.g. previewing the same document against
 	// different sample data without mutating it).
-	app.post("/report/export/pdf", { bodyLimit: 1024 * 2 }, async (req, reply) => {
+	// 1MB Body Limit
+	app.post("/report/export/pdf", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 		const { document, data } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {

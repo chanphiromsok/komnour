@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "canvaskit-wasm": "^0.41.1",
     "skia-canvas": "^3.0.8",
     "zod": "^4.3.6"
   },
