@@ -166,4 +166,5 @@ export default defineConfig({
 		port: 5174,
 		fs: { allow: ["../.."] },
 	},
+	base: "/komnour/",
 });
