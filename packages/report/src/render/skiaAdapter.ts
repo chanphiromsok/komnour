@@ -21,6 +21,7 @@ import type {
 	ResolvedAsset,
 	TextBlockMetrics,
 } from "./adapter";
+import { tokenizeText } from "./tokenizeText";
 
 /**
  * RendererAdapter backed by skia-canvas (native Skia, Node) for server-side
@@ -278,8 +279,7 @@ export class SkiaAdapter implements RendererAdapter {
 
 		for (const run of runs) {
 			const merged = mergeInline(style, run.style);
-			// Tokens: a hard newline, a whitespace span, or a word.
-			const tokens = run.text.match(/\n|[^\S\n]+|\S+/g) ?? [];
+			const tokens = tokenizeText(run.text);
 			for (const text of tokens) {
 				if (text === "\n") {
 					flush();
