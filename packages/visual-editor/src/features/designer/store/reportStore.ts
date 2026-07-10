@@ -11,7 +11,6 @@ import { ReportDocumentSchema } from "@komnour/report/src/model/schema";
 import {
 	addNode as addNodeToTree,
 	duplicateNode as duplicateSubtree,
-	getNode,
 	removeNode as removeNodeFromTree,
 } from "@komnour/report/src/model/tree";
 import type {
@@ -32,6 +31,17 @@ export type Theme = "light" | "dark";
 
 /** Matches the blue used for selection outlines/active toolbar states elsewhere (Tailwind blue-500). */
 const DEFAULT_BOUND_FIELD_INDICATOR_COLOR = "#3b82f6";
+/** Fallback text style for newly created text/checkbox-label nodes, overridable in Data binding > Editor settings. */
+export const DEFAULT_FONT_FAMILY = "Inter";
+export const DEFAULT_FONT_SIZE = 16;
+
+/**
+ * Plain module-level closure, not zustand state — DesignerCanvas replaces
+ * this on mount with a function reading its own DOM refs (see
+ * getSpawnCenter's doc comment on DesignerState). Kept outside the store so
+ * swapping it never triggers a re-render on its own.
+ */
+let spawnCenterProvider: (() => { x: number; y: number } | null) | null = null;
 
 /** A self-contained copy of a node and all its descendants, for the clipboard. */
 interface ClipboardSubtree {
@@ -63,9 +73,31 @@ export interface DesignerState {
 	 * node's own designed checkColor, never this).
 	 */
 	boundFieldIndicatorColor: string;
+	/**
+	 * Font family/size newly created text nodes (and checkbox labels) start
+	 * with — an editor-level default, not part of any document, same
+	 * reasoning as boundFieldIndicatorColor above. Existing nodes are
+	 * unaffected; this only applies at creation time.
+	 */
+	defaultFontFamily: string;
+	defaultFontSize: number;
 
 	toggleTheme: () => void;
 	setBoundFieldIndicatorColor: (color: string) => void;
+	setDefaultFontFamily: (family: string) => void;
+	setDefaultFontSize: (size: number) => void;
+	/**
+	 * Where a newly created node should be centered, in the active page's
+	 * document-local coordinates — near the pointer if it's currently over
+	 * the canvas, otherwise the center of the visible viewport. `null` until
+	 * DesignerCanvas mounts (it's the only thing with the DOM refs needed to
+	 * compute this) and injects the real implementation; Toolbar's "Add
+	 * ___" buttons call this the same way DesignerCanvas's own keyboard
+	 * shortcuts do, since neither has access to the other's local refs.
+	 * Session-only — never persisted, always re-injected on mount.
+	 */
+	getSpawnCenter: () => { x: number; y: number } | null;
+	setSpawnCenterProvider: (provider: () => { x: number; y: number } | null) => void;
 	setActivePageId: (pageId: NodeId) => void;
 	/**
 	 * JSON data used to resolve `{{path}}` bindings (preview + exports). Lives
@@ -165,6 +197,8 @@ export const useDesignerStore = create<DesignerState>()(
 		history: { past: [], future: [] },
 		theme: "light",
 		boundFieldIndicatorColor: DEFAULT_BOUND_FIELD_INDICATOR_COLOR,
+		defaultFontFamily: DEFAULT_FONT_FAMILY,
+		defaultFontSize: DEFAULT_FONT_SIZE,
 		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
 
@@ -172,6 +206,12 @@ export const useDesignerStore = create<DesignerState>()(
 			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 		setBoundFieldIndicatorColor: (color) =>
 			set({ boundFieldIndicatorColor: color }),
+		setDefaultFontFamily: (family) => set({ defaultFontFamily: family }),
+		setDefaultFontSize: (size) => set({ defaultFontSize: size }),
+		getSpawnCenter: () => spawnCenterProvider?.() ?? null,
+		setSpawnCenterProvider: (provider) => {
+			spawnCenterProvider = provider;
+		},
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
 		setBindingData: (data) => {
 			commit((draft) => {
@@ -277,19 +317,32 @@ export const useDesignerStore = create<DesignerState>()(
 			commit((draft) => {
 				let next = draft as ReportDocument;
 				for (const id of ids) {
-					if (!next.nodes[id]) continue;
+					const original = next.nodes[id];
+					if (!original) continue;
+					// A tiny GRID_SIZE (8pt) nudge on both axes left the clone
+					// almost exactly on top of the original — since the clone
+					// renders last (on top, z-order-wise), it read as "duplicating
+					// silently moved the original" rather than "a new copy
+					// appeared". Offsetting straight down by the original's own
+					// height instead puts the clone in an unambiguous new spot,
+					// directly below, with the original completely untouched.
+					const originalHeight = original.frame.height;
+					const originalParentId = original.parentId;
 					const beforeIds = new Set(Object.keys(next.nodes));
 					next = duplicateSubtree(next, id, () => crypto.randomUUID());
-					for (const newId of Object.keys(next.nodes)) {
-						if (!beforeIds.has(newId)) newIds.push(newId);
-					}
-					const original = getNode(next, id);
-					const clone = newIds
+					// Scoped to just this iteration's new ids — accumulating into
+					// the outer `newIds` before this point would let `.find()`
+					// below match a clone from a PREVIOUS id in a multi-select
+					// duplicate whose parentId happened to coincide.
+					const newIdsForThisNode = Object.keys(next.nodes).filter(
+						(nid) => !beforeIds.has(nid),
+					);
+					newIds.push(...newIdsForThisNode);
+					const clone = newIdsForThisNode
 						.map((newId) => next.nodes[newId])
-						.find((n) => n.parentId === original.parentId);
+						.find((n) => n.parentId === originalParentId);
 					if (clone) {
-						clone.frame.x += GRID_SIZE;
-						clone.frame.y += GRID_SIZE;
+						clone.frame.y += originalHeight;
 					}
 				}
 				Object.assign(draft, next);
@@ -481,6 +534,8 @@ export const useDesignerStore = create<DesignerState>()(
 				activePageId: state.activePageId,
 				theme: state.theme,
 				boundFieldIndicatorColor: state.boundFieldIndicatorColor,
+				defaultFontFamily: state.defaultFontFamily,
+				defaultFontSize: state.defaultFontSize,
 			}),
 			// Validate the persisted document before adopting it; a corrupt or
 			// out-of-date entry falls back to the fresh sample rather than
@@ -494,13 +549,27 @@ export const useDesignerStore = create<DesignerState>()(
 							activePageId?: NodeId | null;
 							theme?: Theme;
 							boundFieldIndicatorColor?: string;
+							defaultFontFamily?: string;
+							defaultFontSize?: number;
 					  }
 					| undefined;
 				const theme: Theme = saved?.theme === "dark" ? "dark" : "light";
 				const boundFieldIndicatorColor =
 					saved?.boundFieldIndicatorColor ?? DEFAULT_BOUND_FIELD_INDICATOR_COLOR;
+				const defaultFontFamily = saved?.defaultFontFamily ?? DEFAULT_FONT_FAMILY;
+				const defaultFontSize =
+					typeof saved?.defaultFontSize === "number" && saved.defaultFontSize > 0
+						? saved.defaultFontSize
+						: DEFAULT_FONT_SIZE;
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
-				if (!parsed.success) return { ...current, theme, boundFieldIndicatorColor };
+				if (!parsed.success)
+					return {
+						...current,
+						theme,
+						boundFieldIndicatorColor,
+						defaultFontFamily,
+						defaultFontSize,
+					};
 				const document = parsed.data as ReportDocument;
 				// Fold in the old sibling-field shape so upgrading doesn't drop it.
 				if (document.bindingData === undefined && saved?.bindingData !== undefined) {
@@ -516,6 +585,8 @@ export const useDesignerStore = create<DesignerState>()(
 					activePageId,
 					theme,
 					boundFieldIndicatorColor,
+					defaultFontFamily,
+					defaultFontSize,
 				};
 			},
 		},

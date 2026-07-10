@@ -75,10 +75,13 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 type Interaction =
 	| {
 		kind: "move";
-		nodeId: NodeId;
+		// Every selected node being dragged together — not just the one the
+		// pointer went down on — so a multi-selection moves as one rigid
+		// group instead of only the clicked node while the rest stay put.
+		nodeIds: NodeId[];
 		startX: number;
 		startY: number;
-		originalFrame: Frame;
+		originalFrames: Record<NodeId, Frame>;
 	}
 	| {
 		kind: "resize";
@@ -236,10 +239,8 @@ function fitDroppedImageFrame({
 
 type State = {
 	editingNodeId: NodeId | null
-	dragPreview: {
-		nodeId: NodeId;
-		frame: Partial<Frame>;
-	} | null
+	/** One entry per node currently being dragged/resized/rotated — a plain single-node interaction just has one key. */
+	dragPreview: Record<NodeId, Partial<Frame>> | null
 	marqueeRect: {
 		x: number;
 		y: number;
@@ -296,6 +297,10 @@ export function DesignerCanvas() {
 	const setTool = useDesignerStore((s) => s.setTool);
 	const addNode = useDesignerStore((s) => s.addNode);
 	const setImageAsset = useDesignerStore((s) => s.setImageAsset);
+	const defaultFontFamily = useDesignerStore((s) => s.defaultFontFamily);
+	const defaultFontSize = useDesignerStore((s) => s.defaultFontSize);
+	const setSpawnCenterProvider = useDesignerStore((s) => s.setSpawnCenterProvider);
+	const getSpawnCenter = useDesignerStore((s) => s.getSpawnCenter);
 	const moveNodeToPage = useDesignerStore((s) => s.moveNodeToPage);
 	const copyNodes = useDesignerStore((s) => s.copyNodes);
 	const pasteNodes = useDesignerStore((s) => s.pasteNodes);
@@ -327,6 +332,8 @@ export function DesignerCanvas() {
 
 	const interactionRef = useRef<Interaction | null>(null);
 	const toolBeforeSpaceRef = useRef<typeof tool | null>(null);
+	/** Last place the pointer was seen over the active page, in its local document coordinates — see the spawn-center effect below. */
+	const lastPointerDocPosRef = useRef<{ x: number; y: number } | null>(null);
 
 	// Canvas-preview-only aid: a checkbox whose checked state comes from
 	// checkedBinding gets its tick redrawn in boundFieldIndicatorColor here,
@@ -351,19 +358,16 @@ export function DesignerCanvas() {
 	}, [document, boundFieldIndicatorColor]);
 
 	const effectiveDocument = useMemo<ReportDocument>(() => {
-		if (!dragPreview) return previewDocument;
-		const node = previewDocument.nodes[dragPreview.nodeId];
-		if (!node) return previewDocument;
-		return {
-			...previewDocument,
-			nodes: {
-				...previewDocument.nodes,
-				[dragPreview.nodeId]: {
-					...node,
-					frame: { ...node.frame, ...dragPreview.frame },
-				},
-			},
-		};
+		const previewIds = dragPreview ? Object.keys(dragPreview) : [];
+		if (previewIds.length === 0) return previewDocument;
+		const nodes = { ...previewDocument.nodes };
+		for (const id of previewIds) {
+			const node = nodes[id];
+			const framePatch = dragPreview?.[id];
+			if (!node || !framePatch) continue;
+			nodes[id] = { ...node, frame: { ...node.frame, ...framePatch } };
+		}
+		return { ...previewDocument, nodes };
 	}, [previewDocument, dragPreview]);
 
 	const editingNode = editingNodeId ? document.nodes[editingNodeId] : undefined;
@@ -498,18 +502,25 @@ export function DesignerCanvas() {
 					setTool("pan");
 				}
 			} else if (!isMeta && !event.altKey && !event.repeat && activePageId) {
+				const center = getSpawnCenter() ?? undefined;
 				if (key === "v") setTool("select");
 				else if (key === "h") setTool("pan");
 				else if (key === "t")
-					addNode(createTextNode(activePageId), activePageId);
+					addNode(
+						createTextNode(activePageId, { center, fontFamily: defaultFontFamily, fontSize: defaultFontSize }),
+						activePageId,
+					);
 				else if (key === "r")
-					addNode(createRectNode(activePageId), activePageId);
+					addNode(createRectNode(activePageId, { center }), activePageId);
 				else if (key === "o")
-					addNode(createCircleNode(activePageId), activePageId);
+					addNode(createCircleNode(activePageId, { center }), activePageId);
 				else if (key === "l")
-					addNode(createLineNode(activePageId), activePageId);
+					addNode(createLineNode(activePageId, { center }), activePageId);
 				else if (key === "c")
-					addNode(createCheckboxNode(activePageId), activePageId);
+					addNode(
+						createCheckboxNode(activePageId, { center, fontFamily: defaultFontFamily }),
+						activePageId,
+					);
 			}
 		}
 
@@ -549,6 +560,9 @@ export function DesignerCanvas() {
 		addNode,
 		copyNodes,
 		pasteNodes,
+		getSpawnCenter,
+		defaultFontFamily,
+		defaultFontSize,
 	]);
 
 	/** Converts client coordinates to the ACTIVE page's local document points. */
@@ -558,6 +572,23 @@ export function DesignerCanvas() {
 		const rect = sheet.getBoundingClientRect();
 		return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
 	}
+
+	// Registers this instance's DOM-derived spawn-position logic on the store
+	// so both this component's own keyboard shortcuts and Toolbar's "Add
+	// ___" buttons place new nodes near wherever the user is actually
+	// looking, instead of always at a fixed document position that's easy to
+	// scroll/zoom away from. Re-registered whenever `zoom` changes since the
+	// closure below captures it (via toDocPoint).
+	useEffect(() => {
+		setSpawnCenterProvider(() => {
+			if (lastPointerDocPosRef.current) return lastPointerDocPosRef.current;
+			const viewportEl = viewportRef.current;
+			if (!viewportEl) return null;
+			const rect = viewportEl.getBoundingClientRect();
+			return toDocPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+		});
+		return () => setSpawnCenterProvider(() => null);
+	}, [zoom, setSpawnCenterProvider]);
 
 	function handleHandlePointerDown(
 		nodeId: NodeId,
@@ -644,14 +675,22 @@ export function DesignerCanvas() {
 				toggleSelection(hitId);
 				return;
 			}
+			// Clicking a node that's already part of a multi-selection drags the
+			// WHOLE selection together; clicking one that isn't collapses the
+			// selection to just it first, same as before.
+			const draggedIds = selection.includes(hitId) ? selection : [hitId];
 			if (!selection.includes(hitId)) setSelection([hitId]);
-			const node = document.nodes[hitId];
+			const originalFrames: Record<NodeId, Frame> = {};
+			for (const id of draggedIds) {
+				const node = document.nodes[id];
+				if (node) originalFrames[id] = { ...node.frame };
+			}
 			interactionRef.current = {
 				kind: "move",
-				nodeId: hitId,
+				nodeIds: Object.keys(originalFrames),
 				startX: x,
 				startY: y,
-				originalFrame: { ...node.frame },
+				originalFrames,
 			};
 		} else {
 			if (!event.shiftKey) clearSelection();
@@ -715,6 +754,11 @@ export function DesignerCanvas() {
 	}
 
 	function handlePointerMove(event: React.PointerEvent) {
+		// Tracked unconditionally (not just mid-drag) so a keyboard shortcut or
+		// toolbar click can spawn a new node near wherever the mouse actually
+		// is — see the spawn-center provider effect below.
+		if (activePageId) lastPointerDocPosRef.current = toDocPoint(event.clientX, event.clientY);
+
 		const interaction = interactionRef.current;
 		if (!interaction || !activePageId) return;
 		const { x, y } = toDocPoint(event.clientX, event.clientY);
@@ -722,14 +766,16 @@ export function DesignerCanvas() {
 		if (interaction.kind === "move") {
 			const dx = x - interaction.startX;
 			const dy = y - interaction.startY;
-			// Un-snapped pointer-driven position, in the parent's local space.
-			const rawX = interaction.originalFrame.x + dx;
-			const rawY = interaction.originalFrame.y + dy;
 
-			const draggedNode = document.nodes[interaction.nodeId];
-			const siblingIds = draggedNode
+			// Dragged nodes are assumed to share one parent (the overwhelmingly
+			// common case — multi-select today is only ever siblings on one
+			// page); siblings/parent context come from the first one.
+			const referenceId = interaction.nodeIds[0];
+			const referenceNode = referenceId ? document.nodes[referenceId] : undefined;
+			const draggedIdSet = new Set(interaction.nodeIds);
+			const siblingIds = referenceNode
 				? Object.values(document.nodes).reduce<NodeId[]>((ids, n) => {
-					if (n.parentId === draggedNode.parentId && n.id !== interaction.nodeId)
+					if (n.parentId === referenceNode.parentId && !draggedIdSet.has(n.id))
 						ids.push(n.id);
 					return ids;
 				}, [])
@@ -737,35 +783,53 @@ export function DesignerCanvas() {
 			const siblingFrames = siblingIds.map((id) =>
 				getAbsoluteFrame(document, id),
 			);
-			// Alignment is computed in absolute coordinates and converted back
-			// through the parent's offset, so nothing here assumes frame.x/y are
-			// absolute — nested groups/frames will keep snapping correctly.
 			const parentOffset =
-				draggedNode?.parentId != null
-					? getAbsoluteFrame(document, draggedNode.parentId)
+				referenceNode?.parentId != null
+					? getAbsoluteFrame(document, referenceNode.parentId)
 					: { x: 0, y: 0 };
+
+			// The whole selection moves as one rigid group: a single dx/dy
+			// correction is computed from the group's collective (union)
+			// bounding box, then applied identically to every dragged node's
+			// own original frame — never snapping each node independently,
+			// which would let the group's relative layout drift apart.
+			const originalAbsFrames = interaction.nodeIds.map((id) => {
+				const f = interaction.originalFrames[id];
+				return { x: f.x + parentOffset.x, y: f.y + parentOffset.y, width: f.width, height: f.height };
+			});
+			const unionLeft = Math.min(...originalAbsFrames.map((f) => f.x));
+			const unionTop = Math.min(...originalAbsFrames.map((f) => f.y));
+			const unionRight = Math.max(...originalAbsFrames.map((f) => f.x + f.width));
+			const unionBottom = Math.max(...originalAbsFrames.map((f) => f.y + f.height));
+			const rawUnion = {
+				x: unionLeft + dx,
+				y: unionTop + dy,
+				width: unionRight - unionLeft,
+				height: unionBottom - unionTop,
+			};
+
 			// Alt (Option on macOS) temporarily disables smart alignment;
 			// grid snapping below still applies as usual.
 			const snap = event.altKey
 				? null
-				: computeAlignmentSnap(
-					siblingFrames,
-					{
-						x: rawX + parentOffset.x,
-						y: rawY + parentOffset.y,
-						width: interaction.originalFrame.width,
-						height: interaction.originalFrame.height,
-					},
-					zoom,
-				);
+				: computeAlignmentSnap(siblingFrames, rawUnion, zoom);
 			// Smart alignment wins over the grid, per axis: an axis it claims
 			// takes the exact aligned position; an unclaimed axis falls back to
-			// plain grid snapping.
-			const newFrame = {
-				x: snap?.snappedX ? snap.frame.x - parentOffset.x : snapToGrid(rawX),
-				y: snap?.snappedY ? snap.frame.y - parentOffset.y : snapToGrid(rawY),
-			};
-			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			// plain grid snapping. Either way this yields a coordinate-system-
+			// invariant delta (snapped minus original union position), which
+			// applies the same whether added to a local or absolute x/y.
+			const correctionX = (snap?.snappedX ? snap.frame.x : snapToGrid(rawUnion.x)) - unionLeft;
+			const correctionY = (snap?.snappedY ? snap.frame.y : snapToGrid(rawUnion.y)) - unionTop;
+
+			const framesPatch: Record<NodeId, Partial<Frame>> = {};
+			for (const id of interaction.nodeIds) {
+				const original = interaction.originalFrames[id];
+				framesPatch[id] = {
+					x: original.x + correctionX,
+					y: original.y + correctionY,
+				};
+			}
+			setDragPreview(framesPatch);
 			setGuides(snap?.guides ?? { vertical: [], horizontal: [] });
 		} else if (interaction.kind === "resize") {
 			const node = document.nodes[interaction.nodeId];
@@ -783,7 +847,7 @@ export function DesignerCanvas() {
 				local.dy,
 				node?.type === "line" ? 0 : MIN_SIZE,
 			);
-			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			setDragPreview({ [interaction.nodeId]: newFrame });
 		} else if (interaction.kind === "rotate") {
 			const currentAngle = angleBetween(
 				interaction.centerX,
@@ -798,7 +862,7 @@ export function DesignerCanvas() {
 			const rotation = event.shiftKey
 				? Math.round(rawRotation / 15) * 15
 				: Math.round(rawRotation);
-			setDragPreview({ nodeId: interaction.nodeId, frame: { rotation } });
+			setDragPreview({ [interaction.nodeId]: { rotation } });
 		} else if (interaction.kind === "marquee") {
 			interactionRef.current = { ...interaction, currentX: x, currentY: y };
 			setMarqueeRect({
@@ -844,21 +908,26 @@ export function DesignerCanvas() {
 
 		// Dropping a moved node over a different page reparents it there, so it
 		// stays visible (instead of being clipped past the source page's edge).
-		if (interaction.kind === "move") {
+		// Only for a single dragged node — reparenting a whole multi-selection
+		// across pages while preserving relative offsets is a separate,
+		// bigger feature; a multi-node drag just commits on the current page.
+		if (interaction.kind === "move" && interaction.nodeIds.length === 1) {
+			const soleNodeId = interaction.nodeIds[0];
+			const soleOriginalFrame = interaction.originalFrames[soleNodeId];
 			const targetPageId = pageUnderPointer(event.clientX, event.clientY);
 			if (targetPageId && targetPageId !== activePageId) {
 				const targetEl = sheetRefs.current?.get(targetPageId);
 				if (targetEl) {
 					const rect = targetEl.getBoundingClientRect();
-					const grabOffsetX = interaction.startX - interaction.originalFrame.x;
-					const grabOffsetY = interaction.startY - interaction.originalFrame.y;
+					const grabOffsetX = interaction.startX - soleOriginalFrame.x;
+					const grabOffsetY = interaction.startY - soleOriginalFrame.y;
 					const x = snapToGrid(
 						(event.clientX - rect.left) / zoom - grabOffsetX,
 					);
 					const y = snapToGrid((event.clientY - rect.top) / zoom - grabOffsetY);
-					moveNodeToPage(interaction.nodeId, targetPageId, { x, y });
+					moveNodeToPage(soleNodeId, targetPageId, { x, y });
 					setActivePageId(targetPageId);
-					setSelection([interaction.nodeId]);
+					setSelection([soleNodeId]);
 					setDragPreview(null);
 					setGuides({ vertical: [], horizontal: [] });
 					interactionRef.current = null;
@@ -867,41 +936,48 @@ export function DesignerCanvas() {
 			}
 		}
 
-		if (
-			interaction.kind === "move" ||
-			interaction.kind === "resize" ||
-			interaction.kind === "rotate"
-		) {
+		if (interaction.kind === "move") {
 			if (dragPreview) {
+				for (const nodeId of interaction.nodeIds) {
+					const patch = dragPreview[nodeId];
+					const original = interaction.originalFrames[nodeId];
+					if (!patch || !original) continue;
+					if ("x" in patch || "y" in patch) {
+						updateNodeFrame(nodeId, {
+							x: patch.x ?? original.x,
+							y: patch.y ?? original.y,
+						});
+					}
+				}
+			}
+			setDragPreview(null);
+			setGuides({ vertical: [], horizontal: [] });
+		} else if (interaction.kind === "resize" || interaction.kind === "rotate") {
+			const framePatch = dragPreview?.[interaction.nodeId];
+			if (framePatch) {
 				if (
-					interaction.kind !== "rotate" &&
-					("x" in dragPreview.frame || "y" in dragPreview.frame)
+					interaction.kind === "resize" &&
+					("x" in framePatch || "y" in framePatch)
 				) {
 					updateNodeFrame(interaction.nodeId, {
-						x: dragPreview.frame.x ?? interaction.originalFrame.x,
-						y: dragPreview.frame.y ?? interaction.originalFrame.y,
+						x: framePatch.x ?? interaction.originalFrame.x,
+						y: framePatch.y ?? interaction.originalFrame.y,
 					});
 				}
 				if (
-					interaction.kind !== "rotate" &&
-					("width" in dragPreview.frame || "height" in dragPreview.frame)
+					interaction.kind === "resize" &&
+					("width" in framePatch || "height" in framePatch)
 				) {
 					updateNodeFrame(interaction.nodeId, {
-						width: dragPreview.frame.width ?? interaction.originalFrame.width,
-						height:
-							dragPreview.frame.height ?? interaction.originalFrame.height,
+						width: framePatch.width ?? interaction.originalFrame.width,
+						height: framePatch.height ?? interaction.originalFrame.height,
 					});
 				}
-				if (
-					interaction.kind === "rotate" &&
-					"rotation" in dragPreview.frame
-				) {
+				if (interaction.kind === "rotate" && "rotation" in framePatch) {
 					updateNode(interaction.nodeId, {
 						frame: {
 							...interaction.originalFrame,
-							rotation:
-								dragPreview.frame.rotation ??
-								interaction.originalFrame.rotation,
+							rotation: framePatch.rotation ?? interaction.originalFrame.rotation,
 						},
 					});
 				}
@@ -998,7 +1074,7 @@ export function DesignerCanvas() {
 										<DragPreviewOverlay
 											document={effectiveDocument}
 											pageId={pageId}
-											nodeId={dragPreview?.nodeId ?? null}
+											nodeIds={dragPreview ? Object.keys(dragPreview) : []}
 										/>
 										<SelectionOverlay
 											document={effectiveDocument}
@@ -1049,13 +1125,35 @@ export function DesignerCanvas() {
 function DragPreviewOverlay({
 	document,
 	pageId,
+	nodeIds,
+}: {
+	document: ReportDocument;
+	pageId: NodeId;
+	nodeIds: NodeId[];
+}) {
+	return (
+		<>
+			{nodeIds.map((nodeId) => (
+				<ImageDragPreview
+					key={nodeId}
+					document={document}
+					pageId={pageId}
+					nodeId={nodeId}
+				/>
+			))}
+		</>
+	);
+}
+
+function ImageDragPreview({
+	document,
+	pageId,
 	nodeId,
 }: {
 	document: ReportDocument;
 	pageId: NodeId;
-	nodeId: NodeId | null;
+	nodeId: NodeId;
 }) {
-	if (!nodeId) return null;
 	const node = document.nodes[nodeId];
 	if (!node || node.type !== "image" || node.parentId !== pageId) return null;
 	const asset = document.assets[node.assetId];

@@ -87,8 +87,24 @@ export function duplicateNode(
 		const source = getNode(doc, sourceId);
 		const newId = idMap.get(sourceId);
 		if (!newId) throw new Error(`Missing id mapping for ${sourceId}`);
+		// A deep clone, not a shallow `{...source}` spread: every nested
+		// object a node carries (frame, fill, stroke, style, labelStyle, ...)
+		// is a JS reference, and a shallow spread only copies the top-level
+		// property slots — the clone and the original would still point at
+		// the exact same frame object underneath. Any later IN-PLACE
+		// mutation of one (e.g. updateNodeFrame's `Object.assign(node.frame,
+		// patch)`, or duplicateNodes offsetting the clone below the
+		// original) would silently move both, which is exactly what made
+		// duplicating a node look like it was moving the original.
+		//
+		// JSON round-trip rather than the native structuredClone: `source`
+		// is read off an Immer draft mid-producer here (this runs inside
+		// reportStore's commit()), and structuredClone throws a
+		// DataCloneError on Immer's Proxy-wrapped draft objects — plain
+		// JSON serialization unwraps them correctly, and every ReportNode
+		// field is JSON-safe data (no functions/Dates/etc.) anyway.
 		const clone: ReportNode = {
-			...source,
+			...(JSON.parse(JSON.stringify(source)) as ReportNode),
 			id: newId,
 			parentId: newParentId,
 			children: [],
