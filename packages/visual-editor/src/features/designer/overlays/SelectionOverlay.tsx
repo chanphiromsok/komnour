@@ -8,11 +8,13 @@ interface SelectionOverlayProps {
 	document: ReportDocument;
 	selection: NodeId[];
 	zoom: number;
+	editingNodeId?: NodeId | null;
 	onHandlePointerDown: (
 		nodeId: NodeId,
 		edge: ResizeEdge,
 		event: React.PointerEvent,
 	) => void;
+	onRotatePointerDown: (nodeId: NodeId, event: React.PointerEvent) => void;
 }
 
 /** Visible dot size, in screen px (kept constant across zoom). */
@@ -31,11 +33,23 @@ const HANDLES: { edge: ResizeEdge; fx: number; fy: number; cursor: string }[] = 
 	{ edge: "w", fx: 0, fy: 0.5, cursor: "ew-resize" },
 ];
 
+const LINE_HANDLES: {
+	edge: ResizeEdge;
+	fx: number;
+	fy: number;
+	cursor: string;
+}[] = [
+	{ edge: "nw", fx: 0, fy: 0, cursor: "move" },
+	{ edge: "se", fx: 1, fy: 1, cursor: "move" },
+];
+
 export function SelectionOverlay({
 	document,
 	selection,
 	zoom,
+	editingNodeId,
 	onHandlePointerDown,
+	onRotatePointerDown,
 }: SelectionOverlayProps) {
 	return (
 		<div className="pointer-events-none absolute inset-0">
@@ -43,26 +57,50 @@ export function SelectionOverlay({
 				const node = document.nodes[nodeId];
 				if (!node) return null;
 				const frame = getAbsoluteFrame(document, nodeId);
-				const showHandles = selection.length === 1;
+				const isEditing = nodeId === editingNodeId;
+				const showHandles = selection.length === 1 && !isEditing;
+				const handles = node.type === "line" ? LINE_HANDLES : HANDLES;
+				const rotation = node.frame.rotation;
 
 				return (
-					<div key={nodeId}>
+					// Outline + handles live in one wrapper rotated around the frame's
+					// center — the same pivot the renderer draws with — so the
+					// selection chrome tracks the shape exactly instead of staying
+					// axis-aligned around a rotated node.
+					<div
+						key={nodeId}
+						className="pointer-events-none absolute"
+						style={{
+							left: frame.x,
+							top: frame.y,
+							width: frame.width,
+							height: frame.height,
+							transform: rotation ? `rotate(${rotation}deg)` : undefined,
+							transformOrigin: "center",
+						}}
+					>
 						<div
-							className="pointer-events-none absolute border-2 border-blue-500"
-							style={{
-								left: frame.x,
-								top: frame.y,
-								width: frame.width,
-								height: frame.height,
-							}}
+							className={`pointer-events-none absolute inset-0 border-2 border-blue-500 ${
+								isEditing ? "ring-4 ring-blue-500/15" : ""
+							}`}
 						/>
+						{showHandles && (
+							<RotateHandle
+								x={frame.width / 2}
+								y={-28 / zoom}
+								zoom={zoom}
+								onPointerDown={(event) =>
+									onRotatePointerDown(nodeId, event)
+								}
+							/>
+						)}
 						{showHandles &&
-							HANDLES.map((handle) => (
+							handles.map((handle) => (
 								<ResizeHandle
 									key={handle.edge}
 									cursor={handle.cursor}
-									x={frame.x + frame.width * handle.fx}
-									y={frame.y + frame.height * handle.fy}
+									x={frame.width * handle.fx}
+									y={frame.height * handle.fy}
 									zoom={zoom}
 									onPointerDown={(event) =>
 										onHandlePointerDown(nodeId, handle.edge, event)
@@ -72,6 +110,40 @@ export function SelectionOverlay({
 					</div>
 				);
 			})}
+		</div>
+	);
+}
+
+function RotateHandle({
+	x,
+	y,
+	zoom,
+	onPointerDown,
+}: {
+	x: number;
+	y: number;
+	zoom: number;
+	onPointerDown: (event: React.PointerEvent) => void;
+}) {
+	return (
+		<div
+			className="pointer-events-auto absolute flex items-center justify-center"
+			style={{
+				left: x,
+				top: y,
+				width: HIT_SIZE,
+				height: HIT_SIZE,
+				marginLeft: -HIT_SIZE / 2,
+				marginTop: -HIT_SIZE / 2,
+				cursor: "grab",
+				transform: `scale(${1 / zoom})`,
+			}}
+			onPointerDown={onPointerDown}
+		>
+			<div
+				className="rounded-full border-2 border-blue-500 bg-white"
+				style={{ width: HANDLE_SIZE + 2, height: HANDLE_SIZE + 2 }}
+			/>
 		</div>
 	);
 }

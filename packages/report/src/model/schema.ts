@@ -142,6 +142,19 @@ export const PathNodeSchema = z.object({
 	stroke: StrokeSchema.optional(),
 });
 
+export const CheckboxNodeSchema = z.object({
+	...baseNodeShape,
+	type: z.literal("checkbox"),
+	checked: z.boolean(),
+	checkedBinding: z.string().optional(),
+	fill: PaintSchema.optional(),
+	stroke: StrokeSchema.optional(),
+	checkColor: z.string(),
+	cornerRadius: z.number().optional(),
+	label: z.string().optional(),
+	labelStyle: TextStyleSchema.optional(),
+});
+
 export const ReportNodeSchema = z.discriminatedUnion("type", [
 	PageNodeSchema,
 	ViewNodeSchema,
@@ -151,6 +164,7 @@ export const ReportNodeSchema = z.discriminatedUnion("type", [
 	CircleNodeSchema,
 	LineNodeSchema,
 	PathNodeSchema,
+	CheckboxNodeSchema,
 ]);
 
 export const AssetSchema = z.object({
@@ -175,4 +189,5 @@ export const ReportDocumentSchema = z.object({
 	nodes: z.record(z.string(), ReportNodeSchema),
 	assets: z.record(z.string(), AssetSchema),
 	fonts: z.record(z.string(), FontDefinitionSchema),
+	bindingData: z.record(z.string(), z.unknown()).nullable().optional(),
 });

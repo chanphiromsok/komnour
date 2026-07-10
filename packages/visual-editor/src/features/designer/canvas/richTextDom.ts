@@ -11,9 +11,11 @@ import type {
  * without React reconciling the editable subtree (which fights contentEditable).
  *
  * Encoding: a run with inline overrides becomes a <span data-style="{json}">;
- * an unstyled run is a bare text node; "\n" becomes <br>. The JSON in
- * data-style is the source of truth on the way back out, so the visual inline
- * CSS on the span is purely cosmetic and never re-parsed.
+ * an unstyled run is a bare text node. Tabs and newlines stay as real text
+ * characters (rendered by CSS white-space: pre-wrap) so focus/edit mode uses
+ * the same string shape as the Skia renderer. The JSON in data-style is the
+ * source of truth on the way back out, so the visual inline CSS on the span is
+ * purely cosmetic and never re-parsed.
  */
 
 
@@ -58,21 +60,17 @@ export function renderRunsToElement(el: HTMLElement, runs: TextRun[]): void {
 	el.textContent = "";
 	for (const run of runs) {
 		const style = cleanStyle(run.style);
-		// A run's text can contain newlines; each becomes a <br>.
-		const segments = run.text.split("\n");
-		segments.forEach((segment, index) => {
-			if (index > 0) el.appendChild(document.createElement("br"));
-			if (segment.length === 0) return;
-			if (style) {
-				const span = document.createElement("span");
-				span.dataset.style = JSON.stringify(style);
-				applyInlineCss(span, style);
-				span.textContent = segment;
-				el.appendChild(span);
-			} else {
-				el.appendChild(document.createTextNode(segment));
-			}
-		});
+		const text = run.text.replace(/\r\n?/g, "\n");
+		if (text.length === 0) continue;
+		if (style) {
+			const span = document.createElement("span");
+			span.dataset.style = JSON.stringify(style);
+			applyInlineCss(span, style);
+			span.textContent = text;
+			el.appendChild(span);
+		} else {
+			el.appendChild(document.createTextNode(text));
+		}
 	}
 	// contentEditable needs at least a <br> to hold a caret when empty.
 	if (el.childNodes.length === 0) el.appendChild(document.createElement("br"));
@@ -110,6 +108,139 @@ export function serializeElementToRuns(el: HTMLElement): TextRun[] {
 
 	walk(el, undefined);
 	return runs;
+}
+
+/**
+ * Inline style in effect at a collapsed caret, read directly off the DOM
+ * ancestor chain (data-style spans encode a run's overrides — see the module
+ * doc). O(caret depth), not O(document length): unlike `serializeElementToRuns`
+ * + `inlineStyleAt`, this doesn't walk the whole editor, so it's cheap enough
+ * to call on every keystroke while typing in a large text block.
+ */
+export function styleAtCaret(
+	el: HTMLElement,
+	container: Node,
+): Partial<InlineTextStyle> {
+	let node: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+	while (node) {
+		if (node instanceof HTMLElement && node.dataset.style) {
+			try {
+				return JSON.parse(node.dataset.style) as Partial<InlineTextStyle>;
+			} catch {
+				return {};
+			}
+		}
+		if (node === el) break;
+		node = node.parentElement;
+	}
+	return {};
+}
+
+/**
+ * Text immediately before (container, offset), walking backward through
+ * preceding siblings/ancestors up to `maxChars` characters or the editor
+ * root, whichever comes first. Used for `{{path}}` binding autocomplete,
+ * which only ever needs to see a short local window to find an unclosed
+ * `{{` — bounded like this, it's cheap to call on every keystroke regardless
+ * of total document length (same reasoning as `styleAtCaret` above).
+ */
+export function textBeforeCaret(
+	el: HTMLElement,
+	container: Node,
+	offset: number,
+	maxChars = 300,
+): string {
+	const parts: string[] = [];
+	let collected = 0;
+
+	function pushText(text: string) {
+		parts.unshift(text);
+		collected += text.length;
+	}
+
+	if (container.nodeType === Node.TEXT_NODE) {
+		pushText((container.textContent ?? "").slice(0, offset));
+	}
+
+	let sibling: Node | null =
+		container.nodeType === Node.TEXT_NODE
+			? container.previousSibling
+			: (container.childNodes[offset - 1] ?? null);
+	let ancestor: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+
+	while (ancestor && collected < maxChars) {
+		while (sibling && collected < maxChars) {
+			pushText(sibling.nodeName === "BR" ? "\n" : (sibling.textContent ?? ""));
+			sibling = sibling.previousSibling;
+		}
+		if (ancestor === el) break;
+		sibling = ancestor.previousSibling;
+		ancestor = ancestor.parentNode;
+	}
+
+	const joined = parts.join("");
+	return joined.length > maxChars
+		? joined.slice(joined.length - maxChars)
+		: joined;
+}
+
+/**
+ * DOM position `count` characters before (container, offset) — the inverse of
+ * `textBeforeCaret`'s walk. Used to find where a `{{` opener starts so it (and
+ * the partial path after it) can be replaced when a binding suggestion is
+ * applied. Bounded the same way: only ever walks back as far as `count`
+ * requires, not the whole document.
+ */
+export function stepBack(
+	el: HTMLElement,
+	container: Node,
+	offset: number,
+	count: number,
+): { node: Node; offset: number } {
+	let remaining = count;
+
+	if (container.nodeType === Node.TEXT_NODE) {
+		if (remaining <= offset) return { node: container, offset: offset - remaining };
+		remaining -= offset;
+	}
+
+	let sibling: Node | null =
+		container.nodeType === Node.TEXT_NODE
+			? container.previousSibling
+			: (container.childNodes[offset - 1] ?? null);
+	let ancestor: Node | null =
+		container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+
+	while (ancestor) {
+		while (sibling) {
+			const isBr = sibling.nodeName === "BR";
+			const len = isBr ? 1 : (sibling.textContent ?? "").length;
+			if (remaining <= len) {
+				if (sibling.nodeType === Node.TEXT_NODE) {
+					return { node: sibling, offset: len - remaining };
+				}
+				// A styled <span> (single text child, per renderRunsToElement) or a
+				// <br> — descend into the span's text, or land at the sibling's own
+				// boundary if there's nothing to descend into.
+				const textChild = sibling.firstChild;
+				if (!isBr && textChild?.nodeType === Node.TEXT_NODE) {
+					return {
+						node: textChild,
+						offset: (textChild.textContent ?? "").length - remaining,
+					};
+				}
+				return { node: sibling, offset: 0 };
+			}
+			remaining -= len;
+			sibling = sibling.previousSibling;
+		}
+		if (ancestor === el) return { node: el, offset: 0 };
+		sibling = ancestor.previousSibling;
+		ancestor = ancestor.parentNode;
+	}
+	return { node: el, offset: 0 };
 }
 
 /** Current selection as linear character offsets within the editor, or null if none/outside. */
@@ -234,7 +365,8 @@ export function baseEditorStyle(style: TextStyle): CSSProperties {
 		letterSpacing: style.letterSpacing,
 		textAlign: style.align,
 		textDecoration: style.decoration === "none" ? undefined : style.decoration,
+		whiteSpace: "pre-wrap",
+		tabSize: 8,
 		padding: 0,
 	};
 }
-

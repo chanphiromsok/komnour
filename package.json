@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @komnour/server dev & pnpm --filter @komnour/editor dev",
+    "dev": "pnpm --filter @komnour/server dev & pnpm --filter @komnour/visual-editor dev",
     "server": "pnpm --filter @komnour/server dev",
-    "editor": "pnpm --filter @komnour/editor dev"
+    "editor": "pnpm --filter @komnour/visual-editor dev"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

@@ -1,40 +1,41 @@
-import type { CanvasKit, FontMgr, Surface } from "canvaskit-wasm";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	AlignmentGuides,
-	computeAlignmentGuides,
+	computeAlignmentSnap,
 } from "#/features/designer/overlays/AlignmentGuides";
 import {
 	type ResizeEdge,
 	SelectionOverlay,
 } from "#/features/designer/overlays/SelectionOverlay";
 import {
+	createCheckboxNode,
 	createCircleNode,
+	createImageNode,
 	createLineNode,
 	createRectNode,
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
 import {
+	imageFileToAsset,
+	isImageFile,
+} from "#/features/designer/assets/imageFiles";
+import {
 	GRID_SIZE,
 	snapToGrid,
 	useDesignerStore,
 } from "#/features/designer/store/reportStore";
-import { loadBrowserFontMgr } from "@komnour/report/src/fonts/registerBrowser";
 import { resolvePaperSize } from "@komnour/report/src/layout/paper";
 import { resolveRuns } from "@komnour/report/src/model/runs";
-import { extractPageDocument } from "@komnour/report/src/model/tree";
 import type {
 	Frame,
 	NodeId,
 	PageNode,
 	ReportDocument,
 } from "@komnour/report/src/model/types";
-import { CanvasAdapter } from "@komnour/report/src/render/canvasAdapter";
-import { loadCanvasKit } from "@komnour/report/src/render/canvasKitLoader";
-import { renderDocument } from "@komnour/report/src/render/renderer";
-import { resolveAssetBrowser } from "@komnour/report/src/render/resolveAssetBrowser";
 import { getAbsoluteFrame, hitTest, rectsIntersect } from "./geometry";
 import { TextEditOverlay } from "./TextEditOverlay";
+import { observable } from "@legendapp/state";
+import { useValue } from "@legendapp/state/react";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 4;
@@ -42,85 +43,232 @@ const MAX_ZOOM = 4;
 const PAGE_GAP = 48;
 /** Smallest a node can be resized to, in document points. */
 const MIN_SIZE = 8;
+/**
+ * Ceiling on devicePixelRatio × zoom used to size a page's canvas backing
+ * buffer. Without a cap, a Retina display (dpr 2-3) zoomed to MAX_ZOOM (4)
+ * would render at 8-12x the page's point size — for a multi-page document
+ * that's several such surfaces at once, ballooning GPU/memory for a level of
+ * sharpness well past what's visible on any real screen.
+ */
+const MAX_RENDER_SCALE = 4;
+/** How long a zoom change must stay put before the canvas resizes to match it. */
+const ZOOM_RESIZE_DEBOUNCE_MS = 150;
+/** Wheel zoom sensitivity; roughly 10% per common mouse-wheel notch. */
+const WHEEL_ZOOM_SPEED = 0.001;
+const DROPPED_IMAGE_MAX_SIZE = 240;
+
+/**
+ * Debounced copy of `value`, settling `delayMs` after the last change.
+ * Used to defer the comparatively expensive preview re-render until
+ * a zoom gesture actually stops, instead of refetching server PNGs
+ * on every intermediate tick of a scroll-wheel zoom.
+ */
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+	const [debounced, setDebounced] = useState(value);
+	useEffect(() => {
+		const timer = setTimeout(() => setDebounced(value), delayMs);
+		return () => clearTimeout(timer);
+	}, [value, delayMs]);
+	return debounced;
+}
 
 type Interaction =
 	| {
-			kind: "move";
-			nodeId: NodeId;
-			startX: number;
-			startY: number;
-			originalFrame: Frame;
-	  }
+		kind: "move";
+		nodeId: NodeId;
+		startX: number;
+		startY: number;
+		originalFrame: Frame;
+	}
 	| {
-			kind: "resize";
-			nodeId: NodeId;
-			edge: ResizeEdge;
-			startX: number;
-			startY: number;
-			originalFrame: Frame;
-	  }
+		kind: "resize";
+		nodeId: NodeId;
+		edge: ResizeEdge;
+		startX: number;
+		startY: number;
+		originalFrame: Frame;
+	}
 	| {
-			kind: "marquee";
-			startX: number;
-			startY: number;
-			currentX: number;
-			currentY: number;
-	  }
+		kind: "rotate";
+		nodeId: NodeId;
+		centerX: number;
+		centerY: number;
+		startAngle: number;
+		originalFrame: Frame;
+	}
 	| {
-			kind: "pan";
-			startClientX: number;
-			startClientY: number;
-			originalPan: { x: number; y: number };
-	  };
-
-interface RenderEngine {
-	canvasKit: CanvasKit;
-	fontMgr: FontMgr;
-}
+		kind: "marquee";
+		startX: number;
+		startY: number;
+		currentX: number;
+		currentY: number;
+	}
+	| {
+		kind: "pan";
+		startClientX: number;
+		startClientY: number;
+		originalPan: { x: number; y: number };
+	};
 
 /**
- * Computes the resized frame for a drag of `edge` by (dx, dy) document points.
- * East/south edges grow width/height; west/north edges move x/y and grow the
- * opposite way while keeping the far edge pinned. Each moving edge snaps to the
- * grid and every side stays at least MIN_SIZE apart.
+ * Computes the resized frame for a drag of `edge` by (dx, dy) document points,
+ * where (dx, dy) must already be in the node's LOCAL (unrotated) axes — the
+ * caller rotates the pointer delta by -rotation first, so dragging the "e"
+ * handle of a rotated rectangle stretches it along its own rotated edge
+ * instead of the screen's x axis. East/south edges grow width/height; west/
+ * north edges move x/y and grow the opposite way while keeping the far edge
+ * pinned. Each moving edge snaps to the grid and every side stays at least
+ * `minSize` apart — MIN_SIZE for shapes, but 0 for lines, whose bounding box
+ * is legitimately zero-thick (a horizontal line dragged vertical and back
+ * must be able to return to height 0, not get stuck at MIN_SIZE).
  */
 function resizeFrame(
 	original: Frame,
 	edge: ResizeEdge,
 	dx: number,
 	dy: number,
+	minSize: number = MIN_SIZE,
 ): Partial<Frame> {
 	const result: Partial<Frame> = {};
 	const right = original.x + original.width;
 	const bottom = original.y + original.height;
 
 	if (edge.includes("e")) {
-		result.width = Math.max(MIN_SIZE, snapToGrid(original.width + dx));
+		result.width = Math.max(minSize, snapToGrid(original.width + dx));
 	}
 	if (edge.includes("w")) {
-		const newLeft = Math.min(snapToGrid(original.x + dx), right - MIN_SIZE);
+		const newLeft = Math.min(snapToGrid(original.x + dx), right - minSize);
 		result.x = newLeft;
 		result.width = right - newLeft;
 	}
 	if (edge.includes("s")) {
-		result.height = Math.max(MIN_SIZE, snapToGrid(original.height + dy));
+		result.height = Math.max(minSize, snapToGrid(original.height + dy));
 	}
 	if (edge.includes("n")) {
-		const newTop = Math.min(snapToGrid(original.y + dy), bottom - MIN_SIZE);
+		const newTop = Math.min(snapToGrid(original.y + dy), bottom - minSize);
 		result.y = newTop;
 		result.height = bottom - newTop;
 	}
 	return result;
 }
 
+/** Rotates a pointer delta by -degrees, mapping a page-space drag onto a rotated node's own axes. */
+function rotateDelta(
+	dx: number,
+	dy: number,
+	degrees: number,
+): { dx: number; dy: number } {
+	if (!degrees) return { dx, dy };
+	const rad = (-degrees * Math.PI) / 180;
+	return {
+		dx: dx * Math.cos(rad) - dy * Math.sin(rad),
+		dy: dx * Math.sin(rad) + dy * Math.cos(rad),
+	};
+}
+
+function angleBetween(centerX: number, centerY: number, x: number, y: number) {
+	return (Math.atan2(y - centerY, x - centerX) * 180) / Math.PI;
+}
+
+function isTextInputTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable) return true;
+	return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
+
+function wheelDeltaInPixels(event: WheelEvent): { x: number; y: number } {
+	const unit =
+		event.deltaMode === WheelEvent.DOM_DELTA_LINE
+			? 16
+			: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+				? window.innerHeight
+				: 1;
+	return { x: event.deltaX * unit, y: event.deltaY * unit };
+}
+
+function firstImageFile(files: FileList): File | null {
+	return Array.from(files).find(isImageFile) ?? null;
+}
+
+function dragContainsImage(event: React.DragEvent): boolean {
+	return Array.from(event.dataTransfer.items).some(
+		(item) => item.kind === "file" && item.type.startsWith("image/"),
+	);
+}
+
+function fitDroppedImageFrame({
+	naturalWidth,
+	naturalHeight,
+	pageWidth,
+	pageHeight,
+	x,
+	y,
+}: {
+	naturalWidth: number;
+	naturalHeight: number;
+	pageWidth: number;
+	pageHeight: number;
+	x: number;
+	y: number;
+}): Frame {
+	const fallbackWidth = 160;
+	const fallbackHeight = 120;
+	const sourceWidth = naturalWidth > 0 ? naturalWidth : fallbackWidth;
+	const sourceHeight = naturalHeight > 0 ? naturalHeight : fallbackHeight;
+	const scale = Math.min(
+		1,
+		DROPPED_IMAGE_MAX_SIZE / sourceWidth,
+		DROPPED_IMAGE_MAX_SIZE / sourceHeight,
+	);
+	const width = Math.max(MIN_SIZE, Math.round(sourceWidth * scale));
+	const height = Math.max(MIN_SIZE, Math.round(sourceHeight * scale));
+	const maxX = Math.max(0, pageWidth - width);
+	const maxY = Math.max(0, pageHeight - height);
+	return {
+		x: snapToGrid(Math.min(Math.max(0, x - width / 2), maxX)),
+		y: snapToGrid(Math.min(Math.max(0, y - height / 2), maxY)),
+		width,
+		height,
+		rotation: 0,
+	};
+};
+
+
+type State = {
+	editingNodeId: NodeId | null
+	dragPreview: {
+		nodeId: NodeId;
+		frame: Partial<Frame>;
+	} | null
+	marqueeRect: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	} | null,
+	guides: {
+		vertical: number[];
+		horizontal: number[];
+	}
+}
+const state$ = observable<State>({
+	editingNodeId: null,
+	dragPreview: null,
+	guides: {
+		horizontal: [],
+		vertical: []
+	},
+	marqueeRect: null
+})
 export function DesignerCanvas() {
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<HTMLDivElement>(null);
 	const activeSheetRef = useRef<HTMLDivElement | null>(null);
 	// Every page sheet's DOM element, keyed by page id — used to hit-test which
-	// page the pointer is over when dropping a cross-page drag.
-	const sheetRefs = useRef<Map<NodeId, HTMLDivElement>>(new Map());
-	const [engine, setEngine] = useState<RenderEngine | null>(null);
+	// page the pointer is over when dropping a cross-page drag. Lazily
+	// initialized so the Map is only ever constructed once, not on every render.
+	const sheetRefs = useRef<Map<NodeId, HTMLDivElement> | null>(null);
+	if (sheetRefs.current === null) sheetRefs.current = new Map();
 	const [error, setError] = useState<string | null>(null);
 
 	const document = useDesignerStore((s) => s.document);
@@ -129,7 +277,10 @@ export function DesignerCanvas() {
 	const tool = useDesignerStore((s) => s.tool);
 	const zoom = useDesignerStore((s) => s.zoom);
 	const pan = useDesignerStore((s) => s.pan);
-	const bindingData = useDesignerStore((s) => s.bindingData);
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
+	const boundFieldIndicatorColor = useDesignerStore(
+		(s) => s.boundFieldIndicatorColor,
+	);
 	const setActivePageId = useDesignerStore((s) => s.setActivePageId);
 	const setSelection = useDesignerStore((s) => s.setSelection);
 	const toggleSelection = useDesignerStore((s) => s.toggleSelection);
@@ -144,73 +295,81 @@ export function DesignerCanvas() {
 	const setZoom = useDesignerStore((s) => s.setZoom);
 	const setTool = useDesignerStore((s) => s.setTool);
 	const addNode = useDesignerStore((s) => s.addNode);
+	const setImageAsset = useDesignerStore((s) => s.setImageAsset);
 	const moveNodeToPage = useDesignerStore((s) => s.moveNodeToPage);
 	const copyNodes = useDesignerStore((s) => s.copyNodes);
 	const pasteNodes = useDesignerStore((s) => s.pasteNodes);
 	const verify = useDesignerStore((s) => s.verify);
 
-	const [editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
+	// const [_editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
 
-	const [dragPreview, setDragPreview] = useState<{
-		nodeId: NodeId;
-		frame: Partial<Frame>;
-	} | null>(null);
-	const [marqueeRect, setMarqueeRect] = useState<{
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	} | null>(null);
-	const [guides, setGuides] = useState<{
-		vertical: number[];
-		horizontal: number[];
-	}>({
-		vertical: [],
-		horizontal: [],
-	});
+	// const [_dragPreview, setDragPreview] = useState<{
+	// 	nodeId: NodeId;
+	// 	frame: Partial<Frame>;
+	// } | null>(null);
+	const dragPreview = useValue(state$.dragPreview)
+	const editingNodeId = useValue(state$.editingNodeId)
+	const marqueeRect = useValue(state$.marqueeRect)
+	const guides = useValue(state$.guides)
+
+	const setEditingNodeId = (nodeId: NodeId | null) => {
+		state$.editingNodeId.set(nodeId)
+	}
+	const setDragPreview = (preview: State["dragPreview"]) => {
+		state$.dragPreview.set(preview)
+	}
+	const setMarqueeRect = (marquee: State["marqueeRect"]) => {
+		state$.marqueeRect.set(marquee)
+	}
+	const setGuides = (guide: State['guides']) => {
+		state$.guides.set(guide)
+	}
+
 	const interactionRef = useRef<Interaction | null>(null);
 	const toolBeforeSpaceRef = useRef<typeof tool | null>(null);
 
+	// Canvas-preview-only aid: a checkbox whose checked state comes from
+	// checkedBinding gets its tick redrawn in boundFieldIndicatorColor here,
+	// so it's visually obvious which fields are data-driven while building a
+	// template. This never touches the stored document, so PDF/PNG export
+	// (which renders the real document, not this preview copy) always uses
+	// the node's own designed checkColor.
+	const previewDocument = useMemo<ReportDocument>(() => {
+		let changed = false;
+		const nodes: ReportDocument["nodes"] = { ...document.nodes };
+		for (const [id, node] of Object.entries(document.nodes)) {
+			if (
+				node.type === "checkbox" &&
+				node.checkedBinding &&
+				node.checkColor !== boundFieldIndicatorColor
+			) {
+				nodes[id] = { ...node, checkColor: boundFieldIndicatorColor };
+				changed = true;
+			}
+		}
+		return changed ? { ...document, nodes } : document;
+	}, [document, boundFieldIndicatorColor]);
+
 	const effectiveDocument = useMemo<ReportDocument>(() => {
-		if (!dragPreview) return document;
-		const node = document.nodes[dragPreview.nodeId];
-		if (!node) return document;
+		if (!dragPreview) return previewDocument;
+		const node = previewDocument.nodes[dragPreview.nodeId];
+		if (!node) return previewDocument;
 		return {
-			...document,
+			...previewDocument,
 			nodes: {
-				...document.nodes,
+				...previewDocument.nodes,
 				[dragPreview.nodeId]: {
 					...node,
 					frame: { ...node.frame, ...dragPreview.frame },
 				},
 			},
 		};
-	}, [document, dragPreview]);
+	}, [previewDocument, dragPreview]);
 
 	const editingNode = editingNodeId ? document.nodes[editingNodeId] : undefined;
 	const editingFrame = editingNodeId
 		? getAbsoluteFrame(document, editingNodeId)
 		: undefined;
-
-	useEffect(() => {
-		let cancelled = false;
-
-		async function init() {
-			const canvasKit = await loadCanvasKit();
-			if (cancelled) return;
-			const fontMgr = await loadBrowserFontMgr(canvasKit);
-			if (cancelled) return;
-			setEngine({ canvasKit, fontMgr });
-		}
-
-		init().catch((err) =>
-			setError(err instanceof Error ? err.message : String(err)),
-		);
-
-		return () => {
-			cancelled = true;
-		};
-	}, []);
 
 	// Bring the active page's sheet into view when it changes (e.g. a page
 	// tab click or a freshly added page at the bottom of the stack).
@@ -227,33 +386,39 @@ export function DesignerCanvas() {
 		if (!viewportEl) return;
 
 		function onWheel(event: WheelEvent) {
-			if (!(event.ctrlKey || event.metaKey)) return;
+			if (isTextInputTarget(event.target)) return;
 			const stageEl = stageRef.current;
 			if (!stageEl) return;
 			event.preventDefault();
 
 			const { zoom: zoomOld, pan: panOld } = useDesignerStore.getState();
-			const rect = stageEl.getBoundingClientRect();
-			// Cursor position relative to the stage's current (pre-zoom-change)
-			// rendered box — since screenX = rect.left + docX * zoomOld, this is
-			// exactly `docX * zoomOld`, which is what the zoom-to-cursor pan
-			// correction below needs (see the derivation in the plan doc).
-			const cursorX = event.clientX - rect.left;
-			const cursorY = event.clientY - rect.top;
+			const delta = wheelDeltaInPixels(event);
 
-			// ~10% zoom change per typical wheel notch (deltaY ~100); trackpad
-			// pinch gestures send many small deltas that compound smoothly.
-			const zoomFactor = Math.exp(-event.deltaY * 0.001);
+			if (!(event.ctrlKey || event.metaKey)) {
+				setPan({
+					x: panOld.x - (event.shiftKey ? delta.y : delta.x),
+					y: panOld.y - (event.shiftKey ? 0 : delta.y),
+				});
+				return;
+			}
+
+			const rect = stageEl.getBoundingClientRect();
+			const docXUnderCursor = (event.clientX - rect.left) / zoomOld;
+			const docYUnderCursor = (event.clientY - rect.top) / zoomOld;
+
+			const zoomFactor = Math.exp(-delta.y * WHEEL_ZOOM_SPEED);
 			const zoomNew = Math.min(
 				MAX_ZOOM,
 				Math.max(MIN_ZOOM, zoomOld * zoomFactor),
 			);
-			const scaleRatio = zoomNew / zoomOld;
+			if (zoomNew === zoomOld) return;
+			const stageBaseX = rect.left - panOld.x;
+			const stageBaseY = rect.top - panOld.y;
 
 			setZoom(zoomNew);
 			setPan({
-				x: panOld.x + cursorX * (1 - scaleRatio),
-				y: panOld.y + cursorY * (1 - scaleRatio),
+				x: event.clientX - stageBaseX - docXUnderCursor * zoomNew,
+				y: event.clientY - stageBaseY - docYUnderCursor * zoomNew,
 			});
 		}
 
@@ -263,9 +428,7 @@ export function DesignerCanvas() {
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
-			const target = event.target as HTMLElement | null;
-			if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
-				return;
+			if (isTextInputTarget(event.target)) return;
 			if (editingNodeId) return;
 
 			const isMeta = event.metaKey || event.ctrlKey;
@@ -328,15 +491,12 @@ export function DesignerCanvas() {
 					if (!node) continue;
 					updateNodeFrame(id, { x: node.frame.x + dx, y: node.frame.y + dy });
 				}
-			} else if (
-				!isMeta &&
-				!event.altKey &&
-				event.key === " " &&
-				!event.repeat
-			) {
+			} else if (!isMeta && !event.altKey && event.key === " ") {
 				event.preventDefault();
-				toolBeforeSpaceRef.current = tool;
-				setTool("pan");
+				if (!event.repeat && !toolBeforeSpaceRef.current) {
+					toolBeforeSpaceRef.current = tool;
+					setTool("pan");
+				}
 			} else if (!isMeta && !event.altKey && !event.repeat && activePageId) {
 				if (key === "v") setTool("select");
 				else if (key === "h") setTool("pan");
@@ -348,10 +508,16 @@ export function DesignerCanvas() {
 					addNode(createCircleNode(activePageId), activePageId);
 				else if (key === "l")
 					addNode(createLineNode(activePageId), activePageId);
+				else if (key === "c")
+					addNode(createCheckboxNode(activePageId), activePageId);
 			}
 		}
 
 		function onKeyUp(event: KeyboardEvent) {
+			if (isTextInputTarget(event.target)) return;
+			if (event.key === " ") {
+				event.preventDefault();
+			}
 			if (event.key === " " && toolBeforeSpaceRef.current) {
 				setTool(toolBeforeSpaceRef.current);
 				toolBeforeSpaceRef.current = null;
@@ -409,6 +575,26 @@ export function DesignerCanvas() {
 			edge,
 			startX: x,
 			startY: y,
+			originalFrame: { ...node.frame },
+		};
+		(event.target as Element).setPointerCapture(event.pointerId);
+	}
+
+	function handleRotatePointerDown(nodeId: NodeId, event: React.PointerEvent) {
+		event.stopPropagation();
+		event.preventDefault();
+		const node = document.nodes[nodeId];
+		if (!node) return;
+		const { x, y } = toDocPoint(event.clientX, event.clientY);
+		const frame = getAbsoluteFrame(document, nodeId);
+		const centerX = frame.x + frame.width / 2;
+		const centerY = frame.y + frame.height / 2;
+		interactionRef.current = {
+			kind: "rotate",
+			nodeId,
+			centerX,
+			centerY,
+			startAngle: angleBetween(centerX, centerY, x, y),
 			originalFrame: { ...node.frame },
 		};
 		(event.target as Element).setPointerCapture(event.pointerId);
@@ -480,6 +666,54 @@ export function DesignerCanvas() {
 		}
 	}
 
+	function handleSheetDragOver(event: React.DragEvent<HTMLDivElement>) {
+		if (!dragContainsImage(event)) return;
+		event.preventDefault();
+		event.dataTransfer.dropEffect = "copy";
+	}
+
+	async function handleSheetDrop(
+		pageId: NodeId,
+		event: React.DragEvent<HTMLDivElement>,
+	) {
+		const file = firstImageFile(event.dataTransfer.files);
+		if (!file) return;
+		event.preventDefault();
+		event.stopPropagation();
+
+		const pageNode = document.nodes[pageId];
+		if (!pageNode || pageNode.type !== "page") return;
+		const sheetRect = event.currentTarget.getBoundingClientRect();
+		const point = {
+			x: (event.clientX - sheetRect.left) / zoom,
+			y: (event.clientY - sheetRect.top) / zoom,
+		};
+		const pageSize = resolvePaperSize(pageNode.paper);
+
+		try {
+			setError(null);
+			const imageAsset = await imageFileToAsset(file);
+			const imageNode = createImageNode(pageId);
+			imageNode.name = file.name.replace(/\.[^.]+$/, "") || "Image";
+			imageNode.frame = fitDroppedImageFrame({
+				naturalWidth: imageAsset.width,
+				naturalHeight: imageAsset.height,
+				pageWidth: pageSize.width,
+				pageHeight: pageSize.height,
+				x: point.x,
+				y: point.y,
+			});
+			if (pageId !== activePageId) setActivePageId(pageId);
+			addNode(imageNode, pageId);
+			setImageAsset(imageNode.id, imageAsset.url, {
+				width: imageAsset.width,
+				height: imageAsset.height,
+			});
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	}
+
 	function handlePointerMove(event: React.PointerEvent) {
 		const interaction = interactionRef.current;
 		if (!interaction || !activePageId) return;
@@ -488,39 +722,83 @@ export function DesignerCanvas() {
 		if (interaction.kind === "move") {
 			const dx = x - interaction.startX;
 			const dy = y - interaction.startY;
-			const newFrame = {
-				x: snapToGrid(interaction.originalFrame.x + dx),
-				y: snapToGrid(interaction.originalFrame.y + dy),
-			};
-			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			// Un-snapped pointer-driven position, in the parent's local space.
+			const rawX = interaction.originalFrame.x + dx;
+			const rawY = interaction.originalFrame.y + dy;
 
-			const siblingIds = document.nodes[interaction.nodeId]
-				? Object.values(document.nodes)
-						.filter(
-							(n) => n.parentId === document.nodes[interaction.nodeId].parentId,
-						)
-						.filter((n) => n.id !== interaction.nodeId)
-						.map((n) => n.id)
+			const draggedNode = document.nodes[interaction.nodeId];
+			const siblingIds = draggedNode
+				? Object.values(document.nodes).reduce<NodeId[]>((ids, n) => {
+					if (n.parentId === draggedNode.parentId && n.id !== interaction.nodeId)
+						ids.push(n.id);
+					return ids;
+				}, [])
 				: [];
 			const siblingFrames = siblingIds.map((id) =>
 				getAbsoluteFrame(document, id),
 			);
-			const draggedAbsolute = {
-				...newFrame,
-				width: interaction.originalFrame.width,
-				height: interaction.originalFrame.height,
+			// Alignment is computed in absolute coordinates and converted back
+			// through the parent's offset, so nothing here assumes frame.x/y are
+			// absolute — nested groups/frames will keep snapping correctly.
+			const parentOffset =
+				draggedNode?.parentId != null
+					? getAbsoluteFrame(document, draggedNode.parentId)
+					: { x: 0, y: 0 };
+			// Alt (Option on macOS) temporarily disables smart alignment;
+			// grid snapping below still applies as usual.
+			const snap = event.altKey
+				? null
+				: computeAlignmentSnap(
+					siblingFrames,
+					{
+						x: rawX + parentOffset.x,
+						y: rawY + parentOffset.y,
+						width: interaction.originalFrame.width,
+						height: interaction.originalFrame.height,
+					},
+					zoom,
+				);
+			// Smart alignment wins over the grid, per axis: an axis it claims
+			// takes the exact aligned position; an unclaimed axis falls back to
+			// plain grid snapping.
+			const newFrame = {
+				x: snap?.snappedX ? snap.frame.x - parentOffset.x : snapToGrid(rawX),
+				y: snap?.snappedY ? snap.frame.y - parentOffset.y : snapToGrid(rawY),
 			};
-			setGuides(computeAlignmentGuides(siblingFrames, draggedAbsolute));
+			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			setGuides(snap?.guides ?? { vertical: [], horizontal: [] });
 		} else if (interaction.kind === "resize") {
-			const dx = x - interaction.startX;
-			const dy = y - interaction.startY;
+			const node = document.nodes[interaction.nodeId];
+			// Map the page-space drag onto the node's own (possibly rotated) axes
+			// so handles stretch along the shape's edges, not the screen's.
+			const local = rotateDelta(
+				x - interaction.startX,
+				y - interaction.startY,
+				interaction.originalFrame.rotation,
+			);
 			const newFrame = resizeFrame(
 				interaction.originalFrame,
 				interaction.edge,
-				dx,
-				dy,
+				local.dx,
+				local.dy,
+				node?.type === "line" ? 0 : MIN_SIZE,
 			);
 			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+		} else if (interaction.kind === "rotate") {
+			const currentAngle = angleBetween(
+				interaction.centerX,
+				interaction.centerY,
+				x,
+				y,
+			);
+			const rawRotation =
+				interaction.originalFrame.rotation +
+				currentAngle -
+				interaction.startAngle;
+			const rotation = event.shiftKey
+				? Math.round(rawRotation / 15) * 15
+				: Math.round(rawRotation);
+			setDragPreview({ nodeId: interaction.nodeId, frame: { rotation } });
 		} else if (interaction.kind === "marquee") {
 			interactionRef.current = { ...interaction, currentX: x, currentY: y };
 			setMarqueeRect({
@@ -543,7 +821,7 @@ export function DesignerCanvas() {
 
 	/** The page whose sheet is under the given client point, if any. */
 	function pageUnderPointer(clientX: number, clientY: number): NodeId | null {
-		for (const [pageId, el] of sheetRefs.current) {
+		for (const [pageId, el] of sheetRefs.current ?? []) {
 			const rect = el.getBoundingClientRect();
 			if (
 				clientX >= rect.left &&
@@ -569,7 +847,7 @@ export function DesignerCanvas() {
 		if (interaction.kind === "move") {
 			const targetPageId = pageUnderPointer(event.clientX, event.clientY);
 			if (targetPageId && targetPageId !== activePageId) {
-				const targetEl = sheetRefs.current.get(targetPageId);
+				const targetEl = sheetRefs.current?.get(targetPageId);
 				if (targetEl) {
 					const rect = targetEl.getBoundingClientRect();
 					const grabOffsetX = interaction.startX - interaction.originalFrame.x;
@@ -589,19 +867,42 @@ export function DesignerCanvas() {
 			}
 		}
 
-		if (interaction.kind === "move" || interaction.kind === "resize") {
+		if (
+			interaction.kind === "move" ||
+			interaction.kind === "resize" ||
+			interaction.kind === "rotate"
+		) {
 			if (dragPreview) {
-				if ("x" in dragPreview.frame || "y" in dragPreview.frame) {
+				if (
+					interaction.kind !== "rotate" &&
+					("x" in dragPreview.frame || "y" in dragPreview.frame)
+				) {
 					updateNodeFrame(interaction.nodeId, {
 						x: dragPreview.frame.x ?? interaction.originalFrame.x,
 						y: dragPreview.frame.y ?? interaction.originalFrame.y,
 					});
 				}
-				if ("width" in dragPreview.frame || "height" in dragPreview.frame) {
+				if (
+					interaction.kind !== "rotate" &&
+					("width" in dragPreview.frame || "height" in dragPreview.frame)
+				) {
 					updateNodeFrame(interaction.nodeId, {
 						width: dragPreview.frame.width ?? interaction.originalFrame.width,
 						height:
 							dragPreview.frame.height ?? interaction.originalFrame.height,
+					});
+				}
+				if (
+					interaction.kind === "rotate" &&
+					"rotation" in dragPreview.frame
+				) {
+					updateNode(interaction.nodeId, {
+						frame: {
+							...interaction.originalFrame,
+							rotation:
+								dragPreview.frame.rotation ??
+								interaction.originalFrame.rotation,
+						},
 					});
 				}
 			}
@@ -629,18 +930,18 @@ export function DesignerCanvas() {
 	return (
 		<div
 			ref={viewportRef}
-			className="relative flex-1 overflow-auto bg-neutral-200 dark:bg-neutral-950"
+			className="relative flex-1 overflow-auto bg-[#e9eaec] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.08)_1px,transparent_0)] [background-size:24px_24px] dark:bg-neutral-950 dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)]"
 			onPointerDown={handleViewportPointerDown}
 			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
 		>
-			<div className="min-h-full min-w-full p-16">
+			<div className="min-h-full min-w-full p-12">
 				<div
 					ref={stageRef}
 					className="relative flex w-max flex-col items-start"
 					style={{
 						gap: PAGE_GAP,
-						transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+						transform: `matrix(${zoom}, 0, 0, ${zoom}, ${pan.x}, ${pan.y})`,
 						transformOrigin: "top left",
 					}}
 				>
@@ -657,8 +958,8 @@ export function DesignerCanvas() {
 							<div
 								key={pageId}
 								ref={(el) => {
-									if (el) sheetRefs.current.set(pageId, el);
-									else sheetRefs.current.delete(pageId);
+									if (el) sheetRefs.current?.set(pageId, el);
+									else sheetRefs.current?.delete(pageId);
 									if (isActive) activeSheetRef.current = el;
 								}}
 								className="relative"
@@ -666,20 +967,22 @@ export function DesignerCanvas() {
 								onPointerDown={(event) =>
 									handleSheetPointerDown(pageId, event)
 								}
+								onDragOver={handleSheetDragOver}
+								onDrop={(event) => handleSheetDrop(pageId, event)}
 								onDoubleClick={isActive ? handleSheetDoubleClick : undefined}
 							>
 								<div className="pointer-events-none absolute -top-6 left-0 select-none text-neutral-500 text-xs dark:text-neutral-400">
 									{pageNode.name || `Page ${index + 1}`}
 								</div>
 								<PageCanvas
-									engine={engine}
-									document={effectiveDocument}
+									document={previewDocument}
 									pageId={pageId}
 									width={pageSize.width}
 									height={pageSize.height}
 									bindingData={bindingData}
 									isActive={isActive}
 									onError={setError}
+									zoom={zoom}
 								/>
 								{isActive && (
 									<>
@@ -692,11 +995,18 @@ export function DesignerCanvas() {
 												className="pointer-events-none absolute top-0 left-0 opacity-50 mix-blend-difference"
 											/>
 										)}
+										<DragPreviewOverlay
+											document={effectiveDocument}
+											pageId={pageId}
+											nodeId={dragPreview?.nodeId ?? null}
+										/>
 										<SelectionOverlay
 											document={effectiveDocument}
 											selection={selection}
 											zoom={zoom}
+											editingNodeId={editingNodeId}
 											onHandlePointerDown={handleHandlePointerDown}
+											onRotatePointerDown={handleRotatePointerDown}
 										/>
 										<AlignmentGuides guides={guides} pageSize={pageSize} />
 										{editingNode &&
@@ -704,6 +1014,7 @@ export function DesignerCanvas() {
 											editingFrame && (
 												<TextEditOverlay
 													frame={editingFrame}
+													rotation={editingNode.frame.rotation}
 													style={editingNode.style}
 													initialRuns={resolveRuns(editingNode)}
 													onCommit={({ text, runs }) => {
@@ -735,14 +1046,52 @@ export function DesignerCanvas() {
 	);
 }
 
+function DragPreviewOverlay({
+	document,
+	pageId,
+	nodeId,
+}: {
+	document: ReportDocument;
+	pageId: NodeId;
+	nodeId: NodeId | null;
+}) {
+	if (!nodeId) return null;
+	const node = document.nodes[nodeId];
+	if (!node || node.type !== "image" || node.parentId !== pageId) return null;
+	const asset = document.assets[node.assetId];
+	if (!asset?.url) return null;
+	const frame = getAbsoluteFrame(document, nodeId);
+	return (
+		<img
+			src={asset.url}
+			alt=""
+			draggable={false}
+			className="pointer-events-none absolute select-none opacity-90"
+			style={{
+				left: frame.x,
+				top: frame.y,
+				width: frame.width,
+				height: frame.height,
+				objectFit: node.fit,
+				transform: node.frame.rotation
+					? `rotate(${node.frame.rotation}deg)`
+					: undefined,
+				transformOrigin: "center",
+			}}
+		/>
+	);
+}
+
 /**
- * One page sheet with its own CanvasKit surface. Rendering each page onto
- * its own canvas (via extractPageDocument) is what keeps pages from being
- * drawn on top of each other — renderDocument paints every page of the doc
- * it receives onto the same surface.
+ * One page sheet rendered entirely client-side by a dedicated render Worker
+ * (see renderWorker.ts) — no server round-trip for preview, unlike final
+ * PDF/PNG export which still goes through skia-canvas on the server. The
+ * canvas element's control is transferred to the worker once on mount (an
+ * OffscreenCanvas can only be transferred once), so every draw call after
+ * that happens off the main thread; this component only posts render
+ * requests and surfaces worker-reported errors.
  */
 function PageCanvas({
-	engine,
 	document,
 	pageId,
 	width,
@@ -750,8 +1099,8 @@ function PageCanvas({
 	bindingData,
 	isActive,
 	onError,
+	zoom,
 }: {
-	engine: RenderEngine | null;
 	document: ReportDocument;
 	pageId: NodeId;
 	width: number;
@@ -759,68 +1108,107 @@ function PageCanvas({
 	bindingData: Record<string, unknown> | null;
 	isActive: boolean;
 	onError: (message: string) => void;
+	zoom: number;
 }) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const surfaceRef = useRef<Surface | null>(null);
-	const adapterRef = useRef<CanvasAdapter | null>(null);
-	const [ready, setReady] = useState(false);
+	const workerRef = useRef<Worker | null>(null);
+	const requestIdRef = useRef(0);
+	const settledZoom = useDebouncedValue(zoom, ZOOM_RESIZE_DEBOUNCE_MS);
+	const onErrorRef = useRef(onError);
+	onErrorRef.current = onError;
+	// Guards against React 18 StrictMode's dev-only double-invoke of effects:
+	// transferControlToOffscreen() can be called at most once ever for a given
+	// canvas element, so a naive mount/cleanup pair would transfer it, tear
+	// the worker down, then throw trying to transfer the same (now-burned)
+	// canvas again on the synthetic second mount.
+	const teardownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+	// Mount-only: create the worker and hand it the canvas exactly once — an
+	// OffscreenCanvas transfer can't be undone or repeated, so this can't be
+	// keyed on any prop that changes later (that's what the render-request
+	// effect below is for).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: transferControlToOffscreen must run exactly once per mounted canvas
 	useEffect(() => {
 		const canvasEl = canvasRef.current;
-		if (!canvasEl || !engine) return;
-		// Size the backing pixel buffer at devicePixelRatio; CSS size (the
-		// `style` prop below) stays in document points, so the canvas is crisp
-		// on HiDPI displays instead of upscaled/blurry.
-		const dpr = window.devicePixelRatio || 1;
-		canvasEl.width = width * dpr;
-		canvasEl.height = height * dpr;
-		const surface = engine.canvasKit.MakeCanvasSurface(canvasEl);
-		if (!surface) {
-			onError("Failed to create CanvasKit surface");
-			return;
-		}
-		surfaceRef.current = surface;
-		adapterRef.current = new CanvasAdapter(
-			engine.canvasKit,
-			surface,
-			engine.fontMgr,
-			dpr,
-		);
-		setReady(true);
-		return () => {
-			setReady(false);
-			surface.delete();
-			surfaceRef.current = null;
-			adapterRef.current = null;
-		};
-	}, [engine, width, height, onError]);
+		if (!canvasEl) return;
 
-	useEffect(() => {
-		if (!ready || !adapterRef.current) return;
-		let cancelled = false;
-		const pageDocument = extractPageDocument(document, pageId);
-		renderDocument(pageDocument, adapterRef.current, bindingData ?? undefined, {
-			resolveAsset: resolveAssetBrowser,
-		}).catch((err) => {
-			if (cancelled) return;
-			onError(err instanceof Error ? err.message : String(err));
+		// A pending teardown means this is StrictMode's synthetic re-mount
+		// running synchronously right after the synthetic cleanup below —
+		// cancel it and reuse the worker/transfer that already happened
+		// instead of attempting (and failing) a second transfer.
+		if (teardownTimerRef.current !== null) {
+			clearTimeout(teardownTimerRef.current);
+			teardownTimerRef.current = null;
+		}
+		if (workerRef.current) return;
+
+		const worker = new Worker(new URL("./renderWorker.ts", import.meta.url), {
+			type: "module",
 		});
-		return () => {
-			cancelled = true;
+		workerRef.current = worker;
+		worker.onmessage = (event: MessageEvent<{ type: string; message?: string }>) => {
+			if (event.data.type === "error" && event.data.message) {
+				onErrorRef.current(event.data.message);
+			}
 		};
-	}, [ready, document, pageId, bindingData, onError]);
+		const offscreen = canvasEl.transferControlToOffscreen();
+		// Fonts are served from public/fonts, copied verbatim under whatever
+		// base path this build uses (e.g. "/komnour" on GitHub Pages) — a
+		// root-absolute "/fonts/..." fetch from inside the worker would miss
+		// that prefix, so it's resolved here (where BASE_URL is available)
+		// and sent along instead of read inside the worker module.
+		const fontBaseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+		worker.postMessage({ type: "init", canvas: offscreen, fontBaseUrl }, [offscreen]);
+
+		return () => {
+			// Deferred rather than immediate: if the effect re-runs synchronously
+			// (StrictMode), the timeout above gets cancelled before it ever
+			// fires and this worker/transfer just keeps being reused. Only a
+			// real unmount — where no re-run follows — actually reaches zero
+			// and tears the worker down.
+			teardownTimerRef.current = setTimeout(() => {
+				worker.terminate();
+				workerRef.current = null;
+				teardownTimerRef.current = null;
+			}, 0);
+		};
+	}, []);
+
+	const loadOnceRef = useRef(false);
+	useEffect(() => {
+		const worker = workerRef.current;
+		const pageIndex = document.pages.indexOf(pageId);
+		if (!worker || pageIndex === -1) return;
+		// Only re-render an inactive page once its first frame is up — every
+		// other page redraws only while it's the active one, so editing one
+		// page doesn't repaint every other page in a multi-page document.
+		if (!isActive && loadOnceRef.current) return;
+
+		const dpr = window.devicePixelRatio || 1;
+		const scale = Math.min(dpr * settledZoom, MAX_RENDER_SCALE);
+		const requestId = ++requestIdRef.current;
+		worker.postMessage({
+			type: "render",
+			requestId,
+			document,
+			pageId,
+			bindingData,
+			width,
+			height,
+			scale,
+		});
+		loadOnceRef.current = true;
+	}, [document, pageId, bindingData, width, height, settledZoom, isActive]);
 
 	return (
-		<canvas
-			ref={canvasRef}
-			width={width}
-			height={height}
+		<div
 			style={{ width, height }}
-			className={`bg-white shadow-lg ${
-				isActive
-					? "ring-2 ring-blue-400"
-					: "ring-1 ring-neutral-300 dark:ring-neutral-700"
-			}`}
-		/>
+			className={`overflow-hidden bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] ${isActive
+				? "ring-2 ring-blue-500"
+				: "ring-1 ring-black/10 dark:ring-white/10"
+				}`}
+		>
+			<canvas ref={canvasRef} style={{ width, height }} className="block h-full w-full" />
+		</div>
 	);
 }

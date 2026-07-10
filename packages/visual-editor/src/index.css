@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* Load symbol fonts as CSS faces too, so the HTML glyph picker can render each
-   candidate character as its actual symbol (CanvasKit loads the same file
-   separately for the canvas). Keep family names identical to FONT_MANIFEST. */
+   candidate character as its actual symbol. Keep family names identical to
+   FONT_MANIFEST so skia-canvas export/preview font matching stays aligned. */
 @font-face {
 	font-family: "Wingdings 2";
 	src: url("/fonts/Wingdings2.ttf") format("truetype");
@@ -25,6 +25,9 @@ body,
 
 body {
 	margin: 0;
+	font-family:
+		Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+		sans-serif;
 }
 
 /* Drive native form controls (number/color inputs, selects, checkboxes,
@@ -48,6 +51,28 @@ body {
 /* Text-like form controls inside editor panels/dialogs (marked .report-panel)
    pick up dark surfaces without editing each input's classes. Color/checkbox/
    range inputs are left to the native color-scheme so swatches and ticks show. */
+.report-panel
+	input:not([type="color"]):not([type="checkbox"]):not([type="range"]),
+.report-panel textarea,
+.report-panel select {
+	min-height: 30px;
+	border-color: rgb(212 212 216);
+	border-radius: 0.5rem;
+	background-color: rgb(255 255 255);
+	box-shadow: 0 1px 1px rgb(0 0 0 / 0.03);
+	transition:
+		border-color 150ms ease,
+		box-shadow 150ms ease,
+		background-color 150ms ease;
+}
+.report-panel
+	input:not([type="color"]):not([type="checkbox"]):not([type="range"]):focus,
+.report-panel textarea:focus,
+.report-panel select:focus {
+	border-color: rgb(59 130 246);
+	box-shadow: 0 0 0 3px rgb(59 130 246 / 0.16);
+	outline: none;
+}
 :root[data-theme="dark"]
 	.report-panel
 	input:not([type="color"]):not([type="checkbox"]):not([type="range"]),

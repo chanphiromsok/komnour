@@ -18,8 +18,43 @@ Font.load(
 Font.load("Wingdings2", join(glyphFonts, "KhmerWing2/wingdings2.ttf"));
 
 const app = Fastify({ logger: false });
-app.register(cors, { origin: true });
-registerReportRoutes(app);
+
+// Explicit allowlist rather than `origin: true` (reflects any origin) —
+// this API is served cross-origin from a static GitHub Pages frontend, so
+// an open policy would let any site on the internet call it. Extra origins
+// (a staging domain, a custom production domain) can be added without a
+// code change via the comma-separated CORS_ORIGINS env var.
+const defaultAllowedOrigins = [
+  "http://localhost:5174",
+  "https://chanphiromsok.github.io",
+];
+const allowedOrigins = new Set([
+  ...defaultAllowedOrigins,
+  ...(process.env.CORS_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? []),
+]);
+app.register(cors, {
+  origin(origin, callback) {
+    // No Origin header (curl, same-origin, server-to-server) is allowed
+    // through; browser cross-origin requests are checked against the list.
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin ${origin} is not allowed`), false);
+  },
+  methods: ["POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+});
+
+// Mounted under /api so the same path (`/api/report/export/...`) works
+// whether a request reaches this server directly in production or via the
+// dev server's Vite proxy at packages/visual-editor/vite.config.ts.
+app.register(
+  async (instance) => {
+    registerReportRoutes(instance);
+  },
+  { prefix: "/api" },
+);
 app.get("/health", async () => ({ ok: true }));
 
 const port = Number(process.env.PORT ?? 3001);

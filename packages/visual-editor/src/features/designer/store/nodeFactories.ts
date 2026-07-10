@@ -1,5 +1,6 @@
 import { resolvePaperSize } from "@komnour/report/src/layout/paper";
 import type {
+	CheckboxNode,
 	CircleNode,
 	ImageNode,
 	LineNode,
@@ -67,14 +68,20 @@ export function createCircleNode(parentId: NodeId | null): CircleNode {
 }
 
 export function createLineNode(parentId: NodeId | null): LineNode {
+	// `frame` is the line's bounding box — hit-testing, the selection outline,
+	// and resize handles all key off it, so it can never be left at 0×0 like
+	// x1/x2's raw values would otherwise imply. x1/y1 always sit at the
+	// frame's origin and x2/y2 at its far corner (kept in sync on every
+	// resize by updateNodeFrame), so a plain horizontal line here is frame
+	// {x:48, y:48, width:120, height:0} with x1=y1=0, x2=120, y2=0.
 	return {
 		...baseNode(parentId, "Line"),
 		type: "line",
-		frame: { x: 0, y: 0, width: 0, height: 0, rotation: 0 },
-		x1: 48,
-		y1: 48,
-		x2: 168,
-		y2: 48,
+		frame: { x: 48, y: 48, width: 120, height: 0, rotation: 0 },
+		x1: 0,
+		y1: 0,
+		x2: 120,
+		y2: 0,
 		stroke: { color: "#333333", width: 1 },
 	};
 }
@@ -86,6 +93,24 @@ export function createImageNode(parentId: NodeId | null): ImageNode {
 		frame: { x: 48, y: 48, width: 160, height: 120, rotation: 0 },
 		assetId: "",
 		fit: "contain",
+	};
+}
+
+export function createCheckboxNode(parentId: NodeId | null): CheckboxNode {
+	// frame.height is the box's side length; frame.width is the box plus the
+	// label — see CheckboxNode's doc comment for why the whole row is one
+	// frame instead of a frame just for the box.
+	return {
+		...baseNode(parentId, "Checkbox"),
+		type: "checkbox",
+		frame: { x: 48, y: 48, width: 160, height: 20, rotation: 0 },
+		checked: false,
+		fill: { color: "#ffffff" },
+		stroke: { color: "#999999", width: 1 },
+		checkColor: "#111111",
+		cornerRadius: 3,
+		label: "Checkbox",
+		labelStyle: { ...DEFAULT_TEXT_STYLE, fontSize: 14, verticalAlign: "middle" },
 	};
 }
 

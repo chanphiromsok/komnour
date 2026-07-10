@@ -157,6 +157,31 @@ export interface PathNode extends BaseNode {
 	stroke?: Stroke;
 }
 
+export interface CheckboxNode extends BaseNode {
+	type: "checkbox";
+	/** Design-time default, and the fallback used whenever `checkedBinding` is unset or its path doesn't resolve. */
+	checked: boolean;
+	/**
+	 * Dot path into binding data (e.g. "loan.rateType.fixed") whose truthiness
+	 * overrides `checked` at render/export time — resolved by resolveBindings,
+	 * the same pass that substitutes `{{path}}` in text. A plain path, not
+	 * `{{}}`-wrapped, since this is a distinct labeled field, not inline text.
+	 */
+	checkedBinding?: string;
+	/**
+	 * The box is a square filling the frame's height; frame.width is the box
+	 * plus the label (if any), so the whole row — box and label together — is
+	 * one hit-testable/selectable region without any special-casing.
+	 */
+	fill?: Paint;
+	stroke?: Stroke;
+	checkColor: string;
+	cornerRadius?: number;
+	/** Optional text next to the box. Supports `{{path}}` substitution like a text node. */
+	label?: string;
+	labelStyle?: TextStyle;
+}
+
 export type ReportNode =
 	| PageNode
 	| ViewNode
@@ -165,7 +190,8 @@ export type ReportNode =
 	| RectNode
 	| CircleNode
 	| LineNode
-	| PathNode;
+	| PathNode
+	| CheckboxNode;
 
 export type NodeType = ReportNode["type"];
 
@@ -195,4 +221,11 @@ export interface ReportDocument {
 	nodes: Record<NodeId, ReportNode>;
 	assets: Record<AssetId, Asset>;
 	fonts: Record<FontId, FontDefinition>;
+	/**
+	 * Sample/actual values for the document's `{{path}}` bindings, carried as
+	 * part of the tree itself so a single exported/posted document JSON is
+	 * self-contained — no separate `data` payload has to travel alongside it.
+	 * Optional so documents saved before this field existed still validate.
+	 */
+	bindingData?: Record<string, unknown> | null;
 }

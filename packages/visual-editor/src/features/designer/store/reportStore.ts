@@ -15,6 +15,7 @@ import {
 	removeNode as removeNodeFromTree,
 } from "@komnour/report/src/model/tree";
 import type {
+	Asset,
 	Frame,
 	NodeId,
 	ReportDocument,
@@ -22,14 +23,15 @@ import type {
 	ReportNodePatch,
 	TextStyle,
 } from "@komnour/report/src/model/types";
+import { buildApiUrl } from "#/lib/apiBase";
 
 enablePatches();
 
-const API_BASE_URL: string =
-	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
-
 export type Tool = "select" | "pan";
 export type Theme = "light" | "dark";
+
+/** Matches the blue used for selection outlines/active toolbar states elsewhere (Tailwind blue-500). */
+const DEFAULT_BOUND_FIELD_INDICATOR_COLOR = "#3b82f6";
 
 /** A self-contained copy of a node and all its descendants, for the clipboard. */
 interface ClipboardSubtree {
@@ -50,13 +52,29 @@ export interface DesignerState {
 	zoom: number;
 	pan: { x: number; y: number };
 	history: { past: HistoryEntry[]; future: HistoryEntry[] };
-	/** JSON data used to resolve `{{path}}` bindings in text nodes (preview + exports). */
-	bindingData: Record<string, unknown> | null;
 	/** Editor chrome theme (paper stays white in both). */
 	theme: Theme;
+	/**
+	 * Tick color used ONLY in the canvas preview for a checkbox whose checked
+	 * state comes from checkedBinding — a "this field is data-driven" visual
+	 * aid while building a template. An editor-level setting (like theme),
+	 * not part of any document: it persists across every document you open,
+	 * and never affects what's actually exported (PDF/PNG always use the
+	 * node's own designed checkColor, never this).
+	 */
+	boundFieldIndicatorColor: string;
 
 	toggleTheme: () => void;
+	setBoundFieldIndicatorColor: (color: string) => void;
 	setActivePageId: (pageId: NodeId) => void;
+	/**
+	 * JSON data used to resolve `{{path}}` bindings (preview + exports). Lives
+	 * on `document.bindingData` — not a separate field — so it's part of the
+	 * document's own JSON tree: downloading/copying/importing the document,
+	 * or posting it to the server, carries its bound data automatically
+	 * without a second payload alongside it. Routed through `commit()` so
+	 * changing it is undoable like any other document edit.
+	 */
 	setBindingData: (data: Record<string, unknown> | null) => void;
 	/** Replaces the whole document (e.g. JSON import) and resets selection/history/view. */
 	loadDocument: (document: ReportDocument) => void;
@@ -73,7 +91,11 @@ export interface DesignerState {
 	) => void;
 	updateNodeStyle: (id: NodeId, style: Partial<TextStyle>) => void;
 	updateNode: (id: NodeId, patch: ReportNodePatch) => void;
-	setImageAsset: (nodeId: NodeId, url: string) => void;
+	setImageAsset: (
+		nodeId: NodeId,
+		url: string,
+		metadata?: Pick<Asset, "width" | "height">,
+	) => void;
 	addNode: (node: ReportNode, parentId: NodeId | null) => void;
 	removeNodes: (ids: NodeId[]) => void;
 	duplicateNodes: (ids: NodeId[]) => void;
@@ -141,15 +163,21 @@ export const useDesignerStore = create<DesignerState>()(
 		zoom: 1,
 		pan: { x: 0, y: 0 },
 		history: { past: [], future: [] },
-		bindingData: null,
 		theme: "light",
+		boundFieldIndicatorColor: DEFAULT_BOUND_FIELD_INDICATOR_COLOR,
 		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
 
 		toggleTheme: () =>
 			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
+		setBoundFieldIndicatorColor: (color) =>
+			set({ boundFieldIndicatorColor: color }),
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
-		setBindingData: (data) => set({ bindingData: data }),
+		setBindingData: (data) => {
+			commit((draft) => {
+				draft.bindingData = data;
+			});
+		},
 		loadDocument: (document) =>
 			set({
 				document,
@@ -176,6 +204,18 @@ export const useDesignerStore = create<DesignerState>()(
 				const node = draft.nodes[id];
 				if (!node) return;
 				Object.assign(node.frame, patch);
+				// A line's endpoints are stored relative to its own frame (x1/y1 at
+				// the frame's origin, x2/y2 at its far corner) so the frame stays a
+				// real, hit-testable bounding box instead of always being 0×0.
+				// Moving only shifts frame.x/y, which the translate in renderer.ts
+				// already accounts for, but resizing changes frame.width/height and
+				// must re-sync x2/y2 or the line would stop matching its bbox.
+				if (node.type === "line") {
+					node.x1 = 0;
+					node.y1 = 0;
+					node.x2 = node.frame.width;
+					node.y2 = node.frame.height;
+				}
 			});
 		},
 
@@ -195,12 +235,12 @@ export const useDesignerStore = create<DesignerState>()(
 			});
 		},
 
-		setImageAsset: (nodeId, url) => {
+		setImageAsset: (nodeId, url, metadata) => {
 			commit((draft) => {
 				const node = draft.nodes[nodeId];
 				if (!node || node.type !== "image") return;
 				const assetId = node.assetId || crypto.randomUUID();
-				draft.assets[assetId] = { id: assetId, kind: "image", url };
+				draft.assets[assetId] = { id: assetId, kind: "image", url, ...metadata };
 				node.assetId = assetId;
 			});
 		},
@@ -377,21 +417,34 @@ export const useDesignerStore = create<DesignerState>()(
 			const pageIndex = state.document.pages.indexOf(state.activePageId);
 			if (pageIndex === -1) return;
 
+			// An object URL pins its Blob in memory until explicitly revoked, even
+			// once nothing references the URL string — so any previous verify PNG
+			// must be revoked before it's replaced, not just left for the browser
+			// to garbage-collect (it won't).
+			if (state.verify.pngDataUrl) URL.revokeObjectURL(state.verify.pngDataUrl);
 			set({ verify: { status: "loading", pngDataUrl: null } });
 			try {
-				const response = await fetch(`${API_BASE_URL}/report/export/png`, {
+				// bindingData travels inside `document` itself — no separate `data`
+				// field needed; the server falls back to document.bindingData when
+				// one isn't explicitly given.
+				const response = await fetch(buildApiUrl("/report/export/png"), {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						document: state.document,
 						pageIndex,
-						data: state.bindingData ?? undefined,
 					}),
 				});
 				if (!response.ok) {
 					throw new Error(`Verify render failed: ${response.status}`);
 				}
 				const blob = await response.blob();
+				// Re-read current state rather than reusing the `state` captured at
+				// the top of this call — a second overlapping runVerifyRender (e.g.
+				// a rapid double-click before this one resolved) may have set a
+				// newer URL in the meantime, which must be revoked too, not clobbered.
+				const staleUrl = get().verify.pngDataUrl;
+				if (staleUrl) URL.revokeObjectURL(staleUrl);
 				set({
 					verify: {
 						status: "idle",
@@ -425,9 +478,9 @@ export const useDesignerStore = create<DesignerState>()(
 			// session-only and reset on reload.
 			partialize: (state) => ({
 				document: state.document,
-				bindingData: state.bindingData,
 				activePageId: state.activePageId,
 				theme: state.theme,
+				boundFieldIndicatorColor: state.boundFieldIndicatorColor,
 			}),
 			// Validate the persisted document before adopting it; a corrupt or
 			// out-of-date entry falls back to the fresh sample rather than
@@ -436,15 +489,23 @@ export const useDesignerStore = create<DesignerState>()(
 				const saved = persisted as
 					| {
 							document?: unknown;
+							/** Pre-migration shape: bindingData lived beside `document`, not inside it. */
 							bindingData?: Record<string, unknown> | null;
 							activePageId?: NodeId | null;
 							theme?: Theme;
+							boundFieldIndicatorColor?: string;
 					  }
 					| undefined;
 				const theme: Theme = saved?.theme === "dark" ? "dark" : "light";
+				const boundFieldIndicatorColor =
+					saved?.boundFieldIndicatorColor ?? DEFAULT_BOUND_FIELD_INDICATOR_COLOR;
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
-				if (!parsed.success) return { ...current, theme };
+				if (!parsed.success) return { ...current, theme, boundFieldIndicatorColor };
 				const document = parsed.data as ReportDocument;
+				// Fold in the old sibling-field shape so upgrading doesn't drop it.
+				if (document.bindingData === undefined && saved?.bindingData !== undefined) {
+					document.bindingData = saved.bindingData;
+				}
 				const activePageId =
 					saved?.activePageId && document.nodes[saved.activePageId]
 						? saved.activePageId
@@ -452,9 +513,9 @@ export const useDesignerStore = create<DesignerState>()(
 				return {
 					...current,
 					document,
-					bindingData: saved?.bindingData ?? null,
 					activePageId,
 					theme,
+					boundFieldIndicatorColor,
 				};
 			},
 		},

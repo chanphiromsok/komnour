@@ -15,9 +15,9 @@ export function DesignerApp() {
 	}, [theme]);
 
 	return (
-		<div className="flex h-screen w-screen flex-col bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+		<div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-100 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
 			<Toolbar />
-			<div className="flex flex-1 overflow-hidden">
+			<div className="flex min-h-0 flex-1 overflow-hidden">
 				<LayersPanel />
 				<DesignerCanvas />
 				<PropertyPanel />

@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+	type BindingSuggestion,
+	bindingContextAt,
+	filterSuggestions,
+	flattenBindingPaths,
+} from "#/features/designer/bindings/paths";
+import { useDesignerStore } from "#/features/designer/store/reportStore";
 import {
 	applyInlineStyleToRuns,
 	inlineStyleAt,
@@ -17,6 +24,9 @@ import {
 	renderRunsToElement,
 	serializeElementToRuns,
 	setSelectionOffsets,
+	stepBack,
+	styleAtCaret,
+	textBeforeCaret,
 } from "./richTextDom";
 
 const FONT_FAMILIES = [
@@ -24,11 +34,13 @@ const FONT_FAMILIES = [
 	"Roboto",
 	"Battambang",
 	"Noto Sans Khmer",
+	"Khmer OS Moul",
 	"Wingdings 2",
 ];
 
 interface TextEditOverlayProps {
 	frame: AbsoluteFrame;
+	rotation: number;
 	style: TextStyle;
 	initialRuns: TextRun[];
 	onCommit: (result: { text: string; runs: TextRun[] }) => void;
@@ -46,6 +58,7 @@ interface TextEditOverlayProps {
  */
 export function TextEditOverlay({
 	frame,
+	rotation,
 	style,
 	initialRuns,
 	onCommit,
@@ -56,7 +69,34 @@ export function TextEditOverlay({
 	const runsRef = useRef<TextRun[]>(initialRuns);
 	const lastRangeRef = useRef<{ start: number; end: number } | null>(null);
 	const committedRef = useRef(false);
+	const blurCommitFrameRef = useRef<number | null>(null);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
+
+	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
+	const allBindingPaths = useMemo(
+		() => flattenBindingPaths(bindingData),
+		[bindingData],
+	);
+	// `distanceFromCaret` (not an absolute offset) is what lets applying a
+	// suggestion locate the `{{` opener via a bounded backward DOM walk
+	// (stepBack) instead of needing a document-wide linear offset.
+	const [bindingQuery, setBindingQuery] = useState<{
+		distanceFromCaret: number;
+		prefix: string;
+		query: string;
+	} | null>(null);
+	const [bindingActiveIndex, setBindingActiveIndex] = useState(0);
+
+	const bindingSuggestions =
+		bindingQuery && allBindingPaths.length > 0
+			? filterSuggestions(allBindingPaths, bindingQuery.query)
+			: [];
+	const bindingOpen = bindingQuery !== null && bindingSuggestions.length > 0;
+
+	// Keep the highlighted row in range as the filtered list shrinks/grows.
+	useLayoutEffect(() => {
+		if (bindingActiveIndex >= bindingSuggestions.length) setBindingActiveIndex(0);
+	}, [bindingSuggestions.length, bindingActiveIndex]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: mount-only setup; initialRuns is a snapshot
 	useEffect(() => {
@@ -78,9 +118,48 @@ export function TextEditOverlay({
 		return () => document.removeEventListener("selectionchange", handler);
 	}, []);
 
+	useEffect(() => {
+		return () => {
+			if (blurCommitFrameRef.current !== null) {
+				cancelAnimationFrame(blurCommitFrameRef.current);
+			}
+		};
+	}, []);
+
 	function syncActive() {
 		const el = editorRef.current;
 		if (!el) return;
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+		const range = selection.getRangeAt(0);
+		if (!el.contains(range.startContainer) || !el.contains(range.endContainer))
+			return;
+
+		// The common case while typing is a collapsed caret — read the style
+		// straight off the DOM at the caret instead of re-serializing the whole
+		// editor into runs on every keystroke, which used to make typing cost
+		// grow with the total text length instead of being O(1) per keystroke.
+		if (selection.isCollapsed) {
+			setActive(styleAtCaret(el, range.startContainer));
+
+			// `{{path}}` binding autocomplete: bounded backward walk, so this
+			// stays cheap regardless of total text length (same reasoning as
+			// styleAtCaret above) — see textBeforeCaret's doc comment.
+			const before = textBeforeCaret(el, range.startContainer, range.startOffset);
+			const ctx = bindingContextAt(before, before.length);
+			setBindingQuery(
+				ctx
+					? {
+						distanceFromCaret: before.length - ctx.openIndex,
+						prefix: ctx.prefix,
+						query: ctx.query,
+					}
+					: null,
+			);
+			return;
+		}
+
+		setBindingQuery(null);
 		const offsets = getSelectionOffsets(el);
 		const runs = normalizeRuns(serializeElementToRuns(el));
 		runsRef.current = runs;
@@ -88,6 +167,44 @@ export function TextEditOverlay({
 			if (offsets.start !== offsets.end) lastRangeRef.current = offsets;
 			setActive(inlineStyleAt(runs, offsets.start, offsets.end));
 		}
+	}
+
+	function applyBindingSuggestion(suggestion: BindingSuggestion) {
+		const el = editorRef.current;
+		const selection = window.getSelection();
+		if (!el || !bindingQuery || !selection || selection.rangeCount === 0) return;
+		const range = selection.getRangeAt(0);
+		if (!range.collapsed) return;
+
+		const openPos = stepBack(
+			el,
+			range.startContainer,
+			range.startOffset,
+			bindingQuery.distanceFromCaret,
+		);
+		// A branch path keeps the binding open (trailing dot) so the user can
+		// drill deeper; a leaf closes it with `}}` — same convention as the
+		// properties-panel BindingTextarea.
+		const insertText = suggestion.isBranch
+			? `{{${bindingQuery.prefix}${suggestion.path}.`
+			: `{{${bindingQuery.prefix}${suggestion.path}}}`;
+
+		const deleteRange = document.createRange();
+		deleteRange.setStart(openPos.node, openPos.offset);
+		deleteRange.setEnd(range.startContainer, range.startOffset);
+		deleteRange.deleteContents();
+		const textNode = document.createTextNode(insertText);
+		deleteRange.insertNode(textNode);
+
+		const caretRange = document.createRange();
+		caretRange.setStart(textNode, textNode.length);
+		caretRange.collapse(true);
+		selection.removeAllRanges();
+		selection.addRange(caretRange);
+
+		setBindingQuery(null);
+		el.focus();
+		syncActive();
 	}
 
 	function applyInline(patch: Partial<InlineTextStyle>) {
@@ -106,14 +223,76 @@ export function TextEditOverlay({
 		syncActive();
 	}
 
+	// A native <input type="color"> fires its 'input' event continuously
+	// while the user drags across the picker's gradient — dozens of times for
+	// a single drag. applyInline does a full serialize + DOM teardown/rebuild
+	// + re-selection sized to the whole document, so driving it off every one
+	// of those events measured at 100+ ms per tick on a realistically large
+	// selection: a one-second drag froze the tab for several seconds.
+	//
+	// Debouncing (rather than switching to the native 'change' event) keeps
+	// this on the same event every browser already fires reliably for this
+	// element — 'change' firing semantics for a native/OS color picker vary
+	// enough across browsers that relying on it exclusively silently broke
+	// color-on-selection entirely in practice. Debounced, a drag's rapid burst
+	// collapses into exactly one applyInline call after the user stops moving,
+	// with the same net result and no per-tick cost.
+	const pendingColorRef = useRef<{
+		value: string;
+		timer: ReturnType<typeof setTimeout>;
+	} | null>(null);
+
+	function flushPendingColor() {
+		const pending = pendingColorRef.current;
+		if (!pending) return;
+		clearTimeout(pending.timer);
+		pendingColorRef.current = null;
+		applyInline({ color: pending.value });
+	}
+
+	function handleColorChange(value: string) {
+		if (pendingColorRef.current) clearTimeout(pendingColorRef.current.timer);
+		const timer = setTimeout(() => {
+			pendingColorRef.current = null;
+			applyInline({ color: value });
+		}, 150);
+		pendingColorRef.current = { value, timer };
+	}
+
+	useEffect(() => {
+		return () => {
+			if (pendingColorRef.current) clearTimeout(pendingColorRef.current.timer);
+		};
+	}, []);
+
 	function commit() {
 		if (committedRef.current) return;
+		// A color change still debouncing (e.g. the user picked a color and
+		// immediately clicked away) must land in the DOM before it's read below
+		// — otherwise a fast commit right after picking would silently drop it.
+		flushPendingColor();
 		committedRef.current = true;
 		const el = editorRef.current;
 		const runs = normalizeRuns(
 			el ? serializeElementToRuns(el) : runsRef.current,
 		);
 		onCommit({ text: runsToText(runs), runs });
+	}
+
+	function cancelPendingBlurCommit() {
+		if (blurCommitFrameRef.current === null) return;
+		cancelAnimationFrame(blurCommitFrameRef.current);
+		blurCommitFrameRef.current = null;
+	}
+
+	function scheduleBlurCommit() {
+		cancelPendingBlurCommit();
+		blurCommitFrameRef.current = requestAnimationFrame(() => {
+			blurCommitFrameRef.current = null;
+			const activeElement = document.activeElement;
+			if (activeElement && containerRef.current?.contains(activeElement)) return;
+			commit();
+		});
 	}
 
 	const isBold = (active.fontWeight ?? style.fontWeight) >= 600;
@@ -184,7 +363,7 @@ export function TextEditOverlay({
 					type="color"
 					value={toHexColor(currentColor)}
 					title="Color of selection"
-					onChange={(event) => applyInline({ color: event.target.value })}
+					onChange={(event) => handleColorChange(event.target.value)}
 					className="h-7 w-7 rounded border border-neutral-200 dark:border-neutral-600"
 				/>
 			</div>
@@ -199,12 +378,41 @@ export function TextEditOverlay({
 				aria-multiline="true"
 				tabIndex={0}
 				onInput={syncActive}
+				onFocus={cancelPendingBlurCommit}
 				onKeyDown={(event) => {
 					event.stopPropagation();
+					if (bindingOpen) {
+						if (event.key === "ArrowDown") {
+							event.preventDefault();
+							setBindingActiveIndex((i) => (i + 1) % bindingSuggestions.length);
+							return;
+						}
+						if (event.key === "ArrowUp") {
+							event.preventDefault();
+							setBindingActiveIndex(
+								(i) => (i - 1 + bindingSuggestions.length) % bindingSuggestions.length,
+							);
+							return;
+						}
+						if (event.key === "Enter" || event.key === "Tab") {
+							event.preventDefault();
+							applyBindingSuggestion(bindingSuggestions[bindingActiveIndex]);
+							return;
+						}
+						if (event.key === "Escape") {
+							event.preventDefault();
+							setBindingQuery(null);
+							return;
+						}
+					}
 					if (event.key === "Escape") {
 						event.preventDefault();
 						committedRef.current = true;
 						onCancel();
+					} else if (event.key === "Tab") {
+						event.preventDefault();
+						document.execCommand("insertText", false, "\t");
+						syncActive();
 					} else if (event.key === "Enter" && !event.shiftKey) {
 						event.preventDefault();
 						commit();
@@ -213,14 +421,58 @@ export function TextEditOverlay({
 				onBlur={(event) => {
 					// Focus moving to a toolbar control (font select, color picker)
 					// isn't the end of editing — only commit when focus leaves the
-					// whole overlay.
+					// whole overlay. Some browser/OS controls report relatedTarget as
+					// null during focus handoff, so defer one frame and inspect the
+					// settled activeElement instead of committing synchronously.
 					const next = event.relatedTarget as Node | null;
 					if (next && containerRef.current?.contains(next)) return;
-					commit();
+					scheduleBlurCommit();
 				}}
-				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border border-blue-500 bg-white/95 outline-none"
-				style={baseEditorStyle(style)}
+				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
+				style={{
+					...baseEditorStyle(style),
+					transform: rotation ? `rotate(${rotation}deg)` : undefined,
+					transformOrigin: "center",
+				}}
 			/>
+
+			{/* `{{path}}` binding autocomplete — anchored below the text box, same
+			    convention as the properties-panel BindingTextarea's dropdown. */}
+			{bindingOpen && (
+				<ul
+					className="absolute top-full left-0 z-20 mt-1 max-h-56 w-64 overflow-auto rounded border border-neutral-300 bg-white py-1 text-xs shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+					onPointerDown={(event) => event.stopPropagation()}
+				>
+					{bindingSuggestions.map((suggestion, index) => (
+						<li key={suggestion.path}>
+							<button
+								type="button"
+								// onMouseDown (not onClick) so it beats the editor's blur.
+								onMouseDown={(event) => {
+									event.preventDefault();
+									applyBindingSuggestion(suggestion);
+								}}
+								onMouseEnter={() => setBindingActiveIndex(index)}
+								className={`flex w-full items-center justify-between gap-2 px-2 py-1 text-left ${
+									index === bindingActiveIndex
+										? "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+										: "text-neutral-700 dark:text-neutral-300"
+								}`}
+							>
+								<span className="truncate font-mono">
+									{suggestion.path}
+									{suggestion.isBranch && (
+										<span className="text-neutral-400">.</span>
+									)}
+								</span>
+								<span className="shrink-0 truncate text-neutral-400">
+									{suggestion.preview}
+								</span>
+							</button>
+						</li>
+					))}
+				</ul>
+			)}
 		</div>
 	);
 }
