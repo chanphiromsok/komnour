@@ -122,6 +122,7 @@ export interface DesignerState {
 		patch: Pick<Frame, "x" | "y"> | Pick<Frame, "width" | "height">,
 	) => void;
 	updateNodeStyle: (id: NodeId, style: Partial<TextStyle>) => void;
+	updateNodesStyle: (ids: NodeId[], style: Partial<TextStyle>) => void;
 	updateNode: (id: NodeId, patch: ReportNodePatch) => void;
 	setImageAsset: (
 		nodeId: NodeId,
@@ -264,6 +265,16 @@ export const useDesignerStore = create<DesignerState>()(
 				const node = draft.nodes[id];
 				if (!node || node.type !== "text") return;
 				Object.assign(node.style, style);
+			});
+		},
+
+		updateNodesStyle: (ids, style) => {
+			commit((draft) => {
+				for (const id of ids) {
+					const node = draft.nodes[id];
+					if (!node || node.type !== "text") continue;
+					Object.assign(node.style, style);
+				}
 			});
 		},
 

@@ -4,12 +4,14 @@ export function NumberField({
 	onChange,
 	min,
 	max,
+	step,
 }: {
 	label: string;
 	value: number;
 	onChange: (value: number) => void;
 	min?: number;
 	max?: number;
+	step?: number;
 }) {
 	return (
 		<label className="flex flex-col gap-1 text-neutral-500 text-xs">
@@ -19,6 +21,7 @@ export function NumberField({
 				value={Number.isFinite(value) ? value : 0}
 				min={min}
 				max={max}
+				step={step}
 				onChange={(event) => {
 					const next = Number.parseFloat(event.target.value);
 					if (!Number.isFinite(next)) return;

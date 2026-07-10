@@ -86,6 +86,24 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 					value={node.style.fontWeight}
 					onChange={(fontWeight) => updateNodeStyle(nodeId, { fontWeight })}
 				/>
+				<NumberField
+					label="Line height"
+					value={node.style.lineHeight}
+					min={0.5}
+					max={4}
+					step={0.1}
+					onChange={(lineHeight) => updateNodeStyle(nodeId, { lineHeight })}
+				/>
+				<NumberField
+					label="Letter spacing"
+					value={node.style.letterSpacing}
+					min={-10}
+					max={50}
+					step={0.5}
+					onChange={(letterSpacing) =>
+						updateNodeStyle(nodeId, { letterSpacing })
+					}
+				/>
 			</div>
 
 			<label className="flex flex-col gap-1 text-neutral-500 text-xs">
