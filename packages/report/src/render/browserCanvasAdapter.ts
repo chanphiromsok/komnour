@@ -266,7 +266,7 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 		let current: StyledToken[] = [];
 
 		const flush = () => {
-			lines.push(makeLine(current));
+			lines.push(makeLine(current, style));
 			current = [];
 		};
 
@@ -355,11 +355,22 @@ interface StyledLine {
 	advance: number;
 }
 
-function makeLine(tokens: StyledToken[]): StyledLine {
+/**
+ * `fallbackStyle` covers a blank line (an empty paragraph between two "\n"s,
+ * e.g. a spacer between paragraphs) — with zero tokens, `naturalHeight` and
+ * the token-derived `requestedHeight` are both 0, which used to collapse a
+ * blank line to no vertical space at all. A blank line still needs to
+ * occupy a normal line's worth of height, so it falls back to the
+ * surrounding paragraph's own fontSize × lineHeight.
+ */
+function makeLine(tokens: StyledToken[], fallbackStyle: TextStyle): StyledLine {
 	const ascent = Math.max(0, ...tokens.map((t) => t.ascent));
 	const descent = Math.max(0, ...tokens.map((t) => t.descent));
 	const naturalHeight = ascent + descent;
-	const requestedHeight = Math.max(0, ...tokens.map((t) => t.lineHeight));
+	const requestedHeight =
+		tokens.length > 0
+			? Math.max(0, ...tokens.map((t) => t.lineHeight))
+			: fallbackStyle.fontSize * fallbackStyle.lineHeight;
 	return {
 		tokens,
 		width: tokens.reduce((w, t) => w + t.width, 0),

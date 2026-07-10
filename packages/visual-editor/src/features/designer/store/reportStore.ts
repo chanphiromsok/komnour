@@ -24,6 +24,10 @@ import type {
 	TextStyle,
 } from "@komnour/report/src/model/types";
 import { buildApiUrl } from "#/lib/apiBase";
+import {
+	measureMinTextHeight,
+	waitForFontsReady,
+} from "#/features/designer/store/textMeasurement";
 
 enablePatches();
 
@@ -174,6 +178,48 @@ export function snapToGrid(value: number): number {
 	return Math.round(value / GRID_SIZE) * GRID_SIZE;
 }
 
+/**
+ * Grows a text node's box to fit its content if it's currently too short —
+ * never shrinks it. Neither renderer (browser preview or server PDF/PNG)
+ * clips overflowing text, so a box shorter than its wrapped content doesn't
+ * "hide" anything, it just silently bleeds into whatever sits below it —
+ * invisible until someone reads the exported PDF closely. Called after every
+ * store action that can change a text node's required height: its own
+ * text/runs/style (font size, line height, family, wrap), or its box width
+ * (which changes how the same text wraps).
+ */
+function ensureTextFits(draft: ReportDocument, id: NodeId): void {
+	const node = draft.nodes[id];
+	if (!node || node.type !== "text") return;
+	const minHeight = measureMinTextHeight(node, Object.values(draft.fonts));
+	if (minHeight > node.frame.height) node.frame.height = minHeight;
+}
+
+/**
+ * Same correction as ensureTextFits, applied to every text node in a
+ * document being loaded (JSON import, or a file authored outside the
+ * editor) — so a pre-existing too-short box becomes visible in the editor's
+ * selection outline immediately on open, instead of only surfacing when
+ * someone reads the exported PDF closely. Doesn't mutate the input
+ * (avoids surprises if the caller reuses that object elsewhere) and returns
+ * the same reference unchanged when nothing needed correcting.
+ */
+function healTextHeights(document: ReportDocument): ReportDocument {
+	let nodes = document.nodes;
+	let changed = false;
+	const customFonts = Object.values(document.fonts);
+	for (const node of Object.values(document.nodes)) {
+		if (node.type !== "text") continue;
+		const minHeight = measureMinTextHeight(node, customFonts);
+		if (minHeight > node.frame.height) {
+			if (!changed) nodes = { ...nodes };
+			changed = true;
+			nodes[node.id] = { ...node, frame: { ...node.frame, height: minHeight } };
+		}
+	}
+	return changed ? { ...document, nodes } : document;
+}
+
 /** localStorage key for the persisted editor state. Bump PERSIST_VERSION when the persisted shape changes. */
 const PERSIST_KEY = "komnour-visual-editor";
 const PERSIST_VERSION = 1;
@@ -228,7 +274,7 @@ export const useDesignerStore = create<DesignerState>()(
 				draft.bindingData = data;
 			});
 		},
-		loadDocument: (document) =>
+		loadDocument: (document) => {
 			set({
 				document,
 				activePageId: document.pages[0] ?? null,
@@ -236,7 +282,21 @@ export const useDesignerStore = create<DesignerState>()(
 				history: { past: [], future: [] },
 				pan: { x: 0, y: 0 },
 				zoom: 1,
-			}),
+			});
+			// Healing needs an accurate font measurement, which needs the fonts
+			// actually loaded — awaited here rather than done inline above, so
+			// this doesn't race the network fetch and silently undercount on a
+			// document's first-ever load (see textMeasurement.ts). The document
+			// itself loads instantly either way; this just corrects any
+			// already-too-short text boxes shortly after.
+			void waitForFontsReady(Object.values(document.fonts)).then(() => {
+				// Bail if the user has since loaded/replaced the document again —
+				// this heal pass is for the one that was current when it started.
+				if (get().document !== document) return;
+				const healed = healTextHeights(get().document);
+				if (healed !== get().document) set({ document: healed });
+			});
+		},
 		setSelection: (ids) => set({ selection: ids }),
 		toggleSelection: (id) =>
 			set((state) => ({
@@ -266,6 +326,10 @@ export const useDesignerStore = create<DesignerState>()(
 					node.x2 = node.frame.width;
 					node.y2 = node.frame.height;
 				}
+				// A width change (resize) alters how the same text wraps, and a
+				// direct height shrink is never meaningfully honored anyway (see
+				// ensureTextFits) — re-check either way.
+				if ("width" in patch || "height" in patch) ensureTextFits(draft, id);
 			});
 		},
 
@@ -274,6 +338,7 @@ export const useDesignerStore = create<DesignerState>()(
 				const node = draft.nodes[id];
 				if (!node || node.type !== "text") return;
 				Object.assign(node.style, style);
+				ensureTextFits(draft, id);
 			});
 		},
 
@@ -283,6 +348,7 @@ export const useDesignerStore = create<DesignerState>()(
 					const node = draft.nodes[id];
 					if (!node || node.type !== "text") continue;
 					Object.assign(node.style, style);
+					ensureTextFits(draft, id);
 				}
 			});
 		},
@@ -292,6 +358,7 @@ export const useDesignerStore = create<DesignerState>()(
 				const node = draft.nodes[id];
 				if (!node) return;
 				Object.assign(node, patch as Partial<ReportNode>);
+				if ("text" in patch || "runs" in patch) ensureTextFits(draft, id);
 			});
 		},
 
