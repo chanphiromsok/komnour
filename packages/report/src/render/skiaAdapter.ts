@@ -378,7 +378,9 @@ export class SkiaAdapter implements RendererAdapter {
 function contentHeightOf(metrics: {
 	lines: readonly { y: number; height: number }[];
 }): number {
-	const lastLine = metrics.lines.at(-1);
+	// Array.prototype.at() only landed in Node 16.6 — indexing directly keeps
+	// this working on the full Node >=16 range this package supports.
+	const lastLine = metrics.lines[metrics.lines.length - 1];
 	return lastLine ? lastLine.y + lastLine.height : 0;
 }
 

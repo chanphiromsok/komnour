@@ -1,161 +1,167 @@
-import { z } from "zod";
+import { Type, type Static } from "@sinclair/typebox";
+import { TypeCompiler, type ValueError } from "@sinclair/typebox/compiler";
 
-export const FrameSchema = z.object({
-	x: z.number(),
-	y: z.number(),
-	width: z.number(),
-	height: z.number(),
-	rotation: z.number(),
+/** A string-literal union, TypeBox's equivalent of zod's `z.enum([...])`. */
+function StringUnion<T extends string[]>(values: readonly [...T]) {
+	return Type.Union(values.map((v) => Type.Literal(v)));
+}
+
+export const FrameSchema = Type.Object({
+	x: Type.Number(),
+	y: Type.Number(),
+	width: Type.Number(),
+	height: Type.Number(),
+	rotation: Type.Number(),
 });
 
-export const PaintSchema = z.object({
-	color: z.string(),
+export const PaintSchema = Type.Object({
+	color: Type.String(),
 });
 
-export const StrokeSchema = z.object({
-	color: z.string(),
-	width: z.number(),
-	dash: z.array(z.number()).optional(),
+export const StrokeSchema = Type.Object({
+	color: Type.String(),
+	width: Type.Number(),
+	dash: Type.Optional(Type.Array(Type.Number())),
 });
 
-export const BorderSchema = z.object({
-	color: z.string(),
-	width: z.number(),
+export const BorderSchema = Type.Object({
+	color: Type.String(),
+	width: Type.Number(),
 });
 
 const baseNodeShape = {
-	id: z.string(),
-	parentId: z.string().nullable(),
-	children: z.array(z.string()),
-	name: z.string(),
-	visible: z.boolean(),
-	locked: z.boolean(),
-	opacity: z.number(),
+	id: Type.String(),
+	parentId: Type.Union([Type.String(), Type.Null()]),
+	children: Type.Array(Type.String()),
+	name: Type.String(),
+	visible: Type.Boolean(),
+	locked: Type.Boolean(),
+	opacity: Type.Number(),
 	frame: FrameSchema,
 };
 
-export const PageNodeSchema = z.object({
+export const PageNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("page"),
-	paper: z.object({
-		preset: z.enum(["A5", "A4", "A3", "Letter", "Legal", "Custom"]),
-		orientation: z.enum(["portrait", "landscape"]),
-		width: z.number().optional(),
-		height: z.number().optional(),
+	type: Type.Literal("page"),
+	paper: Type.Object({
+		preset: StringUnion(["A5", "A4", "A3", "Letter", "Legal", "Custom"]),
+		orientation: StringUnion(["portrait", "landscape"]),
+		width: Type.Optional(Type.Number()),
+		height: Type.Optional(Type.Number()),
 	}),
-	margin: z.object({
-		top: z.number(),
-		right: z.number(),
-		bottom: z.number(),
-		left: z.number(),
+	margin: Type.Object({
+		top: Type.Number(),
+		right: Type.Number(),
+		bottom: Type.Number(),
+		left: Type.Number(),
 	}),
-	background: z.string(),
+	background: Type.String(),
 });
 
-export const ViewNodeSchema = z.object({
+export const ViewNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("view"),
-	background: z.string().optional(),
-	border: BorderSchema.optional(),
-	borderRadius: z.number().optional(),
-	clip: z.boolean().optional(),
+	type: Type.Literal("view"),
+	background: Type.Optional(Type.String()),
+	border: Type.Optional(BorderSchema),
+	borderRadius: Type.Optional(Type.Number()),
+	clip: Type.Optional(Type.Boolean()),
 });
 
-export const TextStyleSchema = z.object({
-	fontFamily: z.string(),
-	fontSize: z.number(),
-	fontWeight: z.number(),
-	fontStyle: z.enum(["normal", "italic"]),
-	color: z.string(),
-	lineHeight: z.number(),
-	letterSpacing: z.number(),
-	align: z.enum(["left", "center", "right"]),
-	verticalAlign: z.enum(["top", "middle", "bottom"]),
-	decoration: z.enum(["none", "underline", "line-through"]),
-	wrap: z.boolean(),
+export const TextStyleSchema = Type.Object({
+	fontFamily: Type.String(),
+	fontSize: Type.Number(),
+	fontWeight: Type.Number(),
+	fontStyle: StringUnion(["normal", "italic"]),
+	color: Type.String(),
+	lineHeight: Type.Number(),
+	letterSpacing: Type.Number(),
+	align: StringUnion(["left", "center", "right"]),
+	verticalAlign: StringUnion(["top", "middle", "bottom"]),
+	decoration: StringUnion(["none", "underline", "line-through"]),
+	wrap: Type.Boolean(),
 });
 
 /** Inline overrides a run may carry — the per-span subset of TextStyle (all optional). */
-export const InlineTextStyleSchema = z
-	.object({
-		fontFamily: z.string(),
-		fontSize: z.number(),
-		fontWeight: z.number(),
-		fontStyle: z.enum(["normal", "italic"]),
-		color: z.string(),
-		letterSpacing: z.number(),
-		decoration: z.enum(["none", "underline", "line-through"]),
-	})
-	.partial();
+export const InlineTextStyleSchema = Type.Partial(
+	Type.Object({
+		fontFamily: Type.String(),
+		fontSize: Type.Number(),
+		fontWeight: Type.Number(),
+		fontStyle: StringUnion(["normal", "italic"]),
+		color: Type.String(),
+		letterSpacing: Type.Number(),
+		decoration: StringUnion(["none", "underline", "line-through"]),
+	}),
+);
 
-export const TextRunSchema = z.object({
-	text: z.string(),
-	style: InlineTextStyleSchema.optional(),
+export const TextRunSchema = Type.Object({
+	text: Type.String(),
+	style: Type.Optional(InlineTextStyleSchema),
 });
 
-export const TextNodeSchema = z.object({
+export const TextNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("text"),
-	text: z.string(),
+	type: Type.Literal("text"),
+	text: Type.String(),
 	style: TextStyleSchema,
-	runs: z.array(TextRunSchema).optional(),
+	runs: Type.Optional(Type.Array(TextRunSchema)),
 });
 
-export const ImageNodeSchema = z.object({
+export const ImageNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("image"),
-	assetId: z.string(),
-	fit: z.enum(["contain", "cover", "fill"]),
+	type: Type.Literal("image"),
+	assetId: Type.String(),
+	fit: StringUnion(["contain", "cover", "fill"]),
 });
 
-export const RectNodeSchema = z.object({
+export const RectNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("rect"),
-	fill: PaintSchema.optional(),
-	stroke: StrokeSchema.optional(),
-	radius: z.number().optional(),
+	type: Type.Literal("rect"),
+	fill: Type.Optional(PaintSchema),
+	stroke: Type.Optional(StrokeSchema),
+	radius: Type.Optional(Type.Number()),
 });
 
-export const CircleNodeSchema = z.object({
+export const CircleNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("circle"),
-	radius: z.number(),
-	fill: PaintSchema.optional(),
-	stroke: StrokeSchema.optional(),
+	type: Type.Literal("circle"),
+	radius: Type.Number(),
+	fill: Type.Optional(PaintSchema),
+	stroke: Type.Optional(StrokeSchema),
 });
 
-export const LineNodeSchema = z.object({
+export const LineNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("line"),
-	x1: z.number(),
-	y1: z.number(),
-	x2: z.number(),
-	y2: z.number(),
+	type: Type.Literal("line"),
+	x1: Type.Number(),
+	y1: Type.Number(),
+	x2: Type.Number(),
+	y2: Type.Number(),
 	stroke: StrokeSchema,
 });
 
-export const PathNodeSchema = z.object({
+export const PathNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("path"),
-	d: z.string(),
-	fill: PaintSchema.optional(),
-	stroke: StrokeSchema.optional(),
+	type: Type.Literal("path"),
+	d: Type.String(),
+	fill: Type.Optional(PaintSchema),
+	stroke: Type.Optional(StrokeSchema),
 });
 
-export const CheckboxNodeSchema = z.object({
+export const CheckboxNodeSchema = Type.Object({
 	...baseNodeShape,
-	type: z.literal("checkbox"),
-	checked: z.boolean(),
-	checkedBinding: z.string().optional(),
-	fill: PaintSchema.optional(),
-	stroke: StrokeSchema.optional(),
-	checkColor: z.string(),
-	cornerRadius: z.number().optional(),
-	label: z.string().optional(),
-	labelStyle: TextStyleSchema.optional(),
+	type: Type.Literal("checkbox"),
+	checked: Type.Boolean(),
+	checkedBinding: Type.Optional(Type.String()),
+	fill: Type.Optional(PaintSchema),
+	stroke: Type.Optional(StrokeSchema),
+	checkColor: Type.String(),
+	cornerRadius: Type.Optional(Type.Number()),
+	label: Type.Optional(Type.String()),
+	labelStyle: Type.Optional(TextStyleSchema),
 });
 
-export const ReportNodeSchema = z.discriminatedUnion("type", [
+export const ReportNodeSchema = Type.Union([
 	PageNodeSchema,
 	ViewNodeSchema,
 	TextNodeSchema,
@@ -167,27 +173,74 @@ export const ReportNodeSchema = z.discriminatedUnion("type", [
 	CheckboxNodeSchema,
 ]);
 
-export const AssetSchema = z.object({
-	id: z.string(),
-	kind: z.literal("image"),
-	url: z.string(),
-	width: z.number().optional(),
-	height: z.number().optional(),
+export const AssetSchema = Type.Object({
+	id: Type.String(),
+	kind: Type.Literal("image"),
+	url: Type.String(),
+	width: Type.Optional(Type.Number()),
+	height: Type.Optional(Type.Number()),
 });
 
-export const FontDefinitionSchema = z.object({
-	id: z.string(),
-	family: z.string(),
-	weight: z.number(),
-	style: z.enum(["normal", "italic"]),
-	source: z.string(),
+export const FontDefinitionSchema = Type.Object({
+	id: Type.String(),
+	family: Type.String(),
+	weight: Type.Number(),
+	style: StringUnion(["normal", "italic"]),
+	source: Type.String(),
 });
 
-export const ReportDocumentSchema = z.object({
-	version: z.number(),
-	pages: z.array(z.string()),
-	nodes: z.record(z.string(), ReportNodeSchema),
-	assets: z.record(z.string(), AssetSchema),
-	fonts: z.record(z.string(), FontDefinitionSchema),
-	bindingData: z.record(z.string(), z.unknown()).nullable().optional(),
+export const ReportDocumentTypeBoxSchema = Type.Object({
+	version: Type.Number(),
+	pages: Type.Array(Type.String()),
+	nodes: Type.Record(Type.String(), ReportNodeSchema),
+	assets: Type.Record(Type.String(), AssetSchema),
+	fonts: Type.Record(Type.String(), FontDefinitionSchema),
+	bindingData: Type.Optional(
+		Type.Union([Type.Record(Type.String(), Type.Unknown()), Type.Null()]),
+	),
 });
+
+export type ReportDocumentFromSchema = Static<typeof ReportDocumentTypeBoxSchema>;
+
+/** One validation failure — same shape as a zod issue, so existing `.safeParse()` callers (which read `issue.path`/`issue.message`) don't need to change. */
+export interface SchemaIssue {
+	path: (string | number)[];
+	message: string;
+}
+
+export type SafeParseResult<T> =
+	| { success: true; data: T }
+	| { success: false; error: { issues: SchemaIssue[] } };
+
+/** TypeBox reports a location as a JSON-Pointer string ("/nodes/abc/frame/x"); split it into zod-style path segments. */
+function toIssue(error: ValueError): SchemaIssue {
+	const path = error.path
+		.split("/")
+		.filter((segment) => segment.length > 0)
+		.map((segment) => (/^\d+$/.test(segment) ? Number(segment) : segment));
+	return { path, message: error.message };
+}
+
+const compiledReportDocument = TypeCompiler.Compile(ReportDocumentTypeBoxSchema);
+
+/**
+ * Drop-in replacement for the zod schema's `.safeParse()` this package used
+ * to export — same `{ success, data }` / `{ success: false, error: { issues } }`
+ * shape, so callers (the server's export routes, the visual editor's JSON
+ * import dialog and document-load path) didn't need to change at all when
+ * this migrated off zod. Validation itself runs through TypeBox's compiled
+ * checker (compiled once, at module load, and reused for every call), which
+ * is both faster than re-walking an uncompiled schema and — since a
+ * TypeBox schema is plain JSON Schema — means `ReportDocumentTypeBoxSchema`
+ * can also be handed directly to any JSON-Schema-aware tool, not just this
+ * package's own validator.
+ */
+export const ReportDocumentSchema = {
+	safeParse(value: unknown): SafeParseResult<ReportDocumentFromSchema> {
+		if (compiledReportDocument.Check(value)) {
+			return { success: true, data: value };
+		}
+		const issues = [...compiledReportDocument.Errors(value)].map(toIssue);
+		return { success: false, error: { issues } };
+	},
+};
