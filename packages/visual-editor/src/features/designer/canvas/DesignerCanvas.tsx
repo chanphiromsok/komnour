@@ -169,6 +169,99 @@ function rotateDelta(
 	};
 }
 
+/** Rotates a vector by +degrees — the inverse of rotateDelta, mapping a local-space vector onto page/absolute space. */
+function rotateVector(
+	dx: number,
+	dy: number,
+	degrees: number,
+): { dx: number; dy: number } {
+	if (!degrees) return { dx, dy };
+	const rad = (degrees * Math.PI) / 180;
+	return {
+		dx: dx * Math.cos(rad) - dy * Math.sin(rad),
+		dy: dx * Math.sin(rad) + dy * Math.cos(rad),
+	};
+}
+
+/**
+ * The fixed corner/edge OPPOSITE the one being dragged, as an (x, y) offset
+ * from the frame's own center, in the frame's own unrotated local axes.
+ * E.g. dragging "e" (east) anchors the west edge, whose midpoint sits at
+ * (-width/2, 0) relative to center.
+ */
+function anchorOffsetFromCenter(
+	edge: ResizeEdge,
+	width: number,
+	height: number,
+): { x: number; y: number } {
+	let x = 0;
+	if (edge.includes("e")) x = -width / 2;
+	else if (edge.includes("w")) x = width / 2;
+	let y = 0;
+	if (edge.includes("s")) y = -height / 2;
+	else if (edge.includes("n")) y = height / 2;
+	return { x, y };
+}
+
+/**
+ * A plain (unrotated) resize keeps the anchor corner/edge fixed in the
+ * frame's own LOCAL coordinates — but once the frame is rotated for
+ * display (around its own center), that's not the same as staying fixed on
+ * screen: growing `width` moves the center, and rotating around a moving
+ * center drags the "fixed" edge along with it. This recomputes x/y so the
+ * anchor's ABSOLUTE (page-space) position is what's actually preserved,
+ * which is what makes a resize on a rotated shape look like a resize
+ * instead of a resize-plus-shove.
+ */
+function reanchorRotatedResize(
+	original: Frame,
+	edge: ResizeEdge,
+	naive: Partial<Frame>,
+): Partial<Frame> {
+	const rotation = original.rotation;
+	if (!rotation) return naive;
+	const newWidth = naive.width ?? original.width;
+	const newHeight = naive.height ?? original.height;
+
+	const oldCenter = {
+		x: original.x + original.width / 2,
+		y: original.y + original.height / 2,
+	};
+	const oldAnchorOffset = anchorOffsetFromCenter(
+		edge,
+		original.width,
+		original.height,
+	);
+	const oldAnchorRotated = rotateVector(
+		oldAnchorOffset.x,
+		oldAnchorOffset.y,
+		rotation,
+	);
+	const anchorAbs = {
+		x: oldCenter.x + oldAnchorRotated.dx,
+		y: oldCenter.y + oldAnchorRotated.dy,
+	};
+
+	const newAnchorOffset = anchorOffsetFromCenter(edge, newWidth, newHeight);
+	const newAnchorRotated = rotateVector(
+		newAnchorOffset.x,
+		newAnchorOffset.y,
+		rotation,
+	);
+	const newCenter = {
+		x: anchorAbs.x - newAnchorRotated.dx,
+		y: anchorAbs.y - newAnchorRotated.dy,
+	};
+
+	return {
+		...naive,
+		x: snapToGrid(newCenter.x - newWidth / 2),
+		y: snapToGrid(newCenter.y - newHeight / 2),
+		width: newWidth,
+		height: newHeight,
+	};
+}
+
 function angleBetween(centerX: number, centerY: number, x: number, y: number) {
 	return (Math.atan2(y - centerY, x - centerX) * 180) / Math.PI;
 }
@@ -365,7 +458,16 @@ export function DesignerCanvas() {
 			const node = nodes[id];
 			const framePatch = dragPreview?.[id];
 			if (!node || !framePatch) continue;
-			nodes[id] = { ...node, frame: { ...node.frame, ...framePatch } };
+			const frame = { ...node.frame, ...framePatch };
+			// The renderer draws a line from its own x1/y1/x2/y2 fields, not
+			// from frame.width/height — without this, resizing a line's frame
+			// during a drag updates only its (invisible) bounding box, so the
+			// drawn segment never visibly moves until the drag ends and
+			// updateNodeFrame's own x1/y1/x2/y2 resync finally kicks in.
+			nodes[id] =
+				node.type === "line"
+					? { ...node, frame, x1: 0, y1: 0, x2: frame.width, y2: frame.height }
+					: { ...node, frame };
 		}
 		return { ...previewDocument, nodes };
 	}, [previewDocument, dragPreview]);
@@ -840,12 +942,20 @@ export function DesignerCanvas() {
 				y - interaction.startY,
 				interaction.originalFrame.rotation,
 			);
-			const newFrame = resizeFrame(
+			const naiveFrame = resizeFrame(
 				interaction.originalFrame,
 				interaction.edge,
 				local.dx,
 				local.dy,
 				node?.type === "line" ? 0 : MIN_SIZE,
+			);
+			// A plain local-space resize only looks right at rotation 0 — see
+			// reanchorRotatedResize's comment for why a rotated shape needs its
+			// x/y recomputed too, not just width/height.
+			const newFrame = reanchorRotatedResize(
+				interaction.originalFrame,
+				interaction.edge,
+				naiveFrame,
 			);
 			setDragPreview({ [interaction.nodeId]: newFrame });
 		} else if (interaction.kind === "rotate") {
