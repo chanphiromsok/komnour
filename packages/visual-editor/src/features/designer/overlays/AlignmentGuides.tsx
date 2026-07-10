@@ -126,14 +126,14 @@ export function AlignmentGuides({ guides, pageSize }: AlignmentGuidesProps) {
 				<div
 					key={`v-${x}`}
 					className="absolute bg-pink-500"
-					style={{ left: x, top: 0, width: 1, height: pageSize.height }}
+					style={{ left: x, top: 0, width: 0.5, height: pageSize.height }}
 				/>
 			))}
 			{guides.horizontal.map((y) => (
 				<div
 					key={`h-${y}`}
 					className="absolute bg-pink-500"
-					style={{ left: 0, top: y, width: pageSize.width, height: 1 }}
+					style={{ left: 0, top: y, width: pageSize.width, height: 0.5 }}
 				/>
 			))}
 		</div>

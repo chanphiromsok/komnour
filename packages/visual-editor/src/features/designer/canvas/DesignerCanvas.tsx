@@ -34,6 +34,8 @@ import type {
 } from "@komnour/report/src/model/types";
 import { getAbsoluteFrame, hitTest, rectsIntersect } from "./geometry";
 import { TextEditOverlay } from "./TextEditOverlay";
+import { observable } from "@legendapp/state";
+import { useValue } from "@legendapp/state/react";
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 4;
@@ -229,8 +231,35 @@ function fitDroppedImageFrame({
 		height,
 		rotation: 0,
 	};
-}
+};
 
+
+type State = {
+	editingNodeId: NodeId | null
+	dragPreview: {
+		nodeId: NodeId;
+		frame: Partial<Frame>;
+	} | null
+	marqueeRect: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	} | null,
+	guides: {
+		vertical: number[];
+		horizontal: number[];
+	}
+}
+const state$ = observable<State>({
+	editingNodeId: null,
+	dragPreview: null,
+	guides: {
+		horizontal: [],
+		vertical: []
+	},
+	marqueeRect: null
+})
 export function DesignerCanvas() {
 	const viewportRef = useRef<HTMLDivElement>(null);
 	const stageRef = useRef<HTMLDivElement>(null);
@@ -272,25 +301,30 @@ export function DesignerCanvas() {
 	const pasteNodes = useDesignerStore((s) => s.pasteNodes);
 	const verify = useDesignerStore((s) => s.verify);
 
-	const [editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
+	// const [_editingNodeId, setEditingNodeId] = useState<NodeId | null>(null);
 
-	const [dragPreview, setDragPreview] = useState<{
-		nodeId: NodeId;
-		frame: Partial<Frame>;
-	} | null>(null);
-	const [marqueeRect, setMarqueeRect] = useState<{
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	} | null>(null);
-	const [guides, setGuides] = useState<{
-		vertical: number[];
-		horizontal: number[];
-	}>({
-		vertical: [],
-		horizontal: [],
-	});
+	// const [_dragPreview, setDragPreview] = useState<{
+	// 	nodeId: NodeId;
+	// 	frame: Partial<Frame>;
+	// } | null>(null);
+	const dragPreview = useValue(state$.dragPreview)
+	const editingNodeId = useValue(state$.editingNodeId)
+	const marqueeRect = useValue(state$.marqueeRect)
+	const guides = useValue(state$.guides)
+
+	const setEditingNodeId = (nodeId: NodeId | null) => {
+		state$.editingNodeId.set(nodeId)
+	}
+	const setDragPreview = (preview: State["dragPreview"]) => {
+		state$.dragPreview.set(preview)
+	}
+	const setMarqueeRect = (marquee: State["marqueeRect"]) => {
+		state$.marqueeRect.set(marquee)
+	}
+	const setGuides = (guide: State['guides']) => {
+		state$.guides.set(guide)
+	}
+
 	const interactionRef = useRef<Interaction | null>(null);
 	const toolBeforeSpaceRef = useRef<typeof tool | null>(null);
 
@@ -715,15 +749,15 @@ export function DesignerCanvas() {
 			const snap = event.altKey
 				? null
 				: computeAlignmentSnap(
-						siblingFrames,
-						{
-							x: rawX + parentOffset.x,
-							y: rawY + parentOffset.y,
-							width: interaction.originalFrame.width,
-							height: interaction.originalFrame.height,
-						},
-						zoom,
-					);
+					siblingFrames,
+					{
+						x: rawX + parentOffset.x,
+						y: rawY + parentOffset.y,
+						width: interaction.originalFrame.width,
+						height: interaction.originalFrame.height,
+					},
+					zoom,
+				);
 			// Smart alignment wins over the grid, per axis: an axis it claims
 			// takes the exact aligned position; an unclaimed axis falls back to
 			// plain grid snapping.

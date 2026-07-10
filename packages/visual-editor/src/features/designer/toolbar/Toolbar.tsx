@@ -1,7 +1,6 @@
 import {
 	Braces,
 	Check,
-	CheckSquare,
 	Circle,
 	ClipboardCopy,
 	Copy,
@@ -16,7 +15,6 @@ import {
 	MousePointer2,
 	Plus,
 	Redo2,
-	ScanEye,
 	Square,
 	Sun,
 	Trash2,
@@ -29,7 +27,6 @@ import { useRef, useState } from "react";
 import { DataBindingDialog } from "#/features/designer/dialogs/DataBindingDialog";
 import { ImportJsonDialog } from "#/features/designer/dialogs/ImportJsonDialog";
 import {
-	createCheckboxNode,
 	createCircleNode,
 	createImageNode,
 	createLineNode,
@@ -58,8 +55,6 @@ export function Toolbar() {
 	const canUndo = useDesignerStore((s) => s.canUndo());
 	const canRedo = useDesignerStore((s) => s.canRedo());
 	const verify = useDesignerStore((s) => s.verify);
-	const runVerifyRender = useDesignerStore((s) => s.runVerifyRender);
-	const clearVerify = useDesignerStore((s) => s.clearVerify);
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const theme = useDesignerStore((s) => s.theme);
 	const toggleTheme = useDesignerStore((s) => s.toggleTheme);
@@ -142,11 +137,10 @@ export function Toolbar() {
 							setActivePageId(pageId);
 							setSelection([pageId]);
 						}}
-						className={`h-7 max-w-32 truncate rounded-md px-2 font-medium text-[11px] transition-colors ${
-							pageId === activePageId
+						className={`h-7 max-w-32 truncate rounded-md px-2 font-medium text-[11px] transition-colors ${pageId === activePageId
 								? "bg-white text-neutral-950 shadow-sm"
 								: "text-neutral-400 hover:bg-white/10 hover:text-neutral-100"
-						}`}
+							}`}
 					>
 						{reportDocument.nodes[pageId]?.name || `Page ${index + 1}`}
 					</button>
@@ -167,110 +161,89 @@ export function Toolbar() {
 			<Divider />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton
-				active={tool === "select"}
-				label="Select"
-				onClick={() => setTool("select")}
-			>
-				<MousePointer2 size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				active={tool === "pan"}
-				label="Pan"
-				onClick={() => setTool("pan")}
-			>
-				<Hand size={16} />
-			</ToolbarButton>
+				<ToolbarButton
+					active={tool === "select"}
+					label="Select"
+					onClick={() => setTool("select")}
+				>
+					<MousePointer2 size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					active={tool === "pan"}
+					label="Pan"
+					onClick={() => setTool("pan")}
+				>
+					<Hand size={16} />
+				</ToolbarButton>
 			</div>
 
 			<Divider />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton
-				label="Add text"
-				onClick={() => addNode(createTextNode(activePageId), activePageId)}
-			>
-				<Type size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Add rectangle"
-				onClick={() => addNode(createRectNode(activePageId), activePageId)}
-			>
-				<Square size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Add circle"
-				onClick={() => addNode(createCircleNode(activePageId), activePageId)}
-			>
-				<Circle size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Add line"
-				onClick={() => addNode(createLineNode(activePageId), activePageId)}
-			>
-				<Minus size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Add image"
-				onClick={() => addNode(createImageNode(activePageId), activePageId)}
-			>
-				<Image size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Add checkbox"
-				onClick={() => addNode(createCheckboxNode(activePageId), activePageId)}
-			>
-				<CheckSquare size={16} />
-			</ToolbarButton>
+				<ToolbarButton
+					label="Add text"
+					onClick={() => addNode(createTextNode(activePageId), activePageId)}
+				>
+					<Type size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add rectangle"
+					onClick={() => addNode(createRectNode(activePageId), activePageId)}
+				>
+					<Square size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add circle"
+					onClick={() => addNode(createCircleNode(activePageId), activePageId)}
+				>
+					<Circle size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add line"
+					onClick={() => addNode(createLineNode(activePageId), activePageId)}
+				>
+					<Minus size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add image"
+					onClick={() => addNode(createImageNode(activePageId), activePageId)}
+				>
+					<Image size={16} />
+				</ToolbarButton>
 			</div>
 
 			<Divider />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton label="Undo" disabled={!canUndo} onClick={() => undo()}>
-				<Undo2 size={16} />
-			</ToolbarButton>
-			<ToolbarButton label="Redo" disabled={!canRedo} onClick={() => redo()}>
-				<Redo2 size={16} />
-			</ToolbarButton>
+				<ToolbarButton label="Undo" disabled={!canUndo} onClick={() => undo()}>
+					<Undo2 size={16} />
+				</ToolbarButton>
+				<ToolbarButton label="Redo" disabled={!canRedo} onClick={() => redo()}>
+					<Redo2 size={16} />
+				</ToolbarButton>
 			</div>
 
 			<Divider />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton
-				label="Duplicate"
-				disabled={selection.length === 0}
-				onClick={() => duplicateNodes(selection)}
-			>
-				<Copy size={16} />
-			</ToolbarButton>
-			<ToolbarButton
-				label="Delete"
-				disabled={selection.length === 0}
-				onClick={() => removeNodes(selection)}
-			>
-				<Trash2 size={16} />
-			</ToolbarButton>
+				<ToolbarButton
+					label="Duplicate"
+					disabled={selection.length === 0}
+					onClick={() => duplicateNodes(selection)}
+				>
+					<Copy size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Delete"
+					disabled={selection.length === 0}
+					onClick={() => removeNodes(selection)}
+				>
+					<Trash2 size={16} />
+				</ToolbarButton>
 			</div>
 
 			<Divider />
 
-			<ToolbarButton
-				active={verify.pngDataUrl !== null}
-				label={
-					verify.pngDataUrl
-						? "Hide server render overlay"
-						: "Verify against server render (skia-canvas)"
-				}
-				onClick={() => (verify.pngDataUrl ? clearVerify() : runVerifyRender())}
-			>
-				{verify.status === "loading" ? (
-					<Loader2 size={16} className="animate-spin" />
-				) : (
-					<ScanEye size={16} />
-				)}
-			</ToolbarButton>
 			{verify.status === "error" && (
 				<span
 					className="max-w-48 truncate text-red-600 text-xs"
@@ -340,26 +313,26 @@ export function Toolbar() {
 			<div className="flex-1" />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton
-				label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-				onClick={toggleTheme}
-			>
-				{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-			</ToolbarButton>
+				<ToolbarButton
+					label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+					onClick={toggleTheme}
+				>
+					{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+				</ToolbarButton>
 			</div>
 
 			<Divider />
 
 			<div className="flex items-center gap-1 rounded-lg bg-black/15 p-0.5">
-			<ToolbarButton label="Zoom out" onClick={() => setZoom(zoom - 0.1)}>
-				<ZoomOut size={16} />
-			</ToolbarButton>
-			<span className="w-12 text-center font-medium text-neutral-200 text-xs tabular-nums">
-				{Math.round(zoom * 100)}%
-			</span>
-			<ToolbarButton label="Zoom in" onClick={() => setZoom(zoom + 0.1)}>
-				<ZoomIn size={16} />
-			</ToolbarButton>
+				<ToolbarButton label="Zoom out" onClick={() => setZoom(zoom - 0.1)}>
+					<ZoomOut size={16} />
+				</ToolbarButton>
+				<span className="w-12 text-center font-medium text-neutral-200 text-xs tabular-nums">
+					{Math.round(zoom * 100)}%
+				</span>
+				<ToolbarButton label="Zoom in" onClick={() => setZoom(zoom + 0.1)}>
+					<ZoomIn size={16} />
+				</ToolbarButton>
 			</div>
 		</div>
 	);
@@ -389,11 +362,10 @@ function ToolbarButton({
 			aria-label={label}
 			disabled={disabled}
 			onClick={onClick}
-			className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-				active
+			className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${active
 					? "bg-blue-500 text-white shadow-sm"
 					: "text-neutral-300 hover:bg-white/10 hover:text-white"
-			} disabled:cursor-not-allowed disabled:text-neutral-600 disabled:opacity-60`}
+				} disabled:cursor-not-allowed disabled:text-neutral-600 disabled:opacity-60`}
 		>
 			{children}
 		</button>
