@@ -64,11 +64,27 @@ export function waitForFontsReady(
 }
 
 /**
+ * For a plain (uniform, single-run) text node, the PDF export's SkiaAdapter
+ * doesn't use this same layout code at all — it hands the whole string to
+ * skia-canvas's own native word-wrap instead (kept deliberately, since it's
+ * what gives complex scripts like Khmer correct text shaping; a hand-rolled
+ * whitespace tokenizer can't be trusted with that). That's a second,
+ * independent layout engine that generally agrees with this one but isn't
+ * guaranteed to break at exactly the same words, so this measurement is
+ * padded rather than trusted as an exact number: 15% scales with paragraph
+ * length (covers a handful of lines coming out longer), and one full extra
+ * line-height covers a short block landing just one line over.
+ */
+const SAFETY_MARGIN_FACTOR = 1.15;
+
+/**
  * The minimum frame.height a text node's box needs to render its current
  * content without visually overflowing into whatever sits below it — the
  * exact bug class behind a text box authored (or resized) shorter than its
  * wrapped content, which the renderer never clips, so the overflow just
- * silently bleeds into the next node down.
+ * silently bleeds into the next node down. Padded above the browser's own
+ * measurement (see SAFETY_MARGIN_FACTOR) since the PDF export's text engine
+ * can land on a slightly different line count for the same content.
  *
  * Synchronous and best-effort: if a font hasn't finished loading yet, the
  * measurement may undercount for that one call. Fine for a live edit (the
@@ -91,5 +107,7 @@ export function measureMinTextHeight(
 		node.style,
 		node.frame.width,
 	);
-	return metrics.height;
+	if (metrics.height === 0) return 0;
+	const oneLineHeight = node.style.fontSize * node.style.lineHeight;
+	return metrics.height * SAFETY_MARGIN_FACTOR + oneLineHeight;
 }
