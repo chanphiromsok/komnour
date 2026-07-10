@@ -1,5 +1,7 @@
 node_modules
 contract.docx
+dist
+*.tgz
 
 # Real env files may contain live backend URLs/secrets; only the
 # .env.production.example template is meant to be committed.

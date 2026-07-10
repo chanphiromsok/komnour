@@ -1,271 +1,77 @@
 # Komnour
 
-HTML-to-PDF/PNG renderer with a live editor. Write HTML with inline CSS, preview it in real time, and export crisp PDF or PNG documents — with full Khmer script support.
+A Figma-like visual document editor for building PDF/PNG report templates — drag-and-drop shapes, text, images, and checkboxes onto a page, bind fields to live JSON data with `{{path}}` syntax, and export the result as a crisp PDF or PNG. Built with first-class Khmer script support.
 
 ## Packages
 
 | Package | Description |
 |---|---|
-| `packages/core` | HTML parser, sanitizer, sone layout engine bridge, and renderer |
-| `packages/server` | Fastify REST API that wraps core |
-| `packages/editor` | Monaco-based live editor with Figma-like zoom/pan preview |
+| `packages/report` | The document model, schema validation, layout, and renderer (shared by the editor and the server) — also published standalone as `@komnour/report` for Node-only "JSON in, PDF out" use, see [its README](packages/report/README.md) |
+| `packages/visual-editor` | The design tool itself — a Vite/React canvas editor, deployed as a static site |
+| `packages/server` | A small Fastify API that renders a `ReportDocument` to PDF/PNG using real Skia (`skia-canvas`) |
+
+## Architecture
+
+The editor's live preview renders **entirely client-side**, in a dedicated Web Worker, using the browser's native Canvas2D API — no backend is needed just to use the editor. The server is only needed for two things that require real server-side Skia:
+
+- **Exporting the final PDF** (`Toolbar` → "Export PDF")
+- **"Verify render"** — a PNG diff used to sanity-check that the client-side preview matches the real exported output
 
 ## Getting Started
 
-**Requirements:** Node.js 20+, pnpm 8+
+**Requirements:** Node.js 18+ (the visual editor and server; `@komnour/report/pdf` itself supports Node 16+ standalone), pnpm 9+
 
 ```bash
 pnpm install
 ```
 
-### Start the server
+### Local development
 
 ```bash
-cd packages/server
-pnpm dev
-# → http://localhost:3001
+pnpm --filter @komnour/visual-editor dev
+# → http://localhost:5174
 ```
 
-### Start the editor
+That's it — one command. `vite dev` auto-starts `@komnour/server` as a child process (skipping itself if something's already listening on its port, e.g. if you're running it separately) and proxies `/api` to it, so PDF export and verify-render work without a second terminal. If you'd rather run them separately:
 
 ```bash
-cd packages/editor
-pnpm dev
-# → http://localhost:5173
+pnpm --filter @komnour/server dev        # → http://localhost:3001
+pnpm --filter @komnour/visual-editor dev  # → http://localhost:5174
 ```
 
-Open the editor in your browser. The server must be running for previews and exports to work.
+Override the server's port with `PORT`, and the editor's proxy target with `VITE_DEV_API_PROXY_TARGET` if they don't agree.
 
-## Editor
+### Production build
 
-- **Left pane** — Monaco editor with HTML/CSS syntax highlighting, a custom dark theme, CSS property autocomplete inside `style="..."`, and HTML snippet completions
-- **Right pane** — Live preview with Figma-like zoom/pan
-  - `Ctrl + scroll` — zoom in/out centered on cursor
-  - `Scroll` — pan
-  - `Space + drag` or middle-click drag — pan
-  - `+` / `−` buttons or zoom % display in the status bar
-- **Format toggle** — switch between PDF (paginated) and PNG preview
-- **Export PNG / Export PDF** — download the rendered file
+The visual editor is a static site (deployed to GitHub Pages under `/komnour/`); the server is a normal Node process deployed separately. Because GitHub Pages can't run a backend, the built editor needs to know where the real server lives at **build time**:
 
-Changes are persisted to `localStorage` so your work survives a page refresh.
-
-## Server API
-
-All endpoints accept and return `application/json` unless noted.
-
-### `POST /render`
-
-Render HTML to a PDF or PNG buffer.
-
-**Body**
-```json
-{ "html": "<p>Hello</p>", "format": "pdf" }
-```
-`format` defaults to `"png"`.
-
-**Response** — `image/png` or `application/pdf` binary
-
----
-
-### `POST /preview-pages`
-
-Render HTML as paginated PNG images (one per page, 2× DPR for crisp display).
-
-**Body**
-```json
-{ "html": "<p>Hello</p>" }
+```bash
+cd packages/visual-editor
+cp .env.production.example .env.production   # then edit VITE_API_BASE_URL
+pnpm run build     # → dist/
+pnpm run deploy    # → gh-pages -d dist
 ```
 
-**Response**
-```json
-{ "pages": ["<base64-png>", "..."] }
-```
+`VITE_API_BASE_URL` must point at the deployed `@komnour/server`'s `/api` path (e.g. `https://your-api-domain.com/api`). The server's CORS allowlist (`packages/server/src/index.ts`) includes `https://chanphiromsok.github.io` by default; add more origins via the comma-separated `CORS_ORIGINS` env var.
 
----
+## The editor
 
-### `POST /sanitize`
+- **Canvas** — drag, resize, and rotate shapes; multi-select with marquee or shift-click; undo/redo
+- **Smart alignment** — Figma-style magnetic snapping to sibling edges/centers (all nine start/center/end combinations per axis), with alignment guides shown exactly where snapping occurs. Hold **Alt**/**Option** to temporarily disable it and fall back to grid snapping
+- **Node types** — page, view (a plain container), text (rich inline styling — bold/italic/underline/color per span), image, rectangle, circle, line, path, and checkbox
+- **Checkboxes** — configurable box fill/border/corner-radius and tick color, an optional label, and an optional data binding (see below)
+- **Data binding** — any text node or checkbox's `checked` state can reference the document's own `bindingData` JSON via `{{dot.path.here}}` (text) or a plain dot path (checkbox). The editor shows bound checkbox ticks in a distinct color (configurable, editor-only — never affects the exported file) so it's obvious which fields are template-driven while you're building
+- **Import/export** — copy or download the document as JSON, re-import it, export the current state to PDF
+- **Keyboard shortcuts** — the usual (delete, duplicate, undo/redo, space-drag to pan, scroll-wheel zoom); press a tool's first letter (`t` for text, `r` for rectangle, `c` for checkbox, etc.) to add that node type
 
-Strip unsafe HTML and unsupported CSS before rendering.
+## Fonts
 
-**Body**
-```json
-{ "html": "<script>alert(1)</script><p>Safe</p>" }
-```
+Registered identically on both the browser (`registerBrowser.ts`, CSS Font Loading API) and the server (`registerServer.ts`, `skia-canvas`'s `FontLibrary`) from one shared manifest (`packages/report/src/fonts/manifest.ts`), so the live preview and the exported PDF use byte-identical glyphs:
 
-**Response**
-```json
-{ "html": "<p>Safe</p>", "warnings": ["<script> was removed"] }
-```
+- **Inter**, **Roboto** — Latin text
+- **Battambang**, **Noto Sans Khmer**, **Khmer OS Moul** — Khmer script
+- **Wingdings 2** — symbol/dingbat glyphs, picked via the glyph picker in the properties panel
 
----
+## Using `@komnour/report` standalone
 
-### `GET /health`
-
-```json
-{ "ok": true }
-```
-
-## Supported HTML
-
-### Elements
-
-| Element | Notes |
-|---|---|
-| `div`, `section`, `article`, `header`, `footer` | Block containers; `flex-direction: row` produces a Row layout |
-| `p`, `h1`–`h6`, `label` | Text blocks; headings have preset sizes and bold weight |
-| `span`, `strong`, `b`, `em`, `i` | Inline text with style inheritance |
-| `ul`, `ol`, `li` | Lists with bullet / numbered markers |
-| `table`, `thead`, `tbody`, `tfoot`, `tr`, `th`, `td` | Tables — see [Tables](#tables) below |
-| `hr` | Horizontal rule (1 px grey line) |
-| `input type="checkbox"` | Renders as an outlined checkbox; add `checked` attribute to show the checkmark |
-| `page-break` | Forces a new page at that point — see [Page Break](#page-break) |
-| `tab` | Fixed-width horizontal gap inside text — see [Tab](#tab) |
-
-### CSS properties
-
-`padding`, `margin`, `gap`, `width`, `height`, `min-width`, `flex`, `flex-direction`, `flex-wrap`, `justify-content`, `align-items`, `position`, `top`, `right`, `bottom`, `left`, `background`, `background-color`, `color`, `font-size`, `font-weight`, `font-family`, `line-height`, `text-align`, `border`, `border-top`, `border-bottom`, `border-radius`
-
-Unsupported properties are stripped and reported as warnings.
-
-### Fonts
-
-- **Inter** — Latin characters (default)
-- **Noto Sans Khmer** — Khmer script (auto-fallback, no `font-family` declaration needed)
-
-## Tables
-
-Tables map directly to sone's layout primitives: `table` → Column, `tr` → Row, `td`/`th` → flex Column cells.
-
-### Basic table
-
-```html
-<table style="width: 100%">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Score</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Alice</td>
-      <td>95</td>
-    </tr>
-    <tr>
-      <td>Bob</td>
-      <td>88</td>
-    </tr>
-  </tbody>
-</table>
-```
-
-### Borders
-
-Apply `border` as an inline style on `<td>` and `<th>`. The engine simulates `border-collapse: collapse` automatically — shared edges between adjacent cells are drawn once (no double lines). The first column's left edge and first row's top edge are preserved so the outer table outline remains visible.
-
-```html
-<table style="width: 100%">
-  <tr>
-    <td style="border: 1px solid #333">Cell A</td>
-    <td style="border: 1px solid #333">Cell B</td>
-  </tr>
-  <tr>
-    <td style="border: 1px solid #333">Cell C</td>
-    <td style="border: 1px solid #333">Cell D</td>
-  </tr>
-</table>
-```
-
-You can also apply individual sides: `border-top`, `border-right`, `border-bottom`, `border-left`.
-
-### colspan — span multiple columns
-
-`colspan="N"` makes a cell take the width of N columns:
-
-```html
-<table style="width: 100%">
-  <tr>
-    <td colspan="3" style="border: 1px solid #333">Full-width header cell</td>
-  </tr>
-  <tr>
-    <td style="border: 1px solid #333">A</td>
-    <td style="border: 1px solid #333">B</td>
-    <td style="border: 1px solid #333">C</td>
-  </tr>
-</table>
-```
-
-### rowspan — span multiple rows
-
-`rowspan="N"` makes a cell extend down N rows. The following rows must omit the cell in that column position:
-
-```html
-<table style="width: 100%">
-  <tr>
-    <td rowspan="3" style="border: 1px solid #333">Spans 3 rows</td>
-    <td style="border: 1px solid #333">Row 1, Col 2</td>
-  </tr>
-  <tr>
-    <td style="border: 1px solid #333">Row 2, Col 2</td>
-  </tr>
-  <tr>
-    <td style="border: 1px solid #333">Row 3, Col 2</td>
-  </tr>
-</table>
-```
-
-Both attributes can be combined: `<td colspan="2" rowspan="2">` spans a 2×2 block.
-
-### Header styling
-
-`<th>` cells render text in **bold**. Apply background and text color via inline styles:
-
-```html
-<th style="background-color: #1a1a2e; color: white">Header</th>
-```
-
-### Known limitations
-
-| Feature | Status |
-|---|---|
-| `colspan` | ✅ Supported |
-| `rowspan` | ✅ Supported |
-| `<caption>` | Tag removed, content preserved as a plain block above the table |
-| `<col>` / `<colgroup>` | Tag removed, content discarded |
-| `border-collapse: collapse` | Not needed — collapse is applied automatically; writing it produces a warning |
-| Per-side border color | Only one color per element — last specified wins (`border-left: red; border-right: blue` → both blue) |
-
----
-
-## Tab
-
-Insert `<tab>` anywhere inside a text element (`<p>`, `<h1>`–`<h6>`, etc.) to create a fixed-width horizontal gap. Use the `width` attribute to set the gap in pixels (default: 32 px).
-
-```html
-<p>Item A<tab width="80"></tab>$120</p>
-<p>Item B<tab width="80"></tab>$85</p>
-```
-
-The gap is rendered as an inline span with letter-spacing, so it scales with the surrounding text. It is not a tab-stop — all `<tab>` elements with the same `width` produce the same gap regardless of the text before them. For column-aligned layouts, prefer a table.
-
----
-
-## Page Break
-
-Insert `<page-break>` anywhere in your HTML to force a new page:
-
-```html
-<div style="padding: 40px">
-  <h1>Page 1</h1>
-  <p>First page content.</p>
-</div>
-
-<page-break></page-break>
-
-<div style="padding: 40px">
-  <h1>Page 2</h1>
-  <p>Second page content.</p>
-</div>
-```
-
-Page size is A4 (794 × 1123 pt).
+If you just need "take a JSON document, produce a PDF" in a plain Node.js service — no editor, no browser — see [`packages/report/README.md`](packages/report/README.md) for the `@komnour/report/pdf` entry point.

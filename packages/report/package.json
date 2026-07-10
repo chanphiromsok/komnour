@@ -1,14 +1,38 @@
 {
   "name": "@komnour/report",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./pdf": {
+      "import": {
+        "types": "./dist/pdf.d.mts",
+        "default": "./dist/pdf.mjs"
+      },
+      "require": {
+        "types": "./dist/pdf.d.cts",
+        "default": "./dist/pdf.cjs"
+      }
+    },
+    "./src/*": "./src/*.ts"
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
   "dependencies": {
-    "skia-canvas": "^3.0.8",
-    "zod": "^4.3.6"
+    "@sinclair/typebox": "^0.34.50",
+    "node-fetch": "^3.3.2",
+    "skia-canvas": "^3.0.8"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "tsdown": "^0.22.4",
     "typescript": "^5.0.0"
   }
 }

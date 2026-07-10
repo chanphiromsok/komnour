@@ -20,13 +20,30 @@ async function readAssetBytes(url: string): Promise<Uint8Array> {
 		return new Uint8Array(await readFile(fileURLToPath(url)));
 	}
 	if (/^https?:\/\//i.test(url)) {
-		const response = await fetch(url);
+		const response = await fetchUrl(url);
 		if (!response.ok) {
 			throw new Error(`Failed to fetch image asset: ${response.status}`);
 		}
 		return new Uint8Array(await response.arrayBuffer());
 	}
 	return new Uint8Array(await readFile(url));
+}
+
+/**
+ * Prefers the platform's own global `fetch` (stable since Node 18) and only
+ * falls back to the `node-fetch` dependency — imported lazily, so it costs
+ * nothing at all on a modern Node that never needs it — on Node 16/17,
+ * which have no global fetch at all. This is the one thing in this package
+ * that would otherwise hard-require Node 18+.
+ */
+async function fetchUrl(url: string): Promise<{
+	ok: boolean;
+	status: number;
+	arrayBuffer(): Promise<ArrayBuffer>;
+}> {
+	if (typeof fetch === "function") return fetch(url);
+	const { default: nodeFetch } = await import("node-fetch");
+	return nodeFetch(url);
 }
 
 function readDataUrl(url: string): Uint8Array {
