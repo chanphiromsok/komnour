@@ -303,7 +303,7 @@ export function Toolbar() {
 
 			<Divider />
 
-			<ToolbarButton
+			{/* <ToolbarButton
 				label="Export as PDF"
 				disabled={exportingPdf}
 				onClick={handleExportPdf}
@@ -313,7 +313,7 @@ export function Toolbar() {
 				) : (
 					<FileDown size={16} />
 				)}
-			</ToolbarButton>
+			</ToolbarButton> */}
 			<ToolbarButton
 				label="Download document JSON"
 				onClick={handleDownloadJson}
