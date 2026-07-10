@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	AlignmentGuides,
-	computeAlignmentGuides,
+	computeAlignmentSnap,
 } from "#/features/designer/overlays/AlignmentGuides";
 import {
 	type ResizeEdge,
@@ -689,11 +689,9 @@ export function DesignerCanvas() {
 		if (interaction.kind === "move") {
 			const dx = x - interaction.startX;
 			const dy = y - interaction.startY;
-			const newFrame = {
-				x: snapToGrid(interaction.originalFrame.x + dx),
-				y: snapToGrid(interaction.originalFrame.y + dy),
-			};
-			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			// Un-snapped pointer-driven position, in the parent's local space.
+			const rawX = interaction.originalFrame.x + dx;
+			const rawY = interaction.originalFrame.y + dy;
 
 			const draggedNode = document.nodes[interaction.nodeId];
 			const siblingIds = draggedNode
@@ -706,12 +704,36 @@ export function DesignerCanvas() {
 			const siblingFrames = siblingIds.map((id) =>
 				getAbsoluteFrame(document, id),
 			);
-			const draggedAbsolute = {
-				...newFrame,
-				width: interaction.originalFrame.width,
-				height: interaction.originalFrame.height,
+			// Alignment is computed in absolute coordinates and converted back
+			// through the parent's offset, so nothing here assumes frame.x/y are
+			// absolute — nested groups/frames will keep snapping correctly.
+			const parentOffset =
+				draggedNode?.parentId != null
+					? getAbsoluteFrame(document, draggedNode.parentId)
+					: { x: 0, y: 0 };
+			// Alt (Option on macOS) temporarily disables smart alignment;
+			// grid snapping below still applies as usual.
+			const snap = event.altKey
+				? null
+				: computeAlignmentSnap(
+						siblingFrames,
+						{
+							x: rawX + parentOffset.x,
+							y: rawY + parentOffset.y,
+							width: interaction.originalFrame.width,
+							height: interaction.originalFrame.height,
+						},
+						zoom,
+					);
+			// Smart alignment wins over the grid, per axis: an axis it claims
+			// takes the exact aligned position; an unclaimed axis falls back to
+			// plain grid snapping.
+			const newFrame = {
+				x: snap?.snappedX ? snap.frame.x - parentOffset.x : snapToGrid(rawX),
+				y: snap?.snappedY ? snap.frame.y - parentOffset.y : snapToGrid(rawY),
 			};
-			setGuides(computeAlignmentGuides(siblingFrames, draggedAbsolute));
+			setDragPreview({ nodeId: interaction.nodeId, frame: newFrame });
+			setGuides(snap?.guides ?? { vertical: [], horizontal: [] });
 		} else if (interaction.kind === "resize") {
 			const node = document.nodes[interaction.nodeId];
 			// Map the page-space drag onto the node's own (possibly rotated) axes
