@@ -54,10 +54,23 @@ function komnourServerDevPlugin(): Plugin {
 			return;
 		}
 		console.log(`[komnour-server] starting @komnour/server on :${devApiProxyPort} (${label})...`);
+		// shell: true is required on Windows — `pnpm` there resolves to
+		// pnpm.cmd, not a directly-executable binary, so spawn("pnpm", ...)
+		// fails with ENOENT without a shell to resolve it. An `error` listener
+		// is likewise required on every platform: spawn errors (missing pnpm,
+		// permissions, etc.) emit an 'error' event that Node rethrows and
+		// crashes the whole process — including this Vite dev server — if
+		// nothing is listening for it.
 		child = spawn("pnpm", ["--filter", "@komnour/server", "dev"], {
 			cwd: repoRoot,
 			stdio: "inherit",
+			shell: true,
 			env: { ...process.env, PORT: String(devApiProxyPort) },
+		});
+		child.on("error", (err) => {
+			console.error(
+				`[komnour-server] failed to start (${label}) — PDF export and verify-render won't work until @komnour/server is running some other way: ${err.message}`,
+			);
 		});
 		child.on("exit", (code, signal) => {
 			if (code !== null && code !== 0) {
