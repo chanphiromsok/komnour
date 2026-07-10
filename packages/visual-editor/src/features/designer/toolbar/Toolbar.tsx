@@ -7,6 +7,7 @@ import {
 	Copy,
 	FileDown,
 	FileJson,
+	FileType,
 	FileUp,
 	Hand,
 	Image,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { DataBindingDialog } from "#/features/designer/dialogs/DataBindingDialog";
+import { ImportFontDialog } from "#/features/designer/dialogs/ImportFontDialog";
 import { ImportJsonDialog } from "#/features/designer/dialogs/ImportJsonDialog";
 import {
 	createCheckboxNode,
@@ -67,6 +69,7 @@ export function Toolbar() {
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [importOpen, setImportOpen] = useState(false);
+	const [importFontOpen, setImportFontOpen] = useState(false);
 	const [dataOpen, setDataOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -337,6 +340,12 @@ export function Toolbar() {
 				<FileUp size={16} />
 			</ToolbarButton>
 			<ToolbarButton
+				label="Import font"
+				onClick={() => setImportFontOpen(true)}
+			>
+				<FileType size={16} />
+			</ToolbarButton>
+			<ToolbarButton
 				active={bindingData !== null}
 				label={
 					bindingData !== null
@@ -348,6 +357,9 @@ export function Toolbar() {
 				<Braces size={16} />
 			</ToolbarButton>
 			{importOpen && <ImportJsonDialog onClose={() => setImportOpen(false)} />}
+			{importFontOpen && (
+				<ImportFontDialog onClose={() => setImportFontOpen(false)} />
+			)}
 			{dataOpen && <DataBindingDialog onClose={() => setDataOpen(false)} />}
 			{exportError && (
 				<span

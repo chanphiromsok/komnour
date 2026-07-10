@@ -1,3 +1,5 @@
+import { readFileAsDataUrl } from "#/lib/readFileAsDataUrl";
+
 export interface ImageFileAsset {
 	url: string;
 	width: number;
@@ -20,17 +22,4 @@ export async function imageFileToAsset(file: File): Promise<ImageFileAsset> {
 	};
 	bitmap.close();
 	return asset;
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			if (typeof reader.result === "string") resolve(reader.result);
-			else reject(new Error("Selected file could not be read as an image URL."));
-		};
-		reader.onerror = () =>
-			reject(reader.error ?? new Error("Selected file could not be read."));
-		reader.readAsDataURL(file);
-	});
 }

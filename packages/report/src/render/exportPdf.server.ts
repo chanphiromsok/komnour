@@ -15,13 +15,17 @@ export async function renderDocumentToPdf(
 	doc: ReportDocument,
 	data?: Record<string, unknown>,
 ): Promise<Buffer> {
-	const [{ registerServerFonts }, { resolveAssetServer }, { SkiaAdapter }] =
-		await Promise.all([
-			import("../fonts/registerServer"),
-			import("./resolveAssetServer"),
-			import("./skiaAdapter"),
-		]);
+	const [
+		{ registerServerFonts, registerCustomServerFonts },
+		{ resolveAssetServer },
+		{ SkiaAdapter },
+	] = await Promise.all([
+		import("../fonts/registerServer"),
+		import("./resolveAssetServer"),
+		import("./skiaAdapter"),
+	]);
 	registerServerFonts();
+	registerCustomServerFonts(doc.fonts);
 	const adapter = new SkiaAdapter();
 	const bytes = await renderDocument(doc, adapter, data, {
 		resolveAsset: resolveAssetServer,

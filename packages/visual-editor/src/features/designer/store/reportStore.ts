@@ -16,6 +16,7 @@ import {
 import type {
 	Asset,
 	Frame,
+	FontId,
 	NodeId,
 	ReportDocument,
 	ReportNode,
@@ -129,6 +130,14 @@ export interface DesignerState {
 		url: string,
 		metadata?: Pick<Asset, "width" | "height">,
 	) => void;
+	/** Registers a user-imported font (embedded as a data: URL, so it travels with the document JSON like images do) and returns its new id. */
+	addCustomFont: (font: {
+		family: string;
+		weight: number;
+		style: "normal" | "italic";
+		dataUrl: string;
+	}) => FontId;
+	removeCustomFont: (id: FontId) => void;
 	addNode: (node: ReportNode, parentId: NodeId | null) => void;
 	removeNodes: (ids: NodeId[]) => void;
 	duplicateNodes: (ids: NodeId[]) => void;
@@ -293,6 +302,20 @@ export const useDesignerStore = create<DesignerState>()(
 				const assetId = node.assetId || crypto.randomUUID();
 				draft.assets[assetId] = { id: assetId, kind: "image", url, ...metadata };
 				node.assetId = assetId;
+			});
+		},
+
+		addCustomFont: (font) => {
+			const id = `custom-${crypto.randomUUID()}`;
+			commit((draft) => {
+				draft.fonts[id] = { id, source: font.dataUrl, ...font };
+			});
+			return id;
+		},
+
+		removeCustomFont: (id) => {
+			commit((draft) => {
+				delete draft.fonts[id];
 			});
 		},
 

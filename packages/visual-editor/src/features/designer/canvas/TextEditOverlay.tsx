@@ -5,6 +5,7 @@ import {
 	filterSuggestions,
 	flattenBindingPaths,
 } from "#/features/designer/bindings/paths";
+import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
 import {
 	applyInlineStyleToRuns,
@@ -28,15 +29,6 @@ import {
 	styleAtCaret,
 	textBeforeCaret,
 } from "./richTextDom";
-
-const FONT_FAMILIES = [
-	"Inter",
-	"Roboto",
-	"Battambang",
-	"Noto Sans Khmer",
-	"Khmer OS Moul",
-	"Wingdings 2",
-];
 
 interface TextEditOverlayProps {
 	frame: AbsoluteFrame;
@@ -64,6 +56,7 @@ export function TextEditOverlay({
 	onCommit,
 	onCancel,
 }: TextEditOverlayProps) {
+	const fontFamilies = useFontFamilies();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<HTMLDivElement>(null);
 	const runsRef = useRef<TextRun[]>(initialRuns);
@@ -353,7 +346,7 @@ export function TextEditOverlay({
 					onChange={(event) => applyInline({ fontFamily: event.target.value })}
 					className="h-7 rounded border border-neutral-200 bg-white px-1 text-neutral-800 text-xs dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
 				>
-					{FONT_FAMILIES.map((family) => (
+					{fontFamilies.map((family) => (
 						<option key={family} value={family}>
 							{family}
 						</option>

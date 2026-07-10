@@ -54,8 +54,10 @@ export function registerReportRoutes(app: FastifyInstance) {
 	// set is self-contained and needs nothing else, but an explicit `data`
 	// here still overrides it (e.g. previewing the same document against
 	// different sample data without mutating it).
-	// 1MB Body Limit
-	app.post("/report/export/pdf", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
+	// 20MB body limit — documents can embed data: URL images and now custom
+	// fonts (see ImportFontDialog), either of which routinely exceeds
+	// Fastify's 1MB default well before the document is otherwise unusual.
+	app.post("/report/export/pdf", { bodyLimit: 20 * 1024 * 1024 }, async (req, reply) => {
 		const { document, data } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {
@@ -80,8 +82,9 @@ export function registerReportRoutes(app: FastifyInstance) {
 
 	// POST /report/export/png
 	// body: { document, data?, pageIndex?, scale? } OR a bare document as the plain JSON body → image/png
-	// See the pdf route above for why `data` falls back to document.bindingData.
-	app.post("/report/export/png", async (req, reply) => {
+	// See the pdf route above for why `data` falls back to document.bindingData,
+	// and for the body limit, why it's raised from Fastify's 1MB default.
+	app.post("/report/export/png", { bodyLimit: 20 * 1024 * 1024 }, async (req, reply) => {
 		const { document, data, pageIndex, scale } = extractExportRequest(req.body);
 		const parsed = ReportDocumentSchema.safeParse(document);
 		if (!parsed.success) {

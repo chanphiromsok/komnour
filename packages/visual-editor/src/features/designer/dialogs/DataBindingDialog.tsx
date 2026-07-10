@@ -1,10 +1,8 @@
 import { useState } from "react";
+import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { NumberField } from "#/features/designer/properties/NumberField";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
-import { FONT_MANIFEST } from "@komnour/report/src/fonts/manifest";
 import { DialogShell } from "./DialogShell";
-
-const FONT_FAMILIES = [...new Set(FONT_MANIFEST.map((f) => f.family))];
 
 export function DataBindingDialog({ onClose }: { onClose: () => void }) {
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
@@ -19,6 +17,7 @@ export function DataBindingDialog({ onClose }: { onClose: () => void }) {
 	const setDefaultFontFamily = useDesignerStore((s) => s.setDefaultFontFamily);
 	const defaultFontSize = useDesignerStore((s) => s.defaultFontSize);
 	const setDefaultFontSize = useDesignerStore((s) => s.setDefaultFontSize);
+	const fontFamilies = useFontFamilies();
 	const [text, setText] = useState(() =>
 		bindingData ? JSON.stringify(bindingData, null, 2) : "",
 	);
@@ -96,7 +95,7 @@ export function DataBindingDialog({ onClose }: { onClose: () => void }) {
 							onChange={(event) => setDefaultFontFamily(event.target.value)}
 							className="rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
 						>
-							{FONT_FAMILIES.map((family) => (
+							{fontFamilies.map((family) => (
 								<option key={family} value={family}>
 									{family}
 								</option>

@@ -1,4 +1,7 @@
-import { registerServerFonts } from "../fonts/registerServer";
+import {
+	registerCustomServerFonts,
+	registerServerFonts,
+} from "../fonts/registerServer";
 import { extractPageDocument } from "../model/tree";
 import type { ReportDocument } from "../model/types";
 import { renderDocument } from "./renderer";
@@ -15,6 +18,7 @@ export async function renderPageToPng(
 	if (!pageId) throw new Error(`Page index out of range: ${pageIndex}`);
 
 	registerServerFonts();
+	registerCustomServerFonts(doc.fonts);
 	const adapter = new SkiaAdapter(options.scale ?? 1);
 	await renderDocument(extractPageDocument(doc, pageId), adapter, data, {
 		resolveAsset: resolveAssetServer,

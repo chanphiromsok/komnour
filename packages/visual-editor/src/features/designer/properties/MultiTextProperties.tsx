@@ -1,15 +1,8 @@
+import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
 import type { NodeId, TextNode, TextStyle } from "@komnour/report/src/model/types";
 import { NumberField } from "./NumberField";
 
-const FONT_FAMILIES = [
-	"Inter",
-	"Roboto",
-	"Battambang",
-	"Noto Sans Khmer",
-	"Khmer OS Moul",
-	"Wingdings 2",
-];
 const ALIGNS: TextStyle["align"][] = ["left", "center", "right"];
 
 /**
@@ -28,6 +21,7 @@ export function MultiTextProperties({ nodeIds }: { nodeIds: NodeId[] }) {
 		return undefined;
 	});
 	const updateNodesStyle = useDesignerStore((s) => s.updateNodesStyle);
+	const fontFamilies = useFontFamilies();
 	if (!firstNode) return null;
 
 	function apply(style: Partial<TextStyle>) {
@@ -47,7 +41,7 @@ export function MultiTextProperties({ nodeIds }: { nodeIds: NodeId[] }) {
 					onChange={(event) => apply({ fontFamily: event.target.value })}
 					className="rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
 				>
-					{FONT_FAMILIES.map((family) => (
+					{fontFamilies.map((family) => (
 						<option key={family} value={family}>
 							{family}
 						</option>
