@@ -3,6 +3,7 @@
     "pages": [
         "ed7abfb0-ef9c-4c59-9deb-e6bb5e1cec25",
         "b15ede31-db26-46cd-9398-4788fd0153d3",
+        "435b34ff-cfdc-4b17-b632-6fdc7175db92",
         "8ac3859d-4495-4d07-9c98-e0e236f90f65",
         "8145cc17-6981-4666-a935-93f41779d4b9",
         "9a96fa56-55b7-41f3-97d2-e87d1c08085b",
@@ -1633,7 +1634,6 @@
                 "5dfcf1b9-1322-43ef-8153-606ffc3ebd0e",
                 "f42d5c6f-b799-4e17-9f65-20a265da6e4d",
                 "eab27db1-3cb2-4a6a-a7e9-8de1bb80eb9a",
-                "389c5e07-4bc0-4088-997b-b3fc3d4733fd",
                 "0ecc882e-ca98-4256-8e41-93689b3647f9"
             ],
             "name": "Page",
@@ -2010,7 +2010,7 @@
                 "x": 72,
                 "y": 271,
                 "width": 464,
-                "height": 80,
+                "height": 116,
                 "rotation": 0
             },
             "style": {
@@ -2044,7 +2044,7 @@
             "text": "5.2. In case where any of the above Events of Default happens, then:-  ",
             "frame": {
                 "x": 40.00000000000001,
-                "y": 351,
+                "y": 387,
                 "width": 520,
                 "height": 16,
                 "rotation": 0
@@ -2080,7 +2080,7 @@
             "text": "a. Party A may in its discretion require that the Loan become immediately due and be repaid fully or partially together with accrued interest thereon and all other amounts payable under this Loan for Consumption Contract. If Party B fails to pay or to pay on-time any amount due, Party B shall pay default interest at the default interest rate as set out in Clause 3.2. over such overdue amount in addition to the Fixed Interest Rate set out in Clause 1 above until Party A receives full settlement.  \n\nb. In case where Party B fails to pay or to pay on-time any amount due, Party A has the right to attend to meet with Party B at Party B’s address or business location or at any other arrangeable place to identify any appropriate resolution.  \n\nc. Party A has the right to exercise all or any of the remedies, including through compulsory performance, pursuant to this Loan for Consumption Contract or as allowed by laws either concurrently or consecutively. No delay in exercising any such remedies shall be considered as any waiver of Party A’s right to do so.  ",
             "frame": {
                 "x": 71.99999999999994,
-                "y": 365,
+                "y": 401,
                 "width": 480,
                 "height": 144,
                 "rotation": 0
@@ -2116,7 +2116,7 @@
             "text": "5.3. Party B shall fully indemnify Party A from and against any expenses, loss, or damage which Party A may incur as a consequence of any Event of Default happening under this Loan for Consumption Contract.  ",
             "frame": {
                 "x": 44.00000000000001,
-                "y": 504,
+                "y": 540,
                 "width": 520,
                 "height": 28,
                 "rotation": 0
@@ -2152,7 +2152,7 @@
             "text": "5.4. Party A is entitled to capitalize and add to the indebtedness as principal any interest, default interest and/or other expenses as allowed by laws in case where Party B fails to pay any such interest, default interest and/or expenses as required and at the respective due date",
             "frame": {
                 "x": 42.99999999999998,
-                "y": 531,
+                "y": 567,
                 "width": 520,
                 "height": 40,
                 "rotation": 0
@@ -2188,7 +2188,7 @@
             "text": "5.5. In case where any of the Events of Default stated above occurs, the Parties agree and acknowledge that Party A shall at all times have the right to take immediate action in freezing or setting-off any money or funds from any one or more accounts of Party B maintained with Party A (i.e., current account and/or saving account and/or fixed-term deposit account, etc.) for the purpose of payment of indebtedness.  ",
             "frame": {
                 "x": 42.99999999999998,
-                "y": 571,
+                "y": 607,
                 "width": 520,
                 "height": 48,
                 "rotation": 0
@@ -2214,7 +2214,7 @@
         },
         "389c5e07-4bc0-4088-997b-b3fc3d4733fd": {
             "id": "389c5e07-4bc0-4088-997b-b3fc3d4733fd",
-            "parentId": "b15ede31-db26-46cd-9398-4788fd0153d3",
+            "parentId": "435b34ff-cfdc-4b17-b632-6fdc7175db92",
             "children": [],
             "name": "Text",
             "visible": true,
@@ -2224,7 +2224,7 @@
             "text": "Clause 6. Miscellaneous Provisions  \n\n6.1. Adherence to Environmental, Social and Governance Principles and Clients Protection Principles  \n\nParty B shall adhere to the Environmental, Social and Governance Principles and the Clients Protection Principles as stated in Annex 2 of this Loan for Consumption Contract.  \n6.2. Provision and Disclosure of Information  \n\nParty B shall provide and update relevant information and supporting documents with respect to the loan transaction as required by Party A and, so long as the Loan remains in place and outstanding or where required by laws, Party B also hereby agrees and allows that Party A may declare or disclose all or any of such data or information, including that related to existing or future accounts and reports or documents regularly provided in relation to the Loan or the business of Party B to the National Bank of Cambodia, the Credit Bureau (Cambodia), auditors, provisional administrators/liquidators or other relevant authorities or to Party A’s related entities, partners, or agents, or in accordance with court order, legal action, suit or proceedings relating to the Loan.  ",
             "frame": {
                 "x": 42.99999999999998,
-                "y": 623,
+                "y": 40,
                 "width": 520,
                 "height": 160,
                 "rotation": 0
@@ -6474,6 +6474,73 @@
             "runs": [
                 {
                     "text": "You understand and acknowledge that the insertion of the SMS Code or PIN Code of your Wing Account set out below shall be your electronic signature and that You have read and agreed on each term of these terms and conditions on your acceptance date."
+                }
+            ]
+        },
+        "435b34ff-cfdc-4b17-b632-6fdc7175db92": {
+            "id": "435b34ff-cfdc-4b17-b632-6fdc7175db92",
+            "parentId": null,
+            "children": [
+                "389c5e07-4bc0-4088-997b-b3fc3d4733fd",
+                "6a95c857-132b-44e3-a18a-2fdb2ffdeb22"
+            ],
+            "name": "Page",
+            "visible": true,
+            "locked": false,
+            "opacity": 1,
+            "type": "page",
+            "frame": {
+                "x": 0,
+                "y": 0,
+                "width": 595.28,
+                "height": 841.89,
+                "rotation": 0
+            },
+            "paper": {
+                "preset": "A4",
+                "orientation": "portrait"
+            },
+            "margin": {
+                "top": 48,
+                "right": 48,
+                "bottom": 48,
+                "left": 48
+            },
+            "background": "#ffffff"
+        },
+        "6a95c857-132b-44e3-a18a-2fdb2ffdeb22": {
+            "id": "6a95c857-132b-44e3-a18a-2fdb2ffdeb22",
+            "parentId": "435b34ff-cfdc-4b17-b632-6fdc7175db92",
+            "children": [],
+            "name": "Text",
+            "visible": true,
+            "locked": false,
+            "opacity": 1,
+            "type": "text",
+            "text": ".........................................................................................................................",
+            "frame": {
+                "x": 28,
+                "y": 792,
+                "width": 544,
+                "height": 32,
+                "rotation": 0
+            },
+            "style": {
+                "fontFamily": "Inter",
+                "fontSize": 16,
+                "fontWeight": 400,
+                "fontStyle": "normal",
+                "color": "#111111",
+                "lineHeight": 1.4,
+                "letterSpacing": 0,
+                "align": "left",
+                "verticalAlign": "top",
+                "decoration": "none",
+                "wrap": true
+            },
+            "runs": [
+                {
+                    "text": "........................................................................................................................."
                 }
             ]
         }
