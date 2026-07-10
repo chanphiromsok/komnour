@@ -32,6 +32,7 @@ import type {
 	PageNode,
 	ReportDocument,
 } from "@komnour/report/src/model/types";
+import { buildApiUrl } from "#/lib/apiBase";
 import { getAbsoluteFrame, hitTest, rectsIntersect } from "./geometry";
 import { TextEditOverlay } from "./TextEditOverlay";
 
@@ -54,7 +55,6 @@ const ZOOM_RESIZE_DEBOUNCE_MS = 150;
 /** Wheel zoom sensitivity; roughly 10% per common mouse-wheel notch. */
 const WHEEL_ZOOM_SPEED = 0.001;
 const DROPPED_IMAGE_MAX_SIZE = 240;
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 /**
  * Debounced copy of `value`, settling `delayMs` after the last change.
@@ -1093,7 +1093,7 @@ function PageCanvas({
 		async function renderPreview() {
 			const dpr = window.devicePixelRatio || 1;
 			const scale = Math.min(dpr * settledZoom, MAX_RENDER_SCALE);
-			const response = await fetch(`${API_BASE_URL}/report/export/png`, {
+			const response = await fetch(buildApiUrl("/report/export/png"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({

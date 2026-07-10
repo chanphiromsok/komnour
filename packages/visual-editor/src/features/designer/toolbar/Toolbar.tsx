@@ -38,9 +38,7 @@ import {
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
-
-const API_BASE_URL: string =
-	import.meta.env.VITE_API_BASE_URL ?? "/api";
+import { buildApiUrl } from "#/lib/apiBase";
 
 export function Toolbar() {
 	const tool = useDesignerStore((s) => s.tool);
@@ -92,7 +90,7 @@ export function Toolbar() {
 		try {
 			// bindingData travels inside `document.bindingData` — no separate
 			// `data` field needed; the server falls back to it automatically.
-			const response = await fetch(`${API_BASE_URL}/report/export/pdf`, {
+			const response = await fetch(buildApiUrl("/report/export/pdf"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ document: reportDocument }),

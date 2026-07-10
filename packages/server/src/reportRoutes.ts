@@ -71,6 +71,7 @@ export function registerReportRoutes(app: FastifyInstance) {
 			const buffer = await renderDocumentToPdf(parsed.data, effectiveData);
 			reply.header("Content-Type", "application/pdf");
 			reply.header("Content-Disposition", 'attachment; filename="report.pdf"');
+			reply.header("Cache-Control", "no-store");
 			return reply.send(buffer);
 		} catch (err: any) {
 			return reply.status(500).send({ error: err.message });
@@ -105,6 +106,7 @@ export function registerReportRoutes(app: FastifyInstance) {
 				{ scale: renderScale },
 			);
 			reply.header("Content-Type", "image/png");
+			reply.header("Cache-Control", "no-store");
 			return reply.send(buffer);
 		} catch (err: any) {
 			return reply.status(500).send({ error: err.message });

@@ -23,11 +23,9 @@ import type {
 	ReportNodePatch,
 	TextStyle,
 } from "@komnour/report/src/model/types";
+import { buildApiUrl } from "#/lib/apiBase";
 
 enablePatches();
-
-const API_BASE_URL: string =
-	import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export type Tool = "select" | "pan";
 export type Theme = "light" | "dark";
@@ -429,7 +427,7 @@ export const useDesignerStore = create<DesignerState>()(
 				// bindingData travels inside `document` itself — no separate `data`
 				// field needed; the server falls back to document.bindingData when
 				// one isn't explicitly given.
-				const response = await fetch(`${API_BASE_URL}/report/export/png`, {
+				const response = await fetch(buildApiUrl("/report/export/png"), {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
