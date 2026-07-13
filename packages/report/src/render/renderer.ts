@@ -45,18 +45,17 @@ export interface RenderOptions {
 	shouldAbort?: () => boolean;
 }
 /**
- * ```js
- * export async function renderDocumentToPdf(
-	doc: ReportDocument,
-	data?: Record<string, unknown>,
-): Promise<Buffer> {
-	const adapter = new SkiaAdapter();
-	const bytes = await renderDocument(doc, adapter, data, {
-		resolveAsset: resolveAssetServer,
-	});
-	return Buffer.from(bytes ?? new Uint8Array());
-}
-
+ * Renders every page of `doc` through `adapter` and returns the finished
+ * document's bytes (for SkiaAdapter, a PDF; browser adapters paint and
+ * return undefined). Does not register fonts and does not validate `doc` —
+ * both are the caller's responsibility.
+ *
+ * ```ts
+ * const adapter = new SkiaAdapter();
+ * const bytes = await renderDocument(doc, adapter, data, {
+ * 	resolveAsset: resolveAssetServer, // only needed for image nodes
+ * });
+ * const pdf = Buffer.from(bytes ?? new Uint8Array());
  * ```
  */
 export async function renderDocument(
@@ -67,11 +66,13 @@ export async function renderDocument(
 ): Promise<Uint8Array | undefined> {
 	// Always resolve — not just when `data` is passed — so inline checkbox
 	// literals (`{{checkbox: true}}`/`{{checkbox: false}}`, which don't need
-	// any binding data) still render even for a document with none. Passing
-	// `data` through to lookupPath (undefined or `{}`, doesn't matter — both
-	// resolve every dot-path lookup to undefined) keeps existing data-path
-	// substitution behavior unchanged.
-	const resolved = resolveBindings(doc, data ?? {});
+	// any binding data) still render even for a document with none. When the
+	// caller passes no `data`, fall back to the document's own embedded
+	// `bindingData` (an exported document is self-contained — see
+	// ReportDocument.bindingData) — the same fallback the server's export
+	// routes and this package's README already promise. `{}` as the final
+	// fallback keeps every dot-path lookup resolving to undefined.
+	const resolved = resolveBindings(doc, data ?? doc.bindingData ?? {});
 
 	await adapter.beginDocument();
 	for (const pageId of resolved.pages) {
@@ -256,9 +257,19 @@ async function drawNodeContent(
 		}
 		case "qrcode": {
 			if (!node.value) return;
-			const { data: matrix, size } = encodeQrCode(node.value, {
-				ecc: node.errorCorrection ?? "M",
-			});
+			// A bound value can exceed QR capacity (~3KB at ecc L, much less at
+			// H) and uqr throws "Data too long" — one oversized record shouldn't
+			// blank the rest of the document, so skip just this node, the same
+			// no-op treatment a broken image asset gets above.
+			let matrix: boolean[][];
+			let size: number;
+			try {
+				({ data: matrix, size } = encodeQrCode(node.value, {
+					ecc: node.errorCorrection ?? "M",
+				}));
+			} catch {
+				return;
+			}
 			// Centers a square code within a possibly non-square frame — the
 			// same helper image placement uses, reused directly here since a
 			// QR code is drawn as a grid of rects, not through drawImage.
@@ -271,15 +282,26 @@ async function drawNodeContent(
 					fill: { color: node.background },
 				});
 			}
+			// Adjacent dark modules in a row are drawn as one rect per run, not
+			// one rect per module: identical geometry, but ~10x fewer draw calls
+			// and no antialiased hairline seams between horizontally adjacent
+			// modules at fractional coordinates (visible in some PDF viewers).
 			for (let row = 0; row < size; row++) {
-				for (let col = 0; col < size; col++) {
-					if (!matrix[row][col]) continue;
+				let col = 0;
+				while (col < size) {
+					if (!matrix[row][col]) {
+						col++;
+						continue;
+					}
+					let runEnd = col;
+					while (runEnd < size && matrix[row][runEnd]) runEnd++;
 					adapter.save();
 					adapter.translate(col * moduleSize, row * moduleSize);
-					adapter.drawRect(moduleSize, moduleSize, {
+					adapter.drawRect((runEnd - col) * moduleSize, moduleSize, {
 						fill: { color: node.color },
 					});
 					adapter.restore();
+					col = runEnd;
 				}
 			}
 			adapter.restore();

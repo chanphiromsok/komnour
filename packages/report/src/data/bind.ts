@@ -143,8 +143,13 @@ export function resolveBindings(
 				const boundValue = lookupPath(data, node.valueBinding);
 				// Falls back to the design-time `value` default when the path
 				// doesn't resolve, matching checkedBinding's own fallback fix.
+				// null falls back too (unlike checkedBinding, where null is a
+				// meaningful "unchecked") — String(null) would otherwise encode
+				// the literal text "null" into the QR code.
 				const resolvedValue =
-					boundValue === undefined ? node.value : String(boundValue);
+					boundValue === undefined || boundValue === null
+						? node.value
+						: String(boundValue);
 				if (resolvedValue !== node.value) {
 					next = { ...next, value: resolvedValue };
 				}

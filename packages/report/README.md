@@ -47,8 +47,13 @@ Register fonts once at startup, then render inside the route handler:
 
 ```ts
 import express from "express";
-import { renderDocument, SkiaAdapter, FontLibrary } from "@komnour/report/pdf";
-import type { ReportDocument } from "@komnour/report/pdf";
+import {
+	renderDocument,
+	resolveAssetServer,
+	ReportDocumentSchema,
+	SkiaAdapter,
+	FontLibrary,
+} from "@komnour/report/pdf";
 
 const app = express();
 // Documents can embed data: URL images/fonts, which routinely exceed
@@ -61,14 +66,18 @@ app.use(express.json({ limit: "20mb" }));
 FontLibrary.use("Inter", ["/path/to/fonts/Inter-Regular.ttf"]);
 
 app.post("/report/export/pdf", async (req, res) => {
-	// req.body is trusted here only for brevity — validate it against your
-	// own ReportDocument shape before rendering an untrusted request body.
-	const doc = req.body.document as ReportDocument;
+	const parsed = ReportDocumentSchema.safeParse(req.body.document);
+	if (!parsed.success) {
+		res.status(400).json({ error: "Invalid document", issues: parsed.error.issues });
+		return;
+	}
 	const data = req.body.data as Record<string, unknown> | undefined;
 
 	try {
 		const adapter = new SkiaAdapter();
-		const bytes = await renderDocument(doc, adapter, data);
+		const bytes = await renderDocument(parsed.data, adapter, data, {
+			resolveAsset: resolveAssetServer, // only needed if documents contain image nodes
+		});
 		res.set({
 			"Content-Type": "application/pdf",
 			"Content-Disposition": 'attachment; filename="report.pdf"',
@@ -76,7 +85,7 @@ app.post("/report/export/pdf", async (req, res) => {
 		});
 		res.send(Buffer.from(bytes ?? new Uint8Array()));
 	} catch (err) {
-		res.status(500).json({ error: err.message });
+		res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
 	}
 });
 
@@ -87,11 +96,21 @@ app.listen(3000);
 
 #### `renderDocument(doc: ReportDocument, adapter: RendererAdapter, data?: Record<string, unknown>, options?: RenderOptions): Promise<Uint8Array | undefined>`
 
-Renders every page of `doc` through `adapter` and returns the finished document's bytes (for `SkiaAdapter`, a PDF). `data` resolves `{{dot.path}}` bindings in text and checkbox nodes; when omitted, falls back to `doc.bindingData` if the document carries its own.
+Renders every page of `doc` through `adapter` and returns the finished document's bytes (for `SkiaAdapter`, a PDF). `data` resolves `{{dot.path}}` bindings in text nodes and the bound state of checkbox (`checkedBinding`) and QR code (`valueBinding`) nodes; when omitted, falls back to `doc.bindingData` if the document carries its own.
 
-**Does not register any fonts and does not validate `doc`.** Both are entirely the caller's responsibility — font sources/policy and input trust boundaries vary per deployment and can't be guessed by this package.
+**Does not register any fonts and does not validate `doc`.** Both are entirely the caller's responsibility — font sources/policy and input trust boundaries vary per deployment and can't be guessed by this package. For validation, `ReportDocumentSchema` (below) is exported ready to use.
 
-`options.resolveAsset` is only required if `doc` contains `image` nodes — it resolves an `Asset` to its decoded bytes/dimensions; without it, image nodes are silently skipped. See `packages/report/src/render/resolveAssetServer.ts` in this monorepo for a reference implementation (reads `data:`/`file:`/`http(s):`/local-path asset URLs) if you need one.
+`options.resolveAsset` is only required if `doc` contains `image` nodes — it resolves an `Asset` to its decoded bytes/dimensions; without it, image nodes are silently skipped. Pass the exported `resolveAssetServer` (reads `data:`/`file:`/`http(s):`/local-path asset URLs), or supply your own if your assets live somewhere it can't reach.
+
+#### `ReportDocumentSchema`
+
+`ReportDocumentSchema.safeParse(value)` validates an untrusted JSON payload against the document model and returns `{ success: true, data }` or `{ success: false, error: { issues } }` (each issue has `path` and `message`). Use it before rendering anything that arrives over the network.
+
+#### `resolveAssetServer`
+
+The Node-side `options.resolveAsset` implementation used by the Komnour export server: decodes `data:` URLs, reads `file:` URLs and plain paths from disk, and fetches `http(s):` URLs.
+
+> **Security note:** because it reads local files and fetches arbitrary URLs named *inside the document*, only pass it for documents you trust. If untrusted users can submit documents to your endpoint, supply your own `resolveAsset` that restricts asset URLs to sources you control (e.g. `data:` only, or an allowlisted host).
 
 #### `SkiaAdapter`
 
