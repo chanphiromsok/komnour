@@ -9,7 +9,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "#/*": ["./src/*"],
       "@komnour/report/src/*": ["../report/src/*"]
