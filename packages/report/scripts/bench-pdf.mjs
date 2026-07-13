@@ -19,6 +19,10 @@
  *   --pages N        synthetic document page count (default 30; ignored with --doc)
  *   --runs N         how many exports to render (default 5)
  *   --concurrency N  how many render at once (default 1)
+ *   --image-mb N     embed an ~N MB incompressible image in the synthetic doc.
+ *                    The default image is 1x1 px, which makes the PDFs tiny —
+ *                    fine for CPU numbers, but buffer-copy effects scale with
+ *                    PDF size and only become measurable with real weight.
  *   --doc PATH       benchmark a real document JSON instead of the synthetic one
  *   --snapshot       write V8 .heapsnapshot files before/after (see caveat above)
  *   --out PATH       also write the last rendered PDF here, to eyeball correctness
@@ -57,7 +61,7 @@ const TEXT_STYLE = {
  * an image asset shared by every page). Exported so tests can validate it
  * against the schema without loading skia-canvas.
  */
-export function buildSyntheticDocument(pageCount) {
+export function buildSyntheticDocument(pageCount, imageDataUrl = TINY_PNG_DATA_URL) {
 	const nodes = {};
 	const pages = [];
 	const paragraph =
@@ -163,7 +167,7 @@ export function buildSyntheticDocument(pageCount) {
 		pages,
 		nodes,
 		assets: {
-			"img-1": { id: "img-1", kind: "image", url: TINY_PNG_DATA_URL },
+			"img-1": { id: "img-1", kind: "image", url: imageDataUrl },
 		},
 		fonts: {},
 		bindingData: { customer: { name: "Ada Lovelace" }, approved: true },
@@ -175,6 +179,7 @@ function parseCliArgs(argv) {
 		pages: 30,
 		runs: 5,
 		concurrency: 1,
+		imageMb: 0,
 		docPath: null,
 		snapshot: false,
 		out: null,
@@ -185,6 +190,7 @@ function parseCliArgs(argv) {
 		if (arg === "--pages") opts.pages = Number(next());
 		else if (arg === "--runs") opts.runs = Number(next());
 		else if (arg === "--concurrency") opts.concurrency = Number(next());
+		else if (arg === "--image-mb") opts.imageMb = Number(next());
 		else if (arg === "--doc") opts.docPath = resolve(next());
 		else if (arg === "--snapshot") opts.snapshot = true;
 		else if (arg === "--out") opts.out = resolve(next());
@@ -199,7 +205,32 @@ function parseCliArgs(argv) {
 			process.exit(1);
 		}
 	}
+	if (!Number.isFinite(opts.imageMb) || opts.imageMb < 0) {
+		console.error("--image-mb must be a non-negative number");
+		process.exit(1);
+	}
 	return opts;
+}
+
+/**
+ * Builds an ~sizeMb data: URL PNG of random noise. Noise defeats PNG (and
+ * the PDF backend's) compression, so the bytes keep their full weight all
+ * the way into the finished PDF — which is the point: buffer-copy effects
+ * scale with output size and are invisible on tiny PDFs. Rendered through
+ * skia-canvas itself, which is already a dependency of the render path.
+ */
+async function makeNoiseImageDataUrl(sizeMb) {
+	const { randomFillSync } = await import("node:crypto");
+	const { Canvas } = await import("skia-canvas");
+	const side = Math.max(64, Math.round(Math.sqrt((sizeMb * MB) / 4)));
+	const canvas = new Canvas(side, side);
+	canvas.gpu = false;
+	const ctx = canvas.getContext("2d");
+	const image = ctx.createImageData(side, side);
+	randomFillSync(image.data);
+	ctx.putImageData(image, 0, 0);
+	const png = await canvas.png;
+	return `data:image/png;base64,${Buffer.from(png).toString("base64")}`;
 }
 
 const MB = 1024 * 1024;
@@ -298,9 +329,16 @@ async function main() {
 		}
 	}
 
+	let imageDataUrl = TINY_PNG_DATA_URL;
+	if (opts.imageMb > 0 && !opts.docPath) {
+		imageDataUrl = await makeNoiseImageDataUrl(opts.imageMb);
+		console.log(
+			`synthetic image: ~${opts.imageMb} MB noise PNG (${fmt(imageDataUrl.length)} as a data URL)\n`,
+		);
+	}
 	const rawDoc = opts.docPath
 		? JSON.parse(await readFile(opts.docPath, "utf8"))
-		: buildSyntheticDocument(opts.pages);
+		: buildSyntheticDocument(opts.pages, imageDataUrl);
 	const parsed = ReportDocumentSchema.safeParse(rawDoc);
 	if (!parsed.success) {
 		console.error("Document failed schema validation:");

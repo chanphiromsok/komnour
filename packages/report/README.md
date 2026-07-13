@@ -139,15 +139,20 @@ pnpm --filter @komnour/report build   # the bench renders through dist/pdf.mjs
 # Sequential exports of a 30-page synthetic document (all node types):
 node --expose-gc packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6
 
+# Give the document real weight. The default synthetic image is 1x1 px, so
+# the PDF is ~0.2 MB and buffer-level effects (which scale with PDF size)
+# are lost in noise. --image-mb embeds an incompressible image:
+node --expose-gc packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6 --image-mb 15
+
 # See what concurrency does to peak memory (compare these two):
-node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 1
-node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 8
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 1 --image-mb 15
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 8 --image-mb 15
 
 # Benchmark one of YOUR documents, and keep the PDF to check it rendered right:
 node --expose-gc packages/report/scripts/bench-pdf.mjs --doc my-document.json --out /tmp/check.pdf
 ```
 
-To compare two commits, check each out, rebuild, and rerun the same command — the script has no dependency on the code it measures.
+To compare two commits, check each out, rebuild, and rerun the same command — the script has no dependency on the code it measures. Compare the `PEAK during runs` rss lines; expect meaningful differences only when the PDFs are meaningfully large (`--image-mb`, or a `--doc` with embedded images). Note that `settled` rss typically stays near the peak even when heapUsed/external drop back — allocators keep freed pages around for reuse instead of returning them to the OS; heapUsed/external returning to their post-warmup values is what "no leak" looks like.
 
 **Heap dumps will mislead you here, and it's worth knowing why:** skia-canvas's canvases and the finished PDF bytes are *native* memory, outside the V8 heap. A `.heapsnapshot` (from `--snapshot`, Chrome DevTools, or heapdump) shows JS objects only and will look tiny while the process is actually holding hundreds of MB. Judge memory by **rss** — the bench prints it, or get it independently:
 
