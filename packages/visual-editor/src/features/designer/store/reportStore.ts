@@ -374,8 +374,19 @@ export const useDesignerStore = create<DesignerState>()(
 			commit((draft) => {
 				const node = draft.nodes[id];
 				if (!node) return;
+				const previousText = node.type === "text" ? node.text : undefined;
 				Object.assign(node, patch as Partial<ReportNode>);
-				if ("text" in patch || "runs" in patch) ensureTextFits(draft, id);
+				// TextEditOverlay's blur-commit always calls onCommit — even for a
+				// no-op edit (just clicking into a text box and clicking away
+				// again) — so "text" in patch is true far more often than the
+				// text actually changed. Growing the box on every one of those
+				// no-op commits was undoing a manual shrink the instant you so
+				// much as focused the text box afterward, without changing
+				// anything. Only re-check when the text content itself is
+				// actually different from before.
+				if ("text" in patch && patch.text !== previousText) {
+					ensureTextFits(draft, id);
+				}
 			});
 		},
 
