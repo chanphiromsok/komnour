@@ -1,3 +1,5 @@
+export { resolveAssetServer } from "./render/resolveAssetServer";
+export { ReportDocumentSchema } from "./model/schema";
 export type { FontDefinition, ReportDocument } from "./model/types";
 export { SkiaAdapter } from "./render/skiaAdapter";
 export { renderDocument } from "./render/renderer";
