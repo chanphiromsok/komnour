@@ -12,6 +12,14 @@ const UNCHECKED_BOX_RUN: TextRun = {
 	style: { fontFamily: "Inter" },
 };
 
+/** Parses a literal `true`/`false` token (case-insensitive); anything else is not a literal. */
+function parseLiteralBoolean(token: string): boolean | null {
+	const lower = token.toLowerCase();
+	if (lower === "true") return true;
+	if (lower === "false") return false;
+	return null;
+}
+
 /** Walks `data` along a dot path like "customer.address.city". Array indices work as plain segments ("items.0.name"). */
 function lookupPath(data: Record<string, unknown>, path: string): unknown {
 	let current: unknown = data;
@@ -52,9 +60,13 @@ export function resolveBindings(
 			const expression = path.trim();
 			if (isInlineCheckboxExpression(expression)) {
 				const checkboxPath = expression.slice(INLINE_CHECKBOX_PREFIX.length).trim();
-				const checkboxRun = Boolean(lookupPath(data, checkboxPath))
-					? CHECKED_BOX_RUN
-					: UNCHECKED_BOX_RUN;
+				// `{{checkbox: true}}`/`{{checkbox: false}}` is a hardcoded mark,
+				// not a data binding — resolves the same with or without `data`.
+				// Anything else is a dot path, looked up and coerced as before.
+				const literal = parseLiteralBoolean(checkboxPath);
+				const isChecked =
+					literal !== null ? literal : Boolean(lookupPath(data, checkboxPath));
+				const checkboxRun = isChecked ? CHECKED_BOX_RUN : UNCHECKED_BOX_RUN;
 				out.push({
 					text: checkboxRun.text,
 					style: { ...run.style, ...checkboxRun.style },
@@ -104,7 +116,13 @@ export function resolveBindings(
 			// A plain dot path (not `{{}}`-wrapped) since this drives a boolean,
 			// not text substitution — see CheckboxNode's doc comment.
 			if (node.checkedBinding) {
-				const resolvedChecked = Boolean(lookupPath(data, node.checkedBinding));
+				const boundValue = lookupPath(data, node.checkedBinding);
+				// Falls back to the design-time `checked` default when the path
+				// doesn't resolve (undefined) rather than coercing that to
+				// `false` — matches CheckboxNode.checkedBinding's own doc
+				// comment, and matters now that this runs even without `data`.
+				const resolvedChecked =
+					boundValue === undefined ? node.checked : Boolean(boundValue);
 				if (resolvedChecked !== node.checked) {
 					next = { ...next, checked: resolvedChecked };
 				}

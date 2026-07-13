@@ -63,7 +63,13 @@ export async function renderDocument(
 	data?: ReportData,
 	options?: RenderOptions,
 ): Promise<Uint8Array | undefined> {
-	const resolved = data ? resolveBindings(doc, data) : doc;
+	// Always resolve — not just when `data` is passed — so inline checkbox
+	// literals (`{{checkbox: true}}`/`{{checkbox: false}}`, which don't need
+	// any binding data) still render even for a document with none. Passing
+	// `data` through to lookupPath (undefined or `{}`, doesn't matter — both
+	// resolve every dot-path lookup to undefined) keeps existing data-path
+	// substitution behavior unchanged.
+	const resolved = resolveBindings(doc, data ?? {});
 
 	await adapter.beginDocument();
 	for (const pageId of resolved.pages) {
