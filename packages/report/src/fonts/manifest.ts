@@ -93,7 +93,7 @@ export const FONT_MANIFEST: FontDefinition[] = [
 ];
 
 /** Font families whose characters are symbols/dingbats — the glyph picker is offered for these. */
-export const SYMBOL_FONT_FAMILIES: readonly string[] = ["Wingdings 2"];
+export const SYMBOL_FONT_FAMILIES: readonly string[] = ["Wingdings 2", "Wingding"];
 
 /**
  * Legacy symbol fonts (Wingdings/Webdings families) expose their glyphs through
