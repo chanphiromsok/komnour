@@ -46,8 +46,8 @@ function extractExportRequest(body: unknown): ExportRequest {
 	return { document: body };
 }
 
-export function registerReportRoutes(app: FastifyInstance) {
-	ensureReportFontsRegistered();
+export async function registerReportRoutes(app: FastifyInstance) {
+	await ensureReportFontsRegistered();
 	// POST /report/export/pdf
 	// body: { document, data? } OR a bare document as the plain JSON body → application/pdf
 	// `data` is optional: a document posted with its own `bindingData` field
@@ -67,6 +67,11 @@ export function registerReportRoutes(app: FastifyInstance) {
 		}
 		const effectiveData = data ?? parsed.data.bindingData ?? undefined;
 		try {
+			await ensureReportFontsRegistered();
+			const { registerCustomServerFonts } = await import(
+				"@komnour/report/src/fonts/registerServer"
+			);
+			registerCustomServerFonts(parsed.data.fonts);
 			const { renderDocumentToPdf } = await import(
 				"@komnour/report/src/render/exportPdf.server"
 			);
@@ -99,6 +104,10 @@ export function registerReportRoutes(app: FastifyInstance) {
 				: 1;
 		try {
 			await ensureReportFontsRegistered();
+			const { registerCustomServerFonts } = await import(
+				"@komnour/report/src/fonts/registerServer"
+			);
+			registerCustomServerFonts(parsed.data.fonts);
 			const { renderPageToPng } = await import(
 				"@komnour/report/src/render/exportPng.server"
 			);

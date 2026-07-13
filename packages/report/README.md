@@ -9,13 +9,25 @@ npm install @komnour/report
 ```
 
 ```ts
-import { ReportDocumentSchema, renderDocumentToPdf } from "@komnour/report/pdf";
+import {
+	registerServerFonts,
+	registerCustomServerFonts,
+	ReportDocumentSchema,
+	renderDocumentToPdf,
+} from "@komnour/report/pdf";
 import { writeFile } from "node:fs/promises";
 
 const parsed = ReportDocumentSchema.safeParse(await fetchYourDocumentJson());
 if (!parsed.success) {
 	throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
 }
+
+// renderDocumentToPdf does not register any fonts itself — do it once
+// (e.g. at server startup) with whatever fonts your documents need.
+await registerServerFonts("/path/to/your/fonts");
+// If the document carries its own custom (per-document) fonts, register
+// those too — see `registerCustomServerFonts` below.
+await registerCustomServerFonts(parsed.data.fonts);
 
 const pdf = await renderDocumentToPdf(parsed.data, { customer: { name: "Ada" } });
 await writeFile("report.pdf", pdf);
@@ -46,11 +58,13 @@ Always validate before rendering — `renderDocumentToPdf` assumes a well-formed
 
 Renders every page of `doc` to a multi-page PDF. `data` resolves `{{dot.path}}` bindings in text and checkbox nodes; when omitted, falls back to `doc.bindingData` if the document carries its own.
 
-Powered by real Skia (`skia-canvas`, a native addon) — see [Fonts](#fonts) and [Native dependency](#native-dependency-skia-canvas) below before deploying.
+**Does not register any fonts.** Font registration is entirely the caller's responsibility — see [Fonts](#fonts) below — since font sources and registration policy (which fonts, where they live, when to register them) vary per deployment and can't be guessed by this package.
+
+Powered by real Skia (`skia-canvas`, a native addon) — see [Native dependency](#native-dependency-skia-canvas) below before deploying.
 
 #### `registerServerFonts(publicDir?: string, fonts?: FontDefinition[]): Promise<void>`
 
-Registers font files so `renderDocumentToPdf` can use them. **No font files ship in this package** — you provide them. `renderDocumentToPdf` calls this internally with the defaults, so most callers never need to call it directly; it's exposed for two reasons:
+Registers font files so `renderDocumentToPdf` can use them. **No font files ship in this package** — you provide them. You must call this yourself (typically once, at process startup) before calling `renderDocumentToPdf` on any document that needs these fonts:
 
 1. **Supplying your own fonts.** Pass a custom `fonts` list (a "theme," a per-tenant font set, whatever) instead of the built-in `FONT_MANIFEST`:
 
@@ -66,20 +80,32 @@ Registers font files so `renderDocumentToPdf` can use them. **No font files ship
 
 2. **Registering more fonts later.** Registration is tracked per font *family*, not as a single one-time flag — calling this again with a font list that includes new families registers just those; families already registered are skipped, so calling it repeatedly with overlapping lists (e.g. once per request in a long-lived server) stays cheap. This means you can register a base set at startup and add more (a different theme's fonts, loaded on demand) later in the process's lifetime — nothing after the first call was silently a no-op.
 
+#### `registerCustomServerFonts(fonts: Record<string, FontDefinition> | FontDefinition[]): Promise<void>`
+
+Registers fonts embedded directly on a document as `data:` URLs — e.g. custom fonts a user imported into the Komnour visual editor and saved onto `doc.fonts` — as opposed to `registerServerFonts`' fixed, on-disk `FONT_MANIFEST`. Call this with `doc.fonts` before rendering any document that carries its own custom fonts:
+
+```ts
+import { registerCustomServerFonts } from "@komnour/report/pdf";
+
+await registerCustomServerFonts(parsed.data.fonts);
+```
+
+Registration is tracked per font *id* (not family — two different custom fonts could coincidentally share a family name), so calling this again with the same document's fonts (e.g. once per request) stays cheap. A font that fails to decode or register is skipped rather than failing the whole call.
+
 #### `FONT_MANIFEST`
 
-The built-in font list `registerServerFonts`/`renderDocumentToPdf` use by default — Inter, Roboto, Battambang, Noto Sans Khmer, Khmer OS Moul, and Wingdings 2. Exported as a reference for the shape `registerServerFonts`'s `fonts` parameter expects; none of these files are included in this package (see below).
+The built-in font list `registerServerFonts` uses by default — Inter, Roboto, Battambang, Noto Sans Khmer, Khmer OS Moul, and Wingdings 2. Exported as a reference for the shape `registerServerFonts`'s `fonts` parameter expects; none of these files are included in this package (see below).
 
 ### Fonts
 
-Font *files* are not part of this npm package — only the `FONT_MANIFEST` metadata (family/weight/style/relative path) is. If you use the default manifest, you need to supply your own copies of those files (see `FONT_MANIFEST` for exactly which family/weight/style/filename each entry expects) under whatever `publicDir` you pass to `registerServerFonts`, or pass your own `fonts` list pointing at fonts you already have. If you never call `registerServerFonts` yourself and never trigger it (you always will, indirectly, via `renderDocumentToPdf`) with valid paths, `skia-canvas` falls back to whatever fonts are installed on the host system — which will not visually match the Komnour editor's output.
+Font *files* are not part of this npm package — only the `FONT_MANIFEST` metadata (family/weight/style/relative path) is. `renderDocumentToPdf` never registers fonts on its own — call `registerServerFonts`/`registerCustomServerFonts` yourself before rendering. If you use the default manifest, you need to supply your own copies of those files (see `FONT_MANIFEST` for exactly which family/weight/style/filename each entry expects) under whatever `publicDir` you pass to `registerServerFonts`, or pass your own `fonts` list pointing at fonts you already have. If you never call `registerServerFonts` with valid paths, `skia-canvas` falls back to whatever fonts are installed on the host system — which will not visually match the Komnour editor's output.
 
 ### Native dependency: skia-canvas
 
 `renderDocumentToPdf` is backed by [`skia-canvas`](https://github.com/samizdatco/skia-canvas), a native addon with a prebuilt binary fetched at install time. Two things worth knowing:
 
 - It supports Node back to **v12.22+/14.17+/15.12+/16+** — matching this package's own `engines.node: ">=16"`.
-- If its prebuilt binary can't be fetched for your platform at install time (a restricted network, an unsupported target), the module fails to load. This package protects against that failing *unnecessarily*: importing `@komnour/report/pdf` — e.g. just to use `ReportDocumentSchema` for validation — never touches skia-canvas at all; only actually calling `renderDocumentToPdf` or `registerServerFonts` does.
+- If its prebuilt binary can't be fetched for your platform at install time (a restricted network, an unsupported target), the module fails to load. This package protects against that failing *unnecessarily*: importing `@komnour/report/pdf` — e.g. just to use `ReportDocumentSchema` for validation — never touches skia-canvas at all; only actually calling `renderDocumentToPdf`, `registerServerFonts`, or `registerCustomServerFonts` does.
 
 ### Requirements
 

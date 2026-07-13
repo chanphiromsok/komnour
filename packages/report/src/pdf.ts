@@ -9,11 +9,16 @@
  * Nothing at this module's own top level imports skia-canvas (a native
  * addon that fails to load at all if its platform-specific prebuilt binary
  * isn't installed) — `renderDocumentToPdf` only reaches it via a dynamic
- * import inside the function body, and `registerServerFonts` below is a
- * thin lazy wrapper for the same reason. That means `import "@komnour/
- * report/pdf"` — e.g. just to use `ReportDocumentSchema` for validation —
- * can never fail on skia-canvas alone; only actually calling
- * `renderDocumentToPdf`/`registerServerFonts` can.
+ * import inside the function body, and `registerServerFonts`/
+ * `registerCustomServerFonts` below are thin lazy wrappers for the same
+ * reason. That means `import "@komnour/report/pdf"` — e.g. just to use
+ * `ReportDocumentSchema` for validation — can never fail on skia-canvas
+ * alone; only actually calling `renderDocumentToPdf`/`registerServerFonts`/
+ * `registerCustomServerFonts` can.
+ *
+ * `renderDocumentToPdf` does NOT register any fonts itself — call
+ * `registerServerFonts`/`registerCustomServerFonts` yourself first with
+ * whatever fonts your document needs.
  */
 import type { FontDefinition } from "./model/types";
 
@@ -38,6 +43,9 @@ export { FONT_MANIFEST } from "./fonts/manifest";
  * passed instead (e.g. your own per-document/per-theme font selection);
  * registration is tracked per font family, not as a one-time flag, so
  * calling this again with a *different* list still registers what's new.
+ *
+ * `renderDocumentToPdf` no longer calls this for you — call it yourself
+ * before rendering any document that needs these fonts.
  */
 export async function registerServerFonts(
 	publicDir?: string,
@@ -45,4 +53,22 @@ export async function registerServerFonts(
 ): Promise<void> {
 	const { registerServerFonts: register } = await import("./fonts/registerServer");
 	register(publicDir, fonts);
+}
+
+/**
+ * Lazy wrapper — see this module's doc comment for why it isn't a plain
+ * re-export. Registers fonts embedded directly on a document as `data:`
+ * URLs (e.g. custom fonts a user imported into the Komnour visual editor)
+ * — distinct from `registerServerFonts`' fixed, on-disk `FONT_MANIFEST`.
+ * Registration is tracked per font id, so calling this again with the same
+ * document's fonts is cheap.
+ *
+ * `renderDocumentToPdf` no longer calls this for you — call it yourself
+ * with `doc.fonts` before rendering a document that carries custom fonts.
+ */
+export async function registerCustomServerFonts(
+	fonts: Record<string, FontDefinition> | FontDefinition[],
+): Promise<void> {
+	const { registerCustomServerFonts: register } = await import("./fonts/registerServer");
+	register(fonts);
 }
