@@ -161,6 +161,16 @@ export const CheckboxNodeSchema = Type.Object({
 	labelStyle: Type.Optional(TextStyleSchema),
 });
 
+export const QrCodeNodeSchema = Type.Object({
+	...baseNodeShape,
+	type: Type.Literal("qrcode"),
+	value: Type.String(),
+	valueBinding: Type.Optional(Type.String()),
+	color: Type.String(),
+	background: Type.Optional(Type.String()),
+	errorCorrection: Type.Optional(StringUnion(["L", "M", "Q", "H"])),
+});
+
 export const ReportNodeSchema = Type.Union([
 	PageNodeSchema,
 	ViewNodeSchema,
@@ -171,6 +181,7 @@ export const ReportNodeSchema = Type.Union([
 	LineNodeSchema,
 	PathNodeSchema,
 	CheckboxNodeSchema,
+	QrCodeNodeSchema,
 ]);
 
 export const AssetSchema = Type.Object({

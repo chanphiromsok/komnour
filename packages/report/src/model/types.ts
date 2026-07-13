@@ -182,6 +182,24 @@ export interface CheckboxNode extends BaseNode {
 	labelStyle?: TextStyle;
 }
 
+export interface QrCodeNode extends BaseNode {
+	type: "qrcode";
+	/** Design-time default value, and the fallback used whenever `valueBinding` is unset or its path doesn't resolve. */
+	value: string;
+	/**
+	 * Dot path into binding data whose value overrides `value` at render/export
+	 * time — resolved by resolveBindings, the same pass that resolves
+	 * CheckboxNode.checkedBinding. A plain path, not `{{}}`-wrapped.
+	 */
+	valueBinding?: string;
+	/** Module (dark square) color. */
+	color: string;
+	/** Optional fill behind the modules; left undrawn (transparent) when unset. */
+	background?: string;
+	/** QR error-correction level — higher survives more damage/occlusion at the cost of a denser code. Defaults to "M". */
+	errorCorrection?: "L" | "M" | "Q" | "H";
+}
+
 export type ReportNode =
 	| PageNode
 	| ViewNode
@@ -191,7 +209,8 @@ export type ReportNode =
 	| CircleNode
 	| LineNode
 	| PathNode
-	| CheckboxNode;
+	| CheckboxNode
+	| QrCodeNode;
 
 export type NodeType = ReportNode["type"];
 

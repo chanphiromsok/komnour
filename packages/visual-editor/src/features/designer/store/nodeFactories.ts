@@ -6,6 +6,7 @@ import type {
 	LineNode,
 	NodeId,
 	PageNode,
+	QrCodeNode,
 	RectNode,
 	TextNode,
 } from "@komnour/report/src/model/types";
@@ -184,6 +185,24 @@ export function createCheckboxNode(
 			fontSize: options?.fontSize ?? 14,
 			verticalAlign: "middle",
 		},
+	};
+}
+
+export function createQrCodeNode(
+	parentId: NodeId | null,
+	options?: CreateNodeOptions,
+): QrCodeNode {
+	// Square by default — a QR code is inherently square; fitRect still
+	// centers it correctly if someone resizes the frame to a non-square box.
+	const width = 120;
+	const height = 120;
+	const origin = originFor(options?.center, width, height);
+	return {
+		...baseNode(parentId, "QR Code"),
+		type: "qrcode",
+		frame: { ...origin, width, height, rotation: 0 },
+		value: "https://example.com",
+		color: "#000000",
 	};
 }
 

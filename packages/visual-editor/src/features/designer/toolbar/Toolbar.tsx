@@ -15,6 +15,7 @@ import {
 	Moon,
 	MousePointer2,
 	Plus,
+	QrCode,
 	Redo2,
 	Square,
 	Sun,
@@ -33,6 +34,7 @@ import {
 	createImageNode,
 	createLineNode,
 	createPageNode,
+	createQrCodeNode,
 	createRectNode,
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
@@ -257,6 +259,17 @@ export function Toolbar() {
 					}
 				>
 					<CheckSquare size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add QR code"
+					onClick={() =>
+						addNode(
+							createQrCodeNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
+				>
+					<QrCode size={16} />
 				</ToolbarButton>
 			</div>
 

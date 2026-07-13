@@ -12,6 +12,7 @@ import {
 	createCircleNode,
 	createImageNode,
 	createLineNode,
+	createQrCodeNode,
 	createRectNode,
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
@@ -623,6 +624,8 @@ export function DesignerCanvas() {
 						createCheckboxNode(activePageId, { center, fontFamily: defaultFontFamily }),
 						activePageId,
 					);
+				else if (key === "q")
+					addNode(createQrCodeNode(activePageId, { center }), activePageId);
 			}
 		}
 

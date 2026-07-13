@@ -1,4 +1,6 @@
+import { encode as encodeQrCode } from "uqr";
 import { resolveBindings } from "../data/bind";
+import { fitRect } from "../layout/fitRect";
 import { resolvePaperSize } from "../layout/paper";
 import { resolveRuns } from "../model/runs";
 import type {
@@ -250,6 +252,37 @@ async function drawNodeContent(
 				);
 				adapter.restore();
 			}
+			return;
+		}
+		case "qrcode": {
+			if (!node.value) return;
+			const { data: matrix, size } = encodeQrCode(node.value, {
+				ecc: node.errorCorrection ?? "M",
+			});
+			// Centers a square code within a possibly non-square frame — the
+			// same helper image placement uses, reused directly here since a
+			// QR code is drawn as a grid of rects, not through drawImage.
+			const box = fitRect(1, 1, node.frame.width, node.frame.height, "contain");
+			const moduleSize = box.width / size;
+			adapter.save();
+			adapter.translate(box.x, box.y);
+			if (node.background) {
+				adapter.drawRect(box.width, box.height, {
+					fill: { color: node.background },
+				});
+			}
+			for (let row = 0; row < size; row++) {
+				for (let col = 0; col < size; col++) {
+					if (!matrix[row][col]) continue;
+					adapter.save();
+					adapter.translate(col * moduleSize, row * moduleSize);
+					adapter.drawRect(moduleSize, moduleSize, {
+						fill: { color: node.color },
+					});
+					adapter.restore();
+				}
+			}
+			adapter.restore();
 			return;
 		}
 	}

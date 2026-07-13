@@ -4,6 +4,7 @@ import { FrameProperties } from "./FrameProperties";
 import { ImageProperties } from "./ImageProperties";
 import { MultiTextProperties } from "./MultiTextProperties";
 import { PageProperties } from "./PageProperties";
+import { QrCodeProperties } from "./QrCodeProperties";
 import { ShapeProperties } from "./ShapeProperties";
 import { TextProperties } from "./TextProperties";
 
@@ -81,6 +82,11 @@ export function PropertyPanel() {
 						{node.type === "checkbox" && (
 							<InspectorSection title="Checkbox">
 								<CheckboxProperties nodeId={node.id} />
+							</InspectorSection>
+						)}
+						{node.type === "qrcode" && (
+							<InspectorSection title="QR Code">
+								<QrCodeProperties nodeId={node.id} />
 							</InspectorSection>
 						)}
 					</>

@@ -135,6 +135,24 @@ export function resolveBindings(
 				nodes[id] = next;
 				changed = true;
 			}
+		} else if (node.type === "qrcode") {
+			let next = node;
+			// A plain dot path (not `{{}}`-wrapped), same reasoning as
+			// CheckboxNode.checkedBinding — see QrCodeNode's doc comment.
+			if (node.valueBinding) {
+				const boundValue = lookupPath(data, node.valueBinding);
+				// Falls back to the design-time `value` default when the path
+				// doesn't resolve, matching checkedBinding's own fallback fix.
+				const resolvedValue =
+					boundValue === undefined ? node.value : String(boundValue);
+				if (resolvedValue !== node.value) {
+					next = { ...next, value: resolvedValue };
+				}
+			}
+			if (next !== node) {
+				nodes[id] = next;
+				changed = true;
+			}
 		}
 	}
 	return changed ? { ...doc, nodes } : doc;

@@ -4,6 +4,7 @@ import {
 	Image,
 	LayoutPanelTop,
 	Minus,
+	QrCode,
 	Spline,
 	Square,
 	Type,
@@ -24,6 +25,7 @@ const ICONS: Record<
 	line: Minus,
 	path: Spline,
 	checkbox: CheckSquare,
+	qrcode: QrCode,
 };
 
 export function LayersPanel() {
