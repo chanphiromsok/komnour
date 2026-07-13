@@ -7,6 +7,7 @@ import {
 } from "#/features/designer/bindings/paths";
 import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
+import { measureMinTextHeight } from "#/features/designer/store/textMeasurement";
 import {
 	applyInlineStyleToRuns,
 	inlineStyleAt,
@@ -64,6 +65,13 @@ export function TextEditOverlay({
 	const committedRef = useRef(false);
 	const blurCommitFrameRef = useRef<number | null>(null);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
+	// Tracks the SAME minimum-height calculation the store applies on
+	// commit (ensureTextFits/measureMinTextHeight) — recomputed on every
+	// keystroke so the box you're looking at while typing is already the
+	// size it'll commit as, instead of staying pinned to the pre-edit size
+	// (clipping newly-typed content behind overflow:hidden) and only
+	// jumping to its real size once you click away.
+	const [liveHeight, setLiveHeight] = useState(frame.height);
 
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const allBindingPaths = useMemo(
@@ -103,7 +111,34 @@ export function TextEditOverlay({
 		selection?.removeAllRanges();
 		selection?.addRange(range);
 		syncActive();
+		updateLiveHeight();
 	}, []);
+
+	/**
+	 * Re-measures with the exact same function (and the same padded formula)
+	 * the store applies on commit — see the liveHeight state's own comment.
+	 * Re-serializes fresh from the DOM every call rather than trusting
+	 * runsRef.current, which syncActive only updates for a non-collapsed
+	 * selection — the common case while just typing is a collapsed caret,
+	 * where it's never touched.
+	 */
+	function updateLiveHeight() {
+		const el = editorRef.current;
+		if (!el) return;
+		const runs = normalizeRuns(serializeElementToRuns(el));
+		// Read directly off the store rather than subscribing via the
+		// useDesignerStore hook — Object.values(...) allocates a new array
+		// every call, and a selector that never returns a stable reference
+		// makes React's useSyncExternalStore re-render in an infinite loop.
+		// This only needs the current value at the moment of measurement, not
+		// to react to it, so a plain non-subscribing read is exactly right.
+		const customFonts = Object.values(useDesignerStore.getState().document.fonts);
+		const minHeight = measureMinTextHeight(
+			{ text: runsToText(runs), runs, style, frame: { width: frame.width } },
+			customFonts,
+		);
+		setLiveHeight(Math.max(frame.height, minHeight));
+	}
 
 	useEffect(() => {
 		const handler = () => syncActive();
@@ -302,7 +337,11 @@ export function TextEditOverlay({
 				left: frame.x,
 				top: frame.y,
 				width: frame.width,
-				height: frame.height,
+				// minHeight, not a fixed height: liveHeight already tracks the same
+				// calculation the store commits with, but this is still a floor,
+				// not a hard cap — if the real DOM ever needs a hair more than that
+				// estimate, natural block flow lets it grow instead of clipping.
+				minHeight: liveHeight,
 			}}
 			onPointerDown={(event) => event.stopPropagation()}
 			onClick={(event) => event.stopPropagation()}
@@ -370,7 +409,10 @@ export function TextEditOverlay({
 				role="textbox"
 				aria-multiline="true"
 				tabIndex={0}
-				onInput={syncActive}
+				onInput={() => {
+					syncActive();
+					updateLiveHeight();
+				}}
 				onFocus={cancelPendingBlurCommit}
 				onKeyDown={(event) => {
 					event.stopPropagation();
@@ -421,7 +463,14 @@ export function TextEditOverlay({
 					if (next && containerRef.current?.contains(next)) return;
 					scheduleBlurCommit();
 				}}
-				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
+				// min-h-full (not h-full) and no overflow-hidden: the outer
+				// container's minHeight already tracks liveHeight, but this stays
+				// a floor here too rather than a hard clip — typed content that
+				// (rarely) needs a hair more than the live estimate grows the box
+				// via normal block flow instead of being silently hidden, which is
+				// exactly the bug this replaced (edits invisible while focused,
+				// only appearing once the box snapped to size on blur).
+				className="min-h-full w-full resize-none whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
 				style={{
 					...baseEditorStyle(style),
 					transform: rotation ? `rotate(${rotation}deg)` : undefined,

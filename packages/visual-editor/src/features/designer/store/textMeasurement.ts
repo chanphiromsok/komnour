@@ -1,7 +1,22 @@
 import { registerBrowserFonts } from "@komnour/report/src/fonts/registerBrowser";
-import { resolveRuns } from "@komnour/report/src/model/runs";
-import type { FontDefinition, TextNode } from "@komnour/report/src/model/types";
+import type { FontDefinition, TextNode, TextRun } from "@komnour/report/src/model/types";
 import { BrowserCanvasAdapter } from "@komnour/report/src/render/browserCanvasAdapter";
+
+/**
+ * Just the slice of a TextNode this module actually reads — lets a caller
+ * that doesn't have (or doesn't want to fabricate) a full TextNode, like
+ * TextEditOverlay measuring in-progress edits before there's a committed
+ * node to point at, pass a minimal object instead.
+ */
+export interface MeasurableText extends Pick<TextNode, "text" | "runs" | "style"> {
+	frame: { width: number };
+}
+
+/** Local copy of runs.ts's resolveRuns, over the narrower MeasurableText shape. */
+function resolveMeasurableRuns(node: MeasurableText): TextRun[] {
+	if (node.runs && node.runs.length > 0) return node.runs;
+	return [{ text: node.text }];
+}
 
 // A dedicated offscreen canvas purely for text measurement — never attached
 // to the DOM, never drawn from. Reused across calls instead of allocating a
@@ -93,17 +108,17 @@ const SAFETY_MARGIN_FACTOR = 1.15;
  * just-imported document) should `await waitForFontsReady(...)` first.
  */
 export function measureMinTextHeight(
-	node: TextNode,
+	node: MeasurableText,
 	customFonts: FontDefinition[] = [],
 ): number {
 	// Kicks off loading if it hasn't started yet; intentionally not awaited
 	// here so this stays usable from synchronous Immer producers.
 	void ensureMainThreadFontsRegistered(customFonts);
 	const ctx = getMeasureContext();
-	if (!ctx) return node.frame.height;
+	if (!ctx) return 0;
 	const adapter = new BrowserCanvasAdapter(ctx);
 	const metrics = adapter.measureTextBlock(
-		resolveRuns(node),
+		resolveMeasurableRuns(node),
 		node.style,
 		node.frame.width,
 	);
