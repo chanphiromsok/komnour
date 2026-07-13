@@ -116,6 +116,8 @@ The Node-side `options.resolveAsset` implementation used by the Komnour export s
 
 The `RendererAdapter` implementation `renderDocument` needs for server-side rendering, backed by real Skia (`skia-canvas`, a native addon — see [Native dependency](#native-dependency-skia-canvas) below). Construct one per render: `new SkiaAdapter(pixelRatio?)`.
 
+Leave `pixelRatio` at its default of `1` for PDF export — PDF is vector output, so a higher ratio doesn't add quality, it multiplies the physical page dimensions (a ratio of 2 turns A4 into 2×A4). It exists for raster (PNG) rendering, where it controls the pixel density.
+
 #### `FontLibrary`
 
 Re-exported directly from `skia-canvas` — call `FontLibrary.use(family, paths)` to register font files before rendering any document that needs them. See [skia-canvas's own docs](https://github.com/samizdatco/skia-canvas#fontlibrary) for the full API (weight/style variants, listing installed fonts, etc.).

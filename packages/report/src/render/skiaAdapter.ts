@@ -42,7 +42,14 @@ export class SkiaAdapter implements RendererAdapter {
 		return this.ctx;
 	}
 
-	beginDocument(): void {}
+	beginDocument(): void {
+		// A fresh document must not inherit pages from a previous render that
+		// reused this adapter instance — beginPage's newPage() would otherwise
+		// keep appending to the old canvas and endDocument would emit a PDF
+		// containing both documents' pages.
+		this.canvas = null;
+		this.ctx = null;
+	}
 
 	beginPage(size: { width: number; height: number }, background: string): void {
 		if (!this.canvas) {
@@ -117,8 +124,7 @@ export class SkiaAdapter implements RendererAdapter {
 				ctx.fillRect(0, 0, width, height);
 			}
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			if (opts.radius) {
 				ctx.beginPath();
 				ctx.roundRect(0, 0, width, height, opts.radius);
@@ -139,8 +145,7 @@ export class SkiaAdapter implements RendererAdapter {
 			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.fill();
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			ctx.beginPath();
 			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.stroke();
@@ -155,7 +160,7 @@ export class SkiaAdapter implements RendererAdapter {
 		stroke: Stroke,
 	): void {
 		const ctx = this.context;
-		this.applyStroke(stroke);
+		if (!this.applyStroke(stroke)) return;
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
@@ -169,8 +174,7 @@ export class SkiaAdapter implements RendererAdapter {
 			ctx.fillStyle = opts.fill.color;
 			ctx.fill(path);
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			ctx.stroke(path);
 		}
 	}
@@ -354,11 +358,19 @@ export class SkiaAdapter implements RendererAdapter {
 		ctx.textDecoration = style.decoration === "none" ? "" : style.decoration;
 	}
 
-	private applyStroke(stroke: Stroke): void {
+	/**
+	 * Returns false for a non-positive width so callers skip stroking
+	 * entirely — assigning 0 to lineWidth is ignored per the Canvas2D spec,
+	 * which would silently stroke with whatever width the previous shape
+	 * left behind instead of drawing nothing.
+	 */
+	private applyStroke(stroke: Stroke): boolean {
+		if (!(stroke.width > 0)) return false;
 		const ctx = this.context;
 		ctx.strokeStyle = stroke.color;
 		ctx.lineWidth = stroke.width;
 		ctx.setLineDash(stroke.dash ?? []);
+		return true;
 	}
 
 	private applyTextStyle(style: TextStyle): void {

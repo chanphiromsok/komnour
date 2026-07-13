@@ -73,6 +73,7 @@ export async function renderDocument(
 	// routes and this package's README already promise. `{}` as the final
 	// fallback keeps every dot-path lookup resolving to undefined.
 	const resolved = resolveBindings(doc, data ?? doc.bindingData ?? {});
+	const effectiveOptions = withPerRenderAssetMemo(options);
 
 	await adapter.beginDocument();
 	for (const pageId of resolved.pages) {
@@ -81,12 +82,43 @@ export async function renderDocument(
 		const size = resolvePaperSize(page.paper);
 		adapter.beginPage(size, page.background);
 		for (const childId of page.children) {
-			await drawNode(resolved, childId, adapter, options);
+			await drawNode(resolved, childId, adapter, effectiveOptions);
 			if (options?.shouldAbort?.()) return undefined;
 		}
 		adapter.endPage();
 	}
 	return adapter.endDocument();
+}
+
+/**
+ * Wraps `options.resolveAsset` so each asset id resolves at most once per
+ * render, however many image nodes (across however many pages) reference
+ * it — without this, a repeated asset (e.g. a logo on every page of a long
+ * document) is re-read/re-fetched once per node. Scoped to a single
+ * renderDocument call, so it can never serve stale bytes across renders,
+ * unlike a long-lived cache. A failed resolution is evicted rather than
+ * memoized, so later nodes (and renders) retry instead of inheriting one
+ * transient error.
+ */
+function withPerRenderAssetMemo(
+	options: RenderOptions | undefined,
+): RenderOptions | undefined {
+	const resolveAsset = options?.resolveAsset;
+	if (!resolveAsset) return options;
+	const memo = new Map<string, Promise<ResolvedAsset>>();
+	return {
+		...options,
+		resolveAsset: (asset) => {
+			const hit = memo.get(asset.id);
+			if (hit) return hit;
+			const pending = Promise.resolve(resolveAsset(asset)).catch((err) => {
+				memo.delete(asset.id);
+				throw err;
+			});
+			memo.set(asset.id, pending);
+			return pending;
+		},
+	};
 }
 
 async function drawNode(

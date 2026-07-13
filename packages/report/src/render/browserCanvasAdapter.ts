@@ -31,7 +31,6 @@ import { tokenizeText } from "./tokenizeText";
  */
 export class BrowserCanvasAdapter implements RendererAdapter {
 	private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-	private opacityLayerDepth = 0;
 
 	/**
 	 * `pixelRatio` scales every subsequent draw call so the canvas's backing
@@ -108,8 +107,7 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 				ctx.fillRect(0, 0, width, height);
 			}
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			if (opts.radius) {
 				ctx.beginPath();
 				ctx.roundRect(0, 0, width, height, opts.radius);
@@ -130,8 +128,7 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.fill();
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			ctx.beginPath();
 			ctx.ellipse(rx, ry, rx, ry, 0, 0, Math.PI * 2);
 			ctx.stroke();
@@ -140,7 +137,7 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 
 	drawLine(x1: number, y1: number, x2: number, y2: number, stroke: Stroke): void {
 		const ctx = this.ctx;
-		this.applyStroke(stroke);
+		if (!this.applyStroke(stroke)) return;
 		ctx.beginPath();
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
@@ -154,8 +151,7 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 			ctx.fillStyle = opts.fill.color;
 			ctx.fill(path);
 		}
-		if (opts.stroke) {
-			this.applyStroke(opts.stroke);
+		if (opts.stroke && this.applyStroke(opts.stroke)) {
 			ctx.stroke(path);
 		}
 	}
@@ -317,11 +313,19 @@ export class BrowserCanvasAdapter implements RendererAdapter {
 		ctx.letterSpacing = `${style.letterSpacing}px`;
 	}
 
-	private applyStroke(stroke: Stroke): void {
+	/**
+	 * Returns false for a non-positive width so callers skip stroking
+	 * entirely — assigning 0 to lineWidth is ignored per the Canvas2D spec,
+	 * which would silently stroke with whatever width the previous shape
+	 * left behind instead of drawing nothing. Mirrors SkiaAdapter exactly.
+	 */
+	private applyStroke(stroke: Stroke): boolean {
+		if (!(stroke.width > 0)) return false;
 		const ctx = this.ctx;
 		ctx.strokeStyle = stroke.color;
 		ctx.lineWidth = stroke.width;
 		ctx.setLineDash(stroke.dash ?? []);
+		return true;
 	}
 }
 
