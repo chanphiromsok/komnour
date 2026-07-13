@@ -456,7 +456,7 @@
         "x": 34.99999999999997,
         "y": 248,
         "width": 536,
-        "height": 16,
+        "height": 27.089999999999996,
         "rotation": 0
       },
       "style": {
@@ -507,7 +507,7 @@
       "type": "rect",
       "frame": {
         "x": 35,
-        "y": 267,
+        "y": 278.09,
         "width": 536,
         "height": 148,
         "rotation": 0
@@ -532,7 +532,7 @@
       "text": "Loan Type ",
       "frame": {
         "x": 56,
-        "y": 272,
+        "y": 283.09,
         "width": 40,
         "height": 16,
         "rotation": 0
@@ -568,7 +568,7 @@
       "text": "Loan Amount  ",
       "frame": {
         "x": 151.99999999999994,
-        "y": 271,
+        "y": 282.09,
         "width": 64,
         "height": 27.089999999999996,
         "rotation": 0
@@ -604,7 +604,7 @@
       "text": "Main Conditions of Loan  ",
       "frame": {
         "x": 247.5,
-        "y": 271,
+        "y": 282.09,
         "width": 128,
         "height": 27.089999999999996,
         "rotation": 0
@@ -639,7 +639,7 @@
       "type": "line",
       "frame": {
         "x": 49.5,
-        "y": 340.5,
+        "y": 351.59,
         "width": 148,
         "height": 0,
         "rotation": 90
@@ -664,7 +664,7 @@
       "type": "line",
       "frame": {
         "x": 156,
-        "y": 340.5,
+        "y": 351.59,
         "width": 148,
         "height": 0,
         "rotation": 90
@@ -689,7 +689,7 @@
       "type": "line",
       "frame": {
         "x": 283.5,
-        "y": 351,
+        "y": 362.09,
         "width": 126,
         "height": 0,
         "rotation": 90
@@ -715,7 +715,7 @@
       "text": "Personal Loan ",
       "frame": {
         "x": 35,
-        "y": 333,
+        "y": 344.09,
         "width": 88,
         "height": 24,
         "rotation": 0
@@ -751,7 +751,7 @@
       "text": "{{info.loan_amount}}",
       "frame": {
         "x": 123.5,
-        "y": 333,
+        "y": 344.09,
         "width": 104,
         "height": 40,
         "rotation": 0
@@ -789,7 +789,7 @@
       "type": "line",
       "frame": {
         "x": 35,
-        "y": 288,
+        "y": 299.09,
         "width": 536,
         "height": 0,
         "rotation": 0
@@ -815,7 +815,7 @@
       "text": "Purpose ",
       "frame": {
         "x": 243.5,
-        "y": 291,
+        "y": 302.09,
         "width": 40,
         "height": 24.08,
         "rotation": 0
@@ -850,7 +850,7 @@
       "type": "line",
       "frame": {
         "x": 230.00000000000003,
-        "y": 307,
+        "y": 318.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -876,7 +876,7 @@
       "text": "Family Consumption and other expenses ",
       "frame": {
         "x": 375.5,
-        "y": 290,
+        "y": 301.09,
         "width": 184,
         "height": 24.08,
         "rotation": 0
@@ -912,7 +912,7 @@
       "text": "Loan Tenor",
       "frame": {
         "x": 243,
-        "y": 327,
+        "y": 338.09,
         "width": 88,
         "height": 16,
         "rotation": 0
@@ -948,7 +948,7 @@
       "text": ": ",
       "frame": {
         "x": 346,
-        "y": 309,
+        "y": 320.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -984,7 +984,7 @@
       "text": "{{info.monthly_interest_rate}}",
       "frame": {
         "x": 375.5,
-        "y": 308,
+        "y": 319.09,
         "width": 184,
         "height": 16,
         "rotation": 0
@@ -1022,7 +1022,7 @@
       "type": "line",
       "frame": {
         "x": 229.99999999999997,
-        "y": 325,
+        "y": 336.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -1047,7 +1047,7 @@
       "type": "line",
       "frame": {
         "x": 229.99999999999997,
-        "y": 343,
+        "y": 354.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -1072,7 +1072,7 @@
       "type": "line",
       "frame": {
         "x": 229.99999999999997,
-        "y": 360,
+        "y": 371.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -1097,7 +1097,7 @@
       "type": "line",
       "frame": {
         "x": 230.00000000000003,
-        "y": 378,
+        "y": 389.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -1122,7 +1122,7 @@
       "type": "line",
       "frame": {
         "x": 230.00000000000003,
-        "y": 396,
+        "y": 407.09,
         "width": 341,
         "height": 0,
         "rotation": 0
@@ -1148,7 +1148,7 @@
       "text": "Fixed Interest Rate ",
       "frame": {
         "x": 242.5,
-        "y": 309,
+        "y": 320.09,
         "width": 88,
         "height": 16,
         "rotation": 0
@@ -1184,7 +1184,7 @@
       "text": "Loan Approval Expense ",
       "frame": {
         "x": 242.5,
-        "y": 345,
+        "y": 356.09,
         "width": 102,
         "height": 16,
         "rotation": 0
@@ -1220,7 +1220,7 @@
       "text": "Administrative Expense ",
       "frame": {
         "x": 242.5,
-        "y": 363,
+        "y": 374.09,
         "width": 104,
         "height": 16,
         "rotation": 0
@@ -1256,7 +1256,7 @@
       "text": "* ",
       "frame": {
         "x": 248.5,
-        "y": 382,
+        "y": 393.09,
         "width": 16,
         "height": 24.08,
         "rotation": 0
@@ -1292,7 +1292,7 @@
       "text": "* ",
       "frame": {
         "x": 249.5,
-        "y": 400,
+        "y": 411.09,
         "width": 14,
         "height": 24.08,
         "rotation": 0
@@ -1328,7 +1328,7 @@
       "text": ": ",
       "frame": {
         "x": 345.5,
-        "y": 291,
+        "y": 302.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1364,7 +1364,7 @@
       "text": ": ",
       "frame": {
         "x": 345.5,
-        "y": 327,
+        "y": 338.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1400,7 +1400,7 @@
       "text": ": ",
       "frame": {
         "x": 345.5,
-        "y": 344,
+        "y": 355.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1436,7 +1436,7 @@
       "text": ": ",
       "frame": {
         "x": 345.5,
-        "y": 362,
+        "y": 373.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1472,7 +1472,7 @@
       "text": ": ",
       "frame": {
         "x": 346,
-        "y": 380,
+        "y": 391.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1508,7 +1508,7 @@
       "text": ": ",
       "frame": {
         "x": 345.5,
-        "y": 398,
+        "y": 409.09,
         "width": 24,
         "height": 30.099999999999998,
         "rotation": 0
@@ -1543,7 +1543,7 @@
       "type": "line",
       "frame": {
         "x": 304.5,
-        "y": 351,
+        "y": 362.09,
         "width": 126,
         "height": 0,
         "rotation": 90
@@ -1569,7 +1569,7 @@
       "text": "{{info.loan_term}}",
       "frame": {
         "x": 376,
-        "y": 326.05,
+        "y": 337.14,
         "width": 191.5,
         "height": 16,
         "rotation": 0
@@ -1608,7 +1608,7 @@
       "text": "{{info.processing_fee}}",
       "frame": {
         "x": 376,
-        "y": 344.5,
+        "y": 355.59,
         "width": 192,
         "height": 16,
         "rotation": 0
@@ -1647,7 +1647,7 @@
       "text": "{{info.upfront_fee}}",
       "frame": {
         "x": 376,
-        "y": 361.05,
+        "y": 372.14,
         "width": 191.5,
         "height": 16,
         "rotation": 0
@@ -1728,7 +1728,7 @@
       "text": "Clause 2. Loan Withdrawal or Disbursement  \n2.1. Party B may withdraw or request for disbursement of the Loan if Party B has fulfilled all obligations and conditions, precedent and subsequent, as stated in Annex 1 of this Loan for Consumption Contract.  \n2.2. Party A will disburse to Party B the Loan in cash or through wire transfer into Party B’s account maintained with Party A unless otherwise stated in Annex 1 of this Loan for Consumption Contract.  \nClause 3. Interest and Expenses  \n3.1. Interest: Party B agrees to pay interest in accordance with this Loan for Consumption Contract at a rate as set out in Clause 1 on the basis of daily interest calculation over the outstanding principal amount of the Loan.  \n3.2. Default Interest Rate: In case where Party B fails to pay or to pay on time any amount due, Party B shall pay default interest at the rate of [27] % ([twenty seven] percent) per annum over the overdue amount in addition to the Fixed Interest Rate set out in Clause 1 above.  \n3.3. Party B shall be responsible for other expenses including: □ lawyer fee for contract preparation of [-], □ collateral valuation cost of [-], security registration cost of [-] and security deregistration cost of [-], that Party B shall pay to relevant stakeholders.  \nClause 4. Repayment of Loan  \n4.1. Party B shall repay the Loan in accordance with the amount and regularly at the dates as set out in the repayment schedule provided by Party A.  ",
       "frame": {
         "x": 34.500000000000014,
-        "y": 424.08,
+        "y": 435.16999999999996,
         "width": 536,
         "height": 216,
         "rotation": 0
@@ -1806,7 +1806,7 @@
       "text": "In case where Party B prepays the Loan in whole or in part during the lock-in period, being a period of up to half(1/2) of the entire Loan Tenor which however shall not exceed a maximum period of 24 months from the date of the initial loan disbursement (the “Lock-in Period”), Party B shall:  \n    (i) inform the Bank/Institution in writing at least 30 calendar days in advance;  \n    (ii) pay early settlement expense in an amount equal to 3% of the principal loan amount being prepaid.  \nb. In case where Party B prepays the Loan in whole or in part after the Lock-in Period, Party B shall inform the Bank/Institution in writing at least 30 calendar days in advance. In case where Party B fails to inform as required, Party B shall pay early settlement expense in an amount equal to 1% of the principal loan amount being prepaid. \n",
       "frame": {
         "x": 60.49999999999996,
-        "y": 640.0799999999999,
+        "y": 651.17,
         "width": 496,
         "height": 104,
         "rotation": 0
@@ -1842,7 +1842,7 @@
       "text": "4.2.a.  ",
       "frame": {
         "x": 34,
-        "y": 640.0799999999999,
+        "y": 651.17,
         "width": 24,
         "height": 27.089999999999996,
         "rotation": 0
@@ -6527,7 +6527,7 @@
       "type": "line",
       "frame": {
         "x": 40,
-        "y": 804,
+        "y": 815.09,
         "width": 505,
         "height": 0,
         "rotation": 0
