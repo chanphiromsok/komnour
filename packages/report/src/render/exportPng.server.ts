@@ -24,5 +24,7 @@ export async function renderPageToPng(
 	await renderDocument(extractPageDocument(doc, pageId), adapter, data, {
 		resolveAsset: resolveAssetServer,
 	});
-	return Buffer.from(await adapter.currentPageToPng());
+	const bytes = await adapter.currentPageToPng();
+	// Wrap without copying, same as renderDocumentToPdf.
+	return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }

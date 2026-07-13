@@ -25,7 +25,9 @@ async function renderDocumentToPdf(
 ): Promise<Buffer> {
 	const adapter = new SkiaAdapter();
 	const bytes = await renderDocument(doc, adapter, data);
-	return Buffer.from(bytes ?? new Uint8Array());
+	if (!bytes) return Buffer.alloc(0);
+	// A zero-copy view — Buffer.from(bytes) would duplicate the whole PDF.
+	return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
 
 const doc: ReportDocument = await fetchYourDocumentJson();
@@ -83,7 +85,12 @@ app.post("/report/export/pdf", async (req, res) => {
 			"Content-Disposition": 'attachment; filename="report.pdf"',
 			"Cache-Control": "no-store",
 		});
-		res.send(Buffer.from(bytes ?? new Uint8Array()));
+		// Zero-copy view — Buffer.from(bytes) would duplicate the whole PDF.
+		res.send(
+			bytes
+				? Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+				: Buffer.alloc(0),
+		);
 	} catch (err) {
 		res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
 	}
@@ -117,6 +124,44 @@ The Node-side `options.resolveAsset` implementation used by the Komnour export s
 The `RendererAdapter` implementation `renderDocument` needs for server-side rendering, backed by real Skia (`skia-canvas`, a native addon — see [Native dependency](#native-dependency-skia-canvas) below). Construct one per render: `new SkiaAdapter(pixelRatio?)`.
 
 Leave `pixelRatio` at its default of `1` for PDF export — PDF is vector output, so a higher ratio doesn't add quality, it multiplies the physical page dimensions (a ratio of 2 turns A4 into 2×A4). It exists for raster (PNG) rendering, where it controls the pixel density.
+
+Rendering runs on the CPU by default: PDF generation goes through Skia's vector backend, which never touches a GPU, and skipping GPU probing keeps memory flat on headless servers. If you render PNGs on a machine with a real GPU, opt in with `new SkiaAdapter(1, { gpu: true })`.
+
+If you run exports inside a memory-constrained server, also cap how many render at once (a simple queue/semaphore around your `renderDocument` calls) — each concurrent export holds its own canvas, decoded images, and finished PDF in memory simultaneously, so concurrency is the biggest peak-memory multiplier.
+
+### Measuring memory and CPU yourself
+
+Don't take this README's word for any of it — `scripts/bench-pdf.mjs` renders real PDFs through the exact same pipeline and prints baseline/peak/settled memory plus per-export wall time:
+
+```bash
+pnpm --filter @komnour/report build   # the bench renders through dist/pdf.mjs
+
+# Sequential exports of a 30-page synthetic document (all node types):
+node --expose-gc packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6
+
+# Give the document real weight. The default synthetic image is 1x1 px, so
+# the PDF is ~0.2 MB and buffer-level effects (which scale with PDF size)
+# are lost in noise. --image-mb embeds an incompressible image:
+node --expose-gc packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6 --image-mb 15
+
+# See what concurrency does to peak memory (compare these two):
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 1 --image-mb 15
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 8 --image-mb 15
+
+# Benchmark one of YOUR documents, and keep the PDF to check it rendered right:
+node --expose-gc packages/report/scripts/bench-pdf.mjs --doc my-document.json --out /tmp/check.pdf
+```
+
+To compare two commits, check each out, rebuild, and rerun the same command — the script has no dependency on the code it measures. Compare the `PEAK during runs` rss lines; expect meaningful differences only when the PDFs are meaningfully large (`--image-mb`, or a `--doc` with embedded images). Note that `settled` rss typically stays near the peak even when heapUsed/external drop back — allocators keep freed pages around for reuse instead of returning them to the OS; heapUsed/external returning to their post-warmup values is what "no leak" looks like.
+
+**Heap dumps will mislead you here, and it's worth knowing why:** skia-canvas's canvases and the finished PDF bytes are *native* memory, outside the V8 heap. A `.heapsnapshot` (from `--snapshot`, Chrome DevTools, or heapdump) shows JS objects only and will look tiny while the process is actually holding hundreds of MB. Judge memory by **rss** — the bench prints it, or get it independently:
+
+```bash
+/usr/bin/time -v node packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6
+# → "Maximum resident set size" is the whole-process peak, measured by the OS
+```
+
+For a live server, start it with `node --heapsnapshot-signal=SIGUSR2 ...` and `kill -USR2 <pid>` to dump the JS heap on demand — useful for finding JS-side leaks (retained documents, caches), just not for the native canvas/PDF memory above. `docker stats` / cgroup memory give the container-level rss equivalent.
 
 #### `FontLibrary`
 

@@ -33,8 +33,21 @@ import { tokenizeText } from "./tokenizeText";
 export class SkiaAdapter implements RendererAdapter {
 	private canvas: Canvas | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
+	private readonly gpu: boolean;
 
-	constructor(private readonly pixelRatio = 1) {}
+	/**
+	 * Renders on the CPU by default (`gpu: false`): PDF output goes through
+	 * Skia's vector PDF backend, which never uses the GPU, and on headless
+	 * servers skipping GPU probing avoids allocating a Vulkan context that
+	 * would only ever sit idle. Pass `{ gpu: true }` for raster (PNG)
+	 * rendering on a machine that actually has a GPU worth using.
+	 */
+	constructor(
+		private readonly pixelRatio = 1,
+		options?: { gpu?: boolean },
+	) {
+		this.gpu = options?.gpu ?? false;
+	}
 
 	private get context(): CanvasRenderingContext2D {
 		if (!this.ctx)
@@ -57,6 +70,7 @@ export class SkiaAdapter implements RendererAdapter {
 				size.width * this.pixelRatio,
 				size.height * this.pixelRatio,
 			);
+			this.canvas.gpu = this.gpu;
 			this.ctx = this.canvas.getContext("2d");
 		} else {
 			this.ctx = this.canvas.newPage(
@@ -74,14 +88,18 @@ export class SkiaAdapter implements RendererAdapter {
 	async endDocument(): Promise<Uint8Array> {
 		if (!this.canvas) return new Uint8Array();
 		const buffer = await this.canvas.pdf;
-		return new Uint8Array(buffer);
+		// A view over the native buffer's memory, not a copy — a finished PDF
+		// can be tens of MB, and copying it here (and typically again in the
+		// caller's Buffer.from) tripled peak memory per export.
+		return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	}
 
 	/** Renders just the current page (must be the only/last page drawn) to a PNG buffer. */
 	async currentPageToPng(): Promise<Uint8Array> {
 		if (!this.canvas) return new Uint8Array();
 		const buffer = await this.canvas.png;
-		return new Uint8Array(buffer);
+		// Zero-copy view, same reasoning as endDocument above.
+		return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	}
 
 	save(): void {
