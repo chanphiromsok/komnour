@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "bench:pdf": "node --expose-gc scripts/bench-pdf.mjs",
     "prepublishOnly": "tsdown"
   },
   "dependencies": {

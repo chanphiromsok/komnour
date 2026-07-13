@@ -129,6 +129,35 @@ Rendering runs on the CPU by default: PDF generation goes through Skia's vector 
 
 If you run exports inside a memory-constrained server, also cap how many render at once (a simple queue/semaphore around your `renderDocument` calls) — each concurrent export holds its own canvas, decoded images, and finished PDF in memory simultaneously, so concurrency is the biggest peak-memory multiplier.
 
+### Measuring memory and CPU yourself
+
+Don't take this README's word for any of it — `scripts/bench-pdf.mjs` renders real PDFs through the exact same pipeline and prints baseline/peak/settled memory plus per-export wall time:
+
+```bash
+pnpm --filter @komnour/report build   # the bench renders through dist/pdf.mjs
+
+# Sequential exports of a 30-page synthetic document (all node types):
+node --expose-gc packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6
+
+# See what concurrency does to peak memory (compare these two):
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 1
+node --expose-gc packages/report/scripts/bench-pdf.mjs --runs 8 --concurrency 8
+
+# Benchmark one of YOUR documents, and keep the PDF to check it rendered right:
+node --expose-gc packages/report/scripts/bench-pdf.mjs --doc my-document.json --out /tmp/check.pdf
+```
+
+To compare two commits, check each out, rebuild, and rerun the same command — the script has no dependency on the code it measures.
+
+**Heap dumps will mislead you here, and it's worth knowing why:** skia-canvas's canvases and the finished PDF bytes are *native* memory, outside the V8 heap. A `.heapsnapshot` (from `--snapshot`, Chrome DevTools, or heapdump) shows JS objects only and will look tiny while the process is actually holding hundreds of MB. Judge memory by **rss** — the bench prints it, or get it independently:
+
+```bash
+/usr/bin/time -v node packages/report/scripts/bench-pdf.mjs --pages 30 --runs 6
+# → "Maximum resident set size" is the whole-process peak, measured by the OS
+```
+
+For a live server, start it with `node --heapsnapshot-signal=SIGUSR2 ...` and `kill -USR2 <pid>` to dump the JS heap on demand — useful for finding JS-side leaks (retained documents, caches), just not for the native canvas/PDF memory above. `docker stats` / cgroup memory give the container-level rss equivalent.
+
 #### `FontLibrary`
 
 Re-exported directly from `skia-canvas` — call `FontLibrary.use(family, paths)` to register font files before rendering any document that needs them. See [skia-canvas's own docs](https://github.com/samizdatco/skia-canvas#fontlibrary) for the full API (weight/style variants, listing installed fonts, etc.).
