@@ -5,7 +5,9 @@ import {
 	filterSuggestions,
 	flattenBindingPaths,
 } from "#/features/designer/bindings/paths";
+import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
+import { measureMinTextHeight } from "#/features/designer/store/textMeasurement";
 import {
 	applyInlineStyleToRuns,
 	inlineStyleAt,
@@ -28,15 +30,6 @@ import {
 	styleAtCaret,
 	textBeforeCaret,
 } from "./richTextDom";
-
-const FONT_FAMILIES = [
-	"Inter",
-	"Roboto",
-	"Battambang",
-	"Noto Sans Khmer",
-	"Khmer OS Moul",
-	"Wingdings 2",
-];
 
 interface TextEditOverlayProps {
 	frame: AbsoluteFrame;
@@ -64,6 +57,7 @@ export function TextEditOverlay({
 	onCommit,
 	onCancel,
 }: TextEditOverlayProps) {
+	const fontFamilies = useFontFamilies();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<HTMLDivElement>(null);
 	const runsRef = useRef<TextRun[]>(initialRuns);
@@ -71,6 +65,13 @@ export function TextEditOverlay({
 	const committedRef = useRef(false);
 	const blurCommitFrameRef = useRef<number | null>(null);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
+	// Tracks the SAME minimum-height calculation the store applies on
+	// commit (ensureTextFits/measureMinTextHeight) — recomputed on every
+	// keystroke so the box you're looking at while typing is already the
+	// size it'll commit as, instead of staying pinned to the pre-edit size
+	// (clipping newly-typed content behind overflow:hidden) and only
+	// jumping to its real size once you click away.
+	const [liveHeight, setLiveHeight] = useState(frame.height);
 
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const allBindingPaths = useMemo(
@@ -110,7 +111,34 @@ export function TextEditOverlay({
 		selection?.removeAllRanges();
 		selection?.addRange(range);
 		syncActive();
+		updateLiveHeight();
 	}, []);
+
+	/**
+	 * Re-measures with the exact same function (and the same padded formula)
+	 * the store applies on commit — see the liveHeight state's own comment.
+	 * Re-serializes fresh from the DOM every call rather than trusting
+	 * runsRef.current, which syncActive only updates for a non-collapsed
+	 * selection — the common case while just typing is a collapsed caret,
+	 * where it's never touched.
+	 */
+	function updateLiveHeight() {
+		const el = editorRef.current;
+		if (!el) return;
+		const runs = normalizeRuns(serializeElementToRuns(el));
+		// Read directly off the store rather than subscribing via the
+		// useDesignerStore hook — Object.values(...) allocates a new array
+		// every call, and a selector that never returns a stable reference
+		// makes React's useSyncExternalStore re-render in an infinite loop.
+		// This only needs the current value at the moment of measurement, not
+		// to react to it, so a plain non-subscribing read is exactly right.
+		const customFonts = Object.values(useDesignerStore.getState().document.fonts);
+		const minHeight = measureMinTextHeight(
+			{ text: runsToText(runs), runs, style, frame: { width: frame.width } },
+			customFonts,
+		);
+		setLiveHeight(Math.max(frame.height, minHeight));
+	}
 
 	useEffect(() => {
 		const handler = () => syncActive();
@@ -309,7 +337,11 @@ export function TextEditOverlay({
 				left: frame.x,
 				top: frame.y,
 				width: frame.width,
-				height: frame.height,
+				// minHeight, not a fixed height: liveHeight already tracks the same
+				// calculation the store commits with, but this is still a floor,
+				// not a hard cap — if the real DOM ever needs a hair more than that
+				// estimate, natural block flow lets it grow instead of clipping.
+				minHeight: liveHeight,
 			}}
 			onPointerDown={(event) => event.stopPropagation()}
 			onClick={(event) => event.stopPropagation()}
@@ -353,7 +385,7 @@ export function TextEditOverlay({
 					onChange={(event) => applyInline({ fontFamily: event.target.value })}
 					className="h-7 rounded border border-neutral-200 bg-white px-1 text-neutral-800 text-xs dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-100"
 				>
-					{FONT_FAMILIES.map((family) => (
+					{fontFamilies.map((family) => (
 						<option key={family} value={family}>
 							{family}
 						</option>
@@ -377,7 +409,10 @@ export function TextEditOverlay({
 				role="textbox"
 				aria-multiline="true"
 				tabIndex={0}
-				onInput={syncActive}
+				onInput={() => {
+					syncActive();
+					updateLiveHeight();
+				}}
 				onFocus={cancelPendingBlurCommit}
 				onKeyDown={(event) => {
 					event.stopPropagation();
@@ -428,9 +463,26 @@ export function TextEditOverlay({
 					if (next && containerRef.current?.contains(next)) return;
 					scheduleBlurCommit();
 				}}
-				className="h-full w-full resize-none overflow-hidden whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
+				// min-h-full (not h-full) and no overflow-hidden: the outer
+				// container's minHeight already tracks liveHeight, but this stays
+				// a floor here too rather than a hard clip — typed content that
+				// (rarely) needs a hair more than the live estimate grows the box
+				// via normal block flow instead of being silently hidden, which is
+				// exactly the bug this replaced (edits invisible while focused,
+				// only appearing once the box snapped to size on blur).
+				//
+				// The focus indicator is drawn with `outline` (in the inline style
+				// below), not a `border` class — with this app's global
+				// box-sizing:border-box, a border eats into the element's own
+				// content box, narrowing the width actually available for text to
+				// wrap in below the frame.width every measurement assumes. An
+				// outline is drawn outside the box model entirely and never
+				// affects layout, so the visible focus ring can't silently
+				// squeeze the text it's framing.
+				className="min-h-full w-full resize-none whitespace-pre-wrap break-words bg-white ring-4 ring-blue-500/15 selection:bg-blue-500/25"
 				style={{
 					...baseEditorStyle(style),
+					outline: "2px solid #3b82f6",
 					transform: rotation ? `rotate(${rotation}deg)` : undefined,
 					transformOrigin: "center",
 				}}

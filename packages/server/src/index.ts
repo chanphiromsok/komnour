@@ -51,7 +51,7 @@ app.register(cors, {
 // dev server's Vite proxy at packages/visual-editor/vite.config.ts.
 app.register(
   async (instance) => {
-    registerReportRoutes(instance);
+    await registerReportRoutes(instance);
   },
   { prefix: "/api" },
 );

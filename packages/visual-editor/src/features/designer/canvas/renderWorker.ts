@@ -64,7 +64,14 @@ self.onmessage = async (event: MessageEvent<InMessage>) => {
 async function handleRender(msg: RenderMessage): Promise<void> {
 	const { requestId } = msg;
 	try {
-		await fontsReady;
+		const customFonts = Object.values(msg.document.fonts);
+		await Promise.all([
+			fontsReady,
+			// Fonts the user imported (see ImportFontDialog) live on the document
+			// itself, keyed by their own id — registerBrowserFonts dedupes by id,
+			// so re-registering the same custom fonts on every render is cheap.
+			customFonts.length > 0 ? registerBrowserFonts("", customFonts) : null,
+		]);
 		if (requestId !== latestRequestId || !canvas) return;
 
 		canvas.width = msg.width * msg.scale;

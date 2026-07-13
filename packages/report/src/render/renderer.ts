@@ -1,4 +1,6 @@
+import { encode as encodeQrCode } from "uqr";
 import { resolveBindings } from "../data/bind";
+import { fitRect } from "../layout/fitRect";
 import { resolvePaperSize } from "../layout/paper";
 import { resolveRuns } from "../model/runs";
 import type {
@@ -42,14 +44,36 @@ export interface RenderOptions {
 	 */
 	shouldAbort?: () => boolean;
 }
-
+/**
+ * Renders every page of `doc` through `adapter` and returns the finished
+ * document's bytes (for SkiaAdapter, a PDF; browser adapters paint and
+ * return undefined). Does not register fonts and does not validate `doc` —
+ * both are the caller's responsibility.
+ *
+ * ```ts
+ * const adapter = new SkiaAdapter();
+ * const bytes = await renderDocument(doc, adapter, data, {
+ * 	resolveAsset: resolveAssetServer, // only needed for image nodes
+ * });
+ * const pdf = Buffer.from(bytes ?? new Uint8Array());
+ * ```
+ */
 export async function renderDocument(
 	doc: ReportDocument,
 	adapter: RendererAdapter,
 	data?: ReportData,
 	options?: RenderOptions,
 ): Promise<Uint8Array | undefined> {
-	const resolved = data ? resolveBindings(doc, data) : doc;
+	// Always resolve — not just when `data` is passed — so inline checkbox
+	// literals (`{{checkbox: true}}`/`{{checkbox: false}}`, which don't need
+	// any binding data) still render even for a document with none. When the
+	// caller passes no `data`, fall back to the document's own embedded
+	// `bindingData` (an exported document is self-contained — see
+	// ReportDocument.bindingData) — the same fallback the server's export
+	// routes and this package's README already promise. `{}` as the final
+	// fallback keeps every dot-path lookup resolving to undefined.
+	const resolved = resolveBindings(doc, data ?? doc.bindingData ?? {});
+	const effectiveOptions = withPerRenderAssetMemo(options);
 
 	await adapter.beginDocument();
 	for (const pageId of resolved.pages) {
@@ -58,12 +82,43 @@ export async function renderDocument(
 		const size = resolvePaperSize(page.paper);
 		adapter.beginPage(size, page.background);
 		for (const childId of page.children) {
-			await drawNode(resolved, childId, adapter, options);
+			await drawNode(resolved, childId, adapter, effectiveOptions);
 			if (options?.shouldAbort?.()) return undefined;
 		}
 		adapter.endPage();
 	}
 	return adapter.endDocument();
+}
+
+/**
+ * Wraps `options.resolveAsset` so each asset id resolves at most once per
+ * render, however many image nodes (across however many pages) reference
+ * it — without this, a repeated asset (e.g. a logo on every page of a long
+ * document) is re-read/re-fetched once per node. Scoped to a single
+ * renderDocument call, so it can never serve stale bytes across renders,
+ * unlike a long-lived cache. A failed resolution is evicted rather than
+ * memoized, so later nodes (and renders) retry instead of inheriting one
+ * transient error.
+ */
+function withPerRenderAssetMemo(
+	options: RenderOptions | undefined,
+): RenderOptions | undefined {
+	const resolveAsset = options?.resolveAsset;
+	if (!resolveAsset) return options;
+	const memo = new Map<string, Promise<ResolvedAsset>>();
+	return {
+		...options,
+		resolveAsset: (asset) => {
+			const hit = memo.get(asset.id);
+			if (hit) return hit;
+			const pending = Promise.resolve(resolveAsset(asset)).catch((err) => {
+				memo.delete(asset.id);
+				throw err;
+			});
+			memo.set(asset.id, pending);
+			return pending;
+		},
+	};
 }
 
 async function drawNode(
@@ -230,6 +285,58 @@ async function drawNodeContent(
 				);
 				adapter.restore();
 			}
+			return;
+		}
+		case "qrcode": {
+			if (!node.value) return;
+			// A bound value can exceed QR capacity (~3KB at ecc L, much less at
+			// H) and uqr throws "Data too long" — one oversized record shouldn't
+			// blank the rest of the document, so skip just this node, the same
+			// no-op treatment a broken image asset gets above.
+			let matrix: boolean[][];
+			let size: number;
+			try {
+				({ data: matrix, size } = encodeQrCode(node.value, {
+					ecc: node.errorCorrection ?? "M",
+				}));
+			} catch {
+				return;
+			}
+			// Centers a square code within a possibly non-square frame — the
+			// same helper image placement uses, reused directly here since a
+			// QR code is drawn as a grid of rects, not through drawImage.
+			const box = fitRect(1, 1, node.frame.width, node.frame.height, "contain");
+			const moduleSize = box.width / size;
+			adapter.save();
+			adapter.translate(box.x, box.y);
+			if (node.background) {
+				adapter.drawRect(box.width, box.height, {
+					fill: { color: node.background },
+				});
+			}
+			// Adjacent dark modules in a row are drawn as one rect per run, not
+			// one rect per module: identical geometry, but ~10x fewer draw calls
+			// and no antialiased hairline seams between horizontally adjacent
+			// modules at fractional coordinates (visible in some PDF viewers).
+			for (let row = 0; row < size; row++) {
+				let col = 0;
+				while (col < size) {
+					if (!matrix[row][col]) {
+						col++;
+						continue;
+					}
+					let runEnd = col;
+					while (runEnd < size && matrix[row][runEnd]) runEnd++;
+					adapter.save();
+					adapter.translate(col * moduleSize, row * moduleSize);
+					adapter.drawRect((runEnd - col) * moduleSize, moduleSize, {
+						fill: { color: node.color },
+					});
+					adapter.restore();
+					col = runEnd;
+				}
+			}
+			adapter.restore();
 			return;
 		}
 	}

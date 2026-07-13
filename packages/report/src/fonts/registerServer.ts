@@ -1,3 +1,6 @@
+import { randomBytes } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { FontLibrary } from "skia-canvas";
 import type { FontDefinition } from "../model/types";
@@ -45,5 +48,76 @@ export function registerServerFonts(
 	for (const [family, paths] of pathsByFamily) {
 		FontLibrary.use(family, paths);
 		registeredFamilies.add(family);
+	}
+}
+
+const DATA_URL_EXTENSION_BY_MIME: Record<string, string> = {
+	"font/ttf": ".ttf",
+	"application/x-font-ttf": ".ttf",
+	"application/font-sfnt": ".ttf",
+	"font/otf": ".otf",
+	"application/x-font-otf": ".otf",
+	"font/woff": ".woff",
+	"application/font-woff": ".woff",
+	"font/woff2": ".woff2",
+	"application/font-woff2": ".woff2",
+};
+
+const registeredCustomFontIds = new Set<string>();
+
+/**
+ * Registers fonts a user imported into the visual editor (see
+ * ImportFontDialog) — unlike registerServerFonts' fixed FONT_MANIFEST, these
+ * are embedded as `data:` URLs directly on the posted document (the same
+ * "self-contained JSON" approach already used for dropped images), so they
+ * arrive per-request rather than living on disk. skia-canvas's FontLibrary
+ * only accepts file paths, not raw bytes, so each one is decoded to a temp
+ * file first. Tracked per font id (not family — two different custom fonts
+ * could coincidentally share a family name) so re-exporting the same
+ * document within one server process doesn't rewrite the temp file every
+ * time. A font that fails to decode or register is skipped rather than
+ * failing the whole export — falling back to whatever default font
+ * substitution the renderer already does for an unknown family.
+ */
+export function registerCustomServerFonts(
+	fonts: Record<string, FontDefinition> | FontDefinition[],
+): void {
+	const list = Array.isArray(fonts) ? fonts : Object.values(fonts);
+	const pathsByFamily = new Map<string, string[]>();
+	for (const font of list) {
+		if (registeredCustomFontIds.has(font.id)) continue;
+		const match = /^data:([^;,]*)(;base64)?,(.*)$/s.exec(font.source);
+		if (!match) continue;
+		const [, mime, isBase64, payload] = match;
+		let bytes: Buffer;
+		try {
+			bytes = isBase64
+				? Buffer.from(payload, "base64")
+				: Buffer.from(decodeURIComponent(payload), "utf8");
+		} catch {
+			continue;
+		}
+		const ext = DATA_URL_EXTENSION_BY_MIME[mime] ?? ".ttf";
+		const tempPath = path.join(
+			os.tmpdir(),
+			`komnour-custom-font-${font.id}-${randomBytes(4).toString("hex")}${ext}`,
+		);
+		try {
+			fs.writeFileSync(tempPath, bytes);
+		} catch {
+			continue;
+		}
+		const paths = pathsByFamily.get(font.family) ?? [];
+		paths.push(tempPath);
+		pathsByFamily.set(font.family, paths);
+		registeredCustomFontIds.add(font.id);
+	}
+	for (const [family, paths] of pathsByFamily) {
+		try {
+			FontLibrary.use(family, paths);
+		} catch {
+			// Unsupported font format (e.g. WOFF2 on a skia-canvas build without
+			// brotli support) — the export still proceeds with a substituted font.
+		}
 	}
 }

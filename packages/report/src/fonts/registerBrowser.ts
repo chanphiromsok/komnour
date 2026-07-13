@@ -1,29 +1,27 @@
 import type { FontDefinition } from "../model/types";
 import { FONT_MANIFEST } from "./manifest";
 
-// `self.fonts` (a FontFaceSet) exists on both Window and a Worker's global
-// scope per spec, but lib.dom.d.ts only types it on `document.fonts` — the
-// WorkerGlobalScope typings that declare `self.fonts` live in a separate,
-// mutually-exclusive `lib` flavor from "DOM" (which this package's
-// tsconfig uses, since browserCanvasAdapter.ts also needs DOM's
-// CanvasRenderingContext2D). This is intended to run inside the render
-// Worker specifically, so the ambient `self` is narrowed locally here rather
-// than changing the package's lib config.
+// A Worker's global scope exposes `self.fonts` per spec, but `Window` does
+// NOT — only `Document` does (`document.fonts`). The two are separate
+// FontFaceSet realms with nothing in common, so a font registered from a
+// Worker is invisible to `document.fonts` on the main thread and vice
+// versa. `targetFontFaceSet` below defaults to `self.fonts` for the render
+// Worker's existing usage, but a main-thread caller (e.g. the editor
+// measuring text outside the Worker, before committing a frame height) must
+// pass `document.fonts` explicitly to register into the realm it can
+// actually see.
 declare const self: { fonts: FontFaceSet };
 
 /** Keyed by FontDefinition.id, so a font is fetched/added at most once even across overlapping registerBrowserFonts() calls. */
 const fontPromises = new Map<string, Promise<void>>();
 
 /**
- * Registers fonts with the CSS Font Loading API (`FontFace` + `self.fonts`),
- * fetching the exact same files registerServer.ts reads from disk — same
- * manifest, same bytes — so the live Worker preview and the exported
- * PDF/PNG use identical glyphs. `fonts` exists on both `Window` and a
- * Worker's global scope, so this runs unchanged whether it's called from
- * the main thread or (as intended) from inside the render Worker.
- * `assetBaseUrl` should point at wherever the `/fonts/*` files are served
- * from (the visual editor's `public/` dir), matching `publicDir` in
- * registerServer.ts's role.
+ * Registers fonts with the CSS Font Loading API (`FontFace` + a
+ * `FontFaceSet`), fetching the exact same files registerServer.ts reads
+ * from disk — same manifest, same bytes — so the live Worker preview and
+ * the exported PDF/PNG use identical glyphs. `assetBaseUrl` should point at
+ * wherever the `/fonts/*` files are served from (the visual editor's
+ * `public/` dir), matching `publicDir` in registerServer.ts's role.
  *
  * `fonts` defaults to this package's own FONT_MANIFEST but any font list
  * can be passed instead — a per-document/per-theme font selection, say.
@@ -36,6 +34,7 @@ const fontPromises = new Map<string, Promise<void>>();
 export function registerBrowserFonts(
 	assetBaseUrl = "",
 	fonts: FontDefinition[] = FONT_MANIFEST,
+	targetFontFaceSet: FontFaceSet = self.fonts,
 ): Promise<void> {
 	const pending = fonts.map((font) => {
 		const existing = fontPromises.get(font.id);
@@ -46,7 +45,7 @@ export function registerBrowserFonts(
 				style: font.style,
 			});
 			await face.load();
-			self.fonts.add(face);
+			targetFontFaceSet.add(face);
 		})();
 		fontPromises.set(font.id, promise);
 		return promise;

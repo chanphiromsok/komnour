@@ -12,6 +12,14 @@ const UNCHECKED_BOX_RUN: TextRun = {
 	style: { fontFamily: "Inter" },
 };
 
+/** Parses a literal `true`/`false` token (case-insensitive); anything else is not a literal. */
+function parseLiteralBoolean(token: string): boolean | null {
+	const lower = token.toLowerCase();
+	if (lower === "true") return true;
+	if (lower === "false") return false;
+	return null;
+}
+
 /** Walks `data` along a dot path like "customer.address.city". Array indices work as plain segments ("items.0.name"). */
 function lookupPath(data: Record<string, unknown>, path: string): unknown {
 	let current: unknown = data;
@@ -52,9 +60,13 @@ export function resolveBindings(
 			const expression = path.trim();
 			if (isInlineCheckboxExpression(expression)) {
 				const checkboxPath = expression.slice(INLINE_CHECKBOX_PREFIX.length).trim();
-				const checkboxRun = Boolean(lookupPath(data, checkboxPath))
-					? CHECKED_BOX_RUN
-					: UNCHECKED_BOX_RUN;
+				// `{{checkbox: true}}`/`{{checkbox: false}}` is a hardcoded mark,
+				// not a data binding — resolves the same with or without `data`.
+				// Anything else is a dot path, looked up and coerced as before.
+				const literal = parseLiteralBoolean(checkboxPath);
+				const isChecked =
+					literal !== null ? literal : Boolean(lookupPath(data, checkboxPath));
+				const checkboxRun = isChecked ? CHECKED_BOX_RUN : UNCHECKED_BOX_RUN;
 				out.push({
 					text: checkboxRun.text,
 					style: { ...run.style, ...checkboxRun.style },
@@ -104,7 +116,13 @@ export function resolveBindings(
 			// A plain dot path (not `{{}}`-wrapped) since this drives a boolean,
 			// not text substitution — see CheckboxNode's doc comment.
 			if (node.checkedBinding) {
-				const resolvedChecked = Boolean(lookupPath(data, node.checkedBinding));
+				const boundValue = lookupPath(data, node.checkedBinding);
+				// Falls back to the design-time `checked` default when the path
+				// doesn't resolve (undefined) rather than coercing that to
+				// `false` — matches CheckboxNode.checkedBinding's own doc
+				// comment, and matters now that this runs even without `data`.
+				const resolvedChecked =
+					boundValue === undefined ? node.checked : Boolean(boundValue);
 				if (resolvedChecked !== node.checked) {
 					next = { ...next, checked: resolvedChecked };
 				}
@@ -112,6 +130,29 @@ export function resolveBindings(
 			if (node.label) {
 				const label = substitute(node.label);
 				if (label !== node.label) next = { ...next, label };
+			}
+			if (next !== node) {
+				nodes[id] = next;
+				changed = true;
+			}
+		} else if (node.type === "qrcode") {
+			let next = node;
+			// A plain dot path (not `{{}}`-wrapped), same reasoning as
+			// CheckboxNode.checkedBinding — see QrCodeNode's doc comment.
+			if (node.valueBinding) {
+				const boundValue = lookupPath(data, node.valueBinding);
+				// Falls back to the design-time `value` default when the path
+				// doesn't resolve, matching checkedBinding's own fallback fix.
+				// null falls back too (unlike checkedBinding, where null is a
+				// meaningful "unchecked") — String(null) would otherwise encode
+				// the literal text "null" into the QR code.
+				const resolvedValue =
+					boundValue === undefined || boundValue === null
+						? node.value
+						: String(boundValue);
+				if (resolvedValue !== node.value) {
+					next = { ...next, value: resolvedValue };
+				}
 			}
 			if (next !== node) {
 				nodes[id] = next;

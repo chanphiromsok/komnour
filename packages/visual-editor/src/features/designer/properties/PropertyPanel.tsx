@@ -2,7 +2,9 @@ import { useDesignerStore } from "#/features/designer/store/reportStore";
 import { CheckboxProperties } from "./CheckboxProperties";
 import { FrameProperties } from "./FrameProperties";
 import { ImageProperties } from "./ImageProperties";
+import { MultiTextProperties } from "./MultiTextProperties";
 import { PageProperties } from "./PageProperties";
+import { QrCodeProperties } from "./QrCodeProperties";
 import { ShapeProperties } from "./ShapeProperties";
 import { TextProperties } from "./TextProperties";
 
@@ -10,6 +12,14 @@ export function PropertyPanel() {
 	const selection = useDesignerStore((s) => s.selection);
 	const node = useDesignerStore((s) =>
 		selection.length === 1 ? s.document.nodes[selection[0]] : undefined,
+	);
+	const multiTextCount = useDesignerStore((s) =>
+		selection.length > 1
+			? selection.reduce(
+					(count, id) => count + (s.document.nodes[id]?.type === "text" ? 1 : 0),
+					0,
+				)
+			: 0,
 	);
 	const nodeTypeLabel = node
 		? node.type.charAt(0).toUpperCase() + node.type.slice(1)
@@ -27,12 +37,22 @@ export function PropertyPanel() {
 			</div>
 
 			<div className="flex-1 space-y-3 overflow-auto p-3">
-				{!node && (
-					<div className="rounded-xl border border-dashed border-neutral-300 bg-white/70 p-4 text-center text-neutral-400 text-sm dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-500">
-						{selection.length > 1
-							? "Multiple elements selected"
-							: "Select an element to edit its properties."}
+				{!node && selection.length > 1 && (
+					<div className="rounded-xl border border-dashed border-neutral-300 bg-white/70 p-2 text-center text-neutral-400 text-xs dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-500">
+						{selection.length} elements selected
 					</div>
+				)}
+
+				{!node && selection.length === 0 && (
+					<div className="rounded-xl border border-dashed border-neutral-300 bg-white/70 p-4 text-center text-neutral-400 text-sm dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-500">
+						Select an element to edit its properties.
+					</div>
+				)}
+
+				{!node && multiTextCount > 0 && (
+					<InspectorSection title={`Text (${multiTextCount} selected)`}>
+						<MultiTextProperties nodeIds={selection} />
+					</InspectorSection>
 				)}
 
 				{node && node.type === "page" && <PageProperties nodeId={node.id} />}
@@ -62,6 +82,11 @@ export function PropertyPanel() {
 						{node.type === "checkbox" && (
 							<InspectorSection title="Checkbox">
 								<CheckboxProperties nodeId={node.id} />
+							</InspectorSection>
+						)}
+						{node.type === "qrcode" && (
+							<InspectorSection title="QR Code">
+								<QrCodeProperties nodeId={node.id} />
 							</InspectorSection>
 						)}
 					</>

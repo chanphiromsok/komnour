@@ -1,6 +1,7 @@
 import {
 	Braces,
 	Check,
+	CheckSquare,
 	Circle,
 	ClipboardCopy,
 	Copy,
@@ -14,6 +15,7 @@ import {
 	Moon,
 	MousePointer2,
 	Plus,
+	QrCode,
 	Redo2,
 	Square,
 	Sun,
@@ -27,10 +29,12 @@ import { useRef, useState } from "react";
 import { DataBindingDialog } from "#/features/designer/dialogs/DataBindingDialog";
 import { ImportJsonDialog } from "#/features/designer/dialogs/ImportJsonDialog";
 import {
+	createCheckboxNode,
 	createCircleNode,
 	createImageNode,
 	createLineNode,
 	createPageNode,
+	createQrCodeNode,
 	createRectNode,
 	createTextNode,
 } from "#/features/designer/store/nodeFactories";
@@ -58,6 +62,9 @@ export function Toolbar() {
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
 	const theme = useDesignerStore((s) => s.theme);
 	const toggleTheme = useDesignerStore((s) => s.toggleTheme);
+	const defaultFontFamily = useDesignerStore((s) => s.defaultFontFamily);
+	const defaultFontSize = useDesignerStore((s) => s.defaultFontSize);
+	const getSpawnCenter = useDesignerStore((s) => s.getSpawnCenter);
 
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
@@ -182,33 +189,87 @@ export function Toolbar() {
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
 				<ToolbarButton
 					label="Add text"
-					onClick={() => addNode(createTextNode(activePageId), activePageId)}
+					onClick={() =>
+						addNode(
+							createTextNode(activePageId, {
+								center: getSpawnCenter() ?? undefined,
+								fontFamily: defaultFontFamily,
+								fontSize: defaultFontSize,
+							}),
+							activePageId,
+						)
+					}
 				>
 					<Type size={16} />
 				</ToolbarButton>
 				<ToolbarButton
 					label="Add rectangle"
-					onClick={() => addNode(createRectNode(activePageId), activePageId)}
+					onClick={() =>
+						addNode(
+							createRectNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
 				>
 					<Square size={16} />
 				</ToolbarButton>
 				<ToolbarButton
 					label="Add circle"
-					onClick={() => addNode(createCircleNode(activePageId), activePageId)}
+					onClick={() =>
+						addNode(
+							createCircleNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
 				>
 					<Circle size={16} />
 				</ToolbarButton>
 				<ToolbarButton
 					label="Add line"
-					onClick={() => addNode(createLineNode(activePageId), activePageId)}
+					onClick={() =>
+						addNode(
+							createLineNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
 				>
 					<Minus size={16} />
 				</ToolbarButton>
 				<ToolbarButton
 					label="Add image"
-					onClick={() => addNode(createImageNode(activePageId), activePageId)}
+					onClick={() =>
+						addNode(
+							createImageNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
 				>
 					<Image size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add checkbox"
+					onClick={() =>
+						addNode(
+							createCheckboxNode(activePageId, {
+								center: getSpawnCenter() ?? undefined,
+								fontFamily: defaultFontFamily,
+							}),
+							activePageId,
+						)
+					}
+				>
+					<CheckSquare size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					label="Add QR code"
+					onClick={() =>
+						addNode(
+							createQrCodeNode(activePageId, { center: getSpawnCenter() ?? undefined }),
+							activePageId,
+						)
+					}
+				>
+					<QrCode size={16} />
 				</ToolbarButton>
 			</div>
 
@@ -256,7 +317,7 @@ export function Toolbar() {
 			<Divider />
 
 			<ToolbarButton
-				label="Export as PDF"
+				label="Export as PDF (DEV Environment only)"
 				disabled={exportingPdf}
 				onClick={handleExportPdf}
 			>

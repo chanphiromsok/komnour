@@ -77,6 +77,13 @@ export const FONT_MANIFEST: FontDefinition[] = [
 	// Symbol/dingbat font: each Latin character renders as a symbol. Pick glyphs
 	// via the properties-panel glyph picker (shown when this family is selected).
 	{
+		id: "wingding",
+		family: "Wingding",
+		weight: 400,
+		style: "normal",
+		source: "/fonts/Wingding.ttf",
+	},
+	{
 		id: "wingdings2-400",
 		family: "Wingdings 2",
 		weight: 400,
@@ -86,7 +93,7 @@ export const FONT_MANIFEST: FontDefinition[] = [
 ];
 
 /** Font families whose characters are symbols/dingbats — the glyph picker is offered for these. */
-export const SYMBOL_FONT_FAMILIES: readonly string[] = ["Wingdings 2"];
+export const SYMBOL_FONT_FAMILIES: readonly string[] = ["Wingdings 2", "Wingding"];
 
 /**
  * Legacy symbol fonts (Wingdings/Webdings families) expose their glyphs through

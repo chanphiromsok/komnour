@@ -1,18 +1,11 @@
 import { BindingTextarea } from "#/features/designer/bindings/BindingTextarea";
+import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
 import { SYMBOL_FONT_FAMILIES } from "@komnour/report/src/fonts/manifest";
 import type { NodeId, TextNode } from "@komnour/report/src/model/types";
 import { GlyphPicker } from "./GlyphPicker";
 import { NumberField } from "./NumberField";
 
-const FONT_FAMILIES = [
-	"Inter",
-	"Roboto",
-	"Battambang",
-	"Noto Sans Khmer",
-	"Khmer OS Moul",
-	"Wingdings 2",
-];
 const ALIGNS: TextNode["style"]["align"][] = ["left", "center", "right"];
 
 export function TextProperties({ nodeId }: { nodeId: NodeId }) {
@@ -21,6 +14,7 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 	);
 	const updateNode = useDesignerStore((s) => s.updateNode);
 	const updateNodeStyle = useDesignerStore((s) => s.updateNodeStyle);
+	const fontFamilies = useFontFamilies();
 	if (!node || node.type !== "text") return null;
 
 	return (
@@ -55,7 +49,7 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 					}
 					className="rounded border border-neutral-300 px-2 py-1 text-neutral-900 text-sm"
 				>
-					{FONT_FAMILIES.map((family) => (
+					{fontFamilies.map((family) => (
 						<option key={family} value={family}>
 							{family}
 						</option>
@@ -85,6 +79,24 @@ export function TextProperties({ nodeId }: { nodeId: NodeId }) {
 					label="Weight"
 					value={node.style.fontWeight}
 					onChange={(fontWeight) => updateNodeStyle(nodeId, { fontWeight })}
+				/>
+				<NumberField
+					label="Line height"
+					value={node.style.lineHeight}
+					min={0.5}
+					max={4}
+					step={0.1}
+					onChange={(lineHeight) => updateNodeStyle(nodeId, { lineHeight })}
+				/>
+				<NumberField
+					label="Letter spacing"
+					value={node.style.letterSpacing}
+					min={-10}
+					max={50}
+					step={0.5}
+					onChange={(letterSpacing) =>
+						updateNodeStyle(nodeId, { letterSpacing })
+					}
 				/>
 			</div>
 
