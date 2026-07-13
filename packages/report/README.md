@@ -41,6 +41,57 @@ const { renderDocumentToPdf, ReportDocumentSchema } = require("@komnour/report/p
 
 This entry point is deliberately narrow — it never imports the editor-facing model helpers, the browser (`Worker`/`OffscreenCanvas`) renderer, or PNG export. If you need those, see the [root README](../../README.md); this document is only about the minimal PDF-export surface.
 
+### Using it with Express
+
+Register fonts once at startup, then validate + render inside the route
+handler — the same shape this monorepo's own Fastify server uses in
+`packages/server/src/reportRoutes.ts`:
+
+```ts
+import express from "express";
+import {
+	registerServerFonts,
+	registerCustomServerFonts,
+	ReportDocumentSchema,
+	renderDocumentToPdf,
+} from "@komnour/report/pdf";
+
+const app = express();
+// Documents can embed data: URL images/fonts, which routinely exceed
+// Express's default 100kb JSON body limit well before the document is
+// otherwise unusual.
+app.use(express.json({ limit: "20mb" }));
+
+// Register your font manifest once, before the server starts accepting
+// requests — renderDocumentToPdf does not register any fonts itself.
+await registerServerFonts("/path/to/your/fonts");
+
+app.post("/report/export/pdf", async (req, res) => {
+	const parsed = ReportDocumentSchema.safeParse(req.body);
+	if (!parsed.success) {
+		return res.status(400).json({ error: "Invalid document", issues: parsed.error.issues });
+	}
+
+	try {
+		// Register any custom fonts embedded on this particular document —
+		// cheap to call per-request, registration is tracked per font id.
+		await registerCustomServerFonts(parsed.data.fonts);
+
+		const pdf = await renderDocumentToPdf(parsed.data, req.body.data);
+		res.set({
+			"Content-Type": "application/pdf",
+			"Content-Disposition": 'attachment; filename="report.pdf"',
+			"Cache-Control": "no-store",
+		});
+		res.send(pdf);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
+app.listen(3000);
+```
+
 ### API
 
 #### `ReportDocumentSchema.safeParse(value: unknown)`
