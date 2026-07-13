@@ -79,11 +79,13 @@ export function SelectionOverlay({
 							transformOrigin: "center",
 						}}
 					>
-						<div
-							className={`pointer-events-none absolute inset-0 border-2 border-blue-500 ${
-								isEditing ? "ring-4 ring-blue-500/15" : ""
-							}`}
-						/>
+						{/* Skipped while editing: TextEditOverlay draws its own outline
+						    that actually tracks the box's live-growing size as you
+						    type — this one only knows the pre-edit committed frame, so
+						    showing both used to look like a doubled, mismatched border. */}
+						{!isEditing && (
+							<div className="pointer-events-none absolute inset-0 border-2 border-blue-500" />
+						)}
 						{showHandles && (
 							<RotateHandle
 								x={frame.width / 2}

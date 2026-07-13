@@ -470,9 +470,19 @@ export function TextEditOverlay({
 				// via normal block flow instead of being silently hidden, which is
 				// exactly the bug this replaced (edits invisible while focused,
 				// only appearing once the box snapped to size on blur).
-				className="min-h-full w-full resize-none whitespace-pre-wrap break-words border-2 border-blue-500 bg-white outline-none ring-4 ring-blue-500/15 selection:bg-blue-500/25"
+				//
+				// The focus indicator is drawn with `outline` (in the inline style
+				// below), not a `border` class — with this app's global
+				// box-sizing:border-box, a border eats into the element's own
+				// content box, narrowing the width actually available for text to
+				// wrap in below the frame.width every measurement assumes. An
+				// outline is drawn outside the box model entirely and never
+				// affects layout, so the visible focus ring can't silently
+				// squeeze the text it's framing.
+				className="min-h-full w-full resize-none whitespace-pre-wrap break-words bg-white ring-4 ring-blue-500/15 selection:bg-blue-500/25"
 				style={{
 					...baseEditorStyle(style),
+					outline: "2px solid #3b82f6",
 					transform: rotation ? `rotate(${rotation}deg)` : undefined,
 					transformOrigin: "center",
 				}}
