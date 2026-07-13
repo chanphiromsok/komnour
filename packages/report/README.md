@@ -25,7 +25,9 @@ async function renderDocumentToPdf(
 ): Promise<Buffer> {
 	const adapter = new SkiaAdapter();
 	const bytes = await renderDocument(doc, adapter, data);
-	return Buffer.from(bytes ?? new Uint8Array());
+	if (!bytes) return Buffer.alloc(0);
+	// A zero-copy view — Buffer.from(bytes) would duplicate the whole PDF.
+	return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
 
 const doc: ReportDocument = await fetchYourDocumentJson();
@@ -83,7 +85,12 @@ app.post("/report/export/pdf", async (req, res) => {
 			"Content-Disposition": 'attachment; filename="report.pdf"',
 			"Cache-Control": "no-store",
 		});
-		res.send(Buffer.from(bytes ?? new Uint8Array()));
+		// Zero-copy view — Buffer.from(bytes) would duplicate the whole PDF.
+		res.send(
+			bytes
+				? Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+				: Buffer.alloc(0),
+		);
 	} catch (err) {
 		res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
 	}
@@ -117,6 +124,10 @@ The Node-side `options.resolveAsset` implementation used by the Komnour export s
 The `RendererAdapter` implementation `renderDocument` needs for server-side rendering, backed by real Skia (`skia-canvas`, a native addon — see [Native dependency](#native-dependency-skia-canvas) below). Construct one per render: `new SkiaAdapter(pixelRatio?)`.
 
 Leave `pixelRatio` at its default of `1` for PDF export — PDF is vector output, so a higher ratio doesn't add quality, it multiplies the physical page dimensions (a ratio of 2 turns A4 into 2×A4). It exists for raster (PNG) rendering, where it controls the pixel density.
+
+Rendering runs on the CPU by default: PDF generation goes through Skia's vector backend, which never touches a GPU, and skipping GPU probing keeps memory flat on headless servers. If you render PNGs on a machine with a real GPU, opt in with `new SkiaAdapter(1, { gpu: true })`.
+
+If you run exports inside a memory-constrained server, also cap how many render at once (a simple queue/semaphore around your `renderDocument` calls) — each concurrent export holds its own canvas, decoded images, and finished PDF in memory simultaneously, so concurrency is the biggest peak-memory multiplier.
 
 #### `FontLibrary`
 

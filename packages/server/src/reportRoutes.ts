@@ -20,6 +20,35 @@ async function ensureReportFontsRegistered() {
 	fontsRegistered = true;
 }
 
+/**
+ * Peak memory under load is driven by how many exports render at once —
+ * each in-flight render holds its own canvas pages, decoded image assets,
+ * and the finished PDF/PNG buffer simultaneously, so N concurrent requests
+ * cost N times the peak of one. This gate caps concurrent renders (FIFO for
+ * the rest), trading a little latency under burst for a flat memory
+ * ceiling. Tune with REPORT_RENDER_CONCURRENCY (default 2).
+ */
+function createRenderGate(limit: number) {
+	let active = 0;
+	const waiting: (() => void)[] = [];
+	return async function gated<T>(task: () => Promise<T>): Promise<T> {
+		if (active >= limit) {
+			await new Promise<void>((resolve) => waiting.push(resolve));
+		}
+		active++;
+		try {
+			return await task();
+		} finally {
+			active--;
+			waiting.shift()?.();
+		}
+	};
+}
+
+const renderGate = createRenderGate(
+	Math.max(1, Number(process.env.REPORT_RENDER_CONCURRENCY) || 2),
+);
+
 interface ExportRequest {
 	document: unknown;
 	data?: Record<string, unknown>;
@@ -75,7 +104,9 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			const { renderDocumentToPdf } = await import(
 				"@komnour/report/src/render/exportPdf.server"
 			);
-			const buffer = await renderDocumentToPdf(parsed.data, effectiveData);
+			const buffer = await renderGate(() =>
+				renderDocumentToPdf(parsed.data, effectiveData),
+			);
 			reply.header("Content-Type", "application/pdf");
 			reply.header("Content-Disposition", 'attachment; filename="report.pdf"');
 			reply.header("Cache-Control", "no-store");
@@ -111,11 +142,10 @@ export async function registerReportRoutes(app: FastifyInstance) {
 			const { renderPageToPng } = await import(
 				"@komnour/report/src/render/exportPng.server"
 			);
-			const buffer = await renderPageToPng(
-				parsed.data,
-				pageIndex ?? 0,
-				effectiveData,
-				{ scale: renderScale },
+			const buffer = await renderGate(() =>
+				renderPageToPng(parsed.data, pageIndex ?? 0, effectiveData, {
+					scale: renderScale,
+				}),
 			);
 			reply.header("Content-Type", "image/png");
 			reply.header("Cache-Control", "no-store");

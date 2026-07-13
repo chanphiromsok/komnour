@@ -29,5 +29,8 @@ export async function renderDocumentToPdf(
 	const bytes = await renderDocument(doc, adapter, data, {
 		resolveAsset: resolveAssetServer,
 	});
-	return Buffer.from(bytes ?? new Uint8Array());
+	if (!bytes) return Buffer.alloc(0);
+	// Wrap the rendered bytes without copying — Buffer.from(bytes) would
+	// duplicate the entire PDF just to change its type.
+	return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
