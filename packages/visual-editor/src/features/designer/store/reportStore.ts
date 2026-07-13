@@ -313,6 +313,7 @@ export const useDesignerStore = create<DesignerState>()(
 			commit((draft) => {
 				const node = draft.nodes[id];
 				if (!node) return;
+				const previousHeight = node.frame.height;
 				Object.assign(node.frame, patch);
 				// A line's endpoints are stored relative to its own frame (x1/y1 at
 				// the frame's origin, x2/y2 at its far corner) so the frame stays a
@@ -326,10 +327,26 @@ export const useDesignerStore = create<DesignerState>()(
 					node.x2 = node.frame.width;
 					node.y2 = node.frame.height;
 				}
-				// A width change (resize) alters how the same text wraps, and a
-				// direct height shrink is never meaningfully honored anyway (see
-				// ensureTextFits) — re-check either way.
-				if ("width" in patch || "height" in patch) ensureTextFits(draft, id);
+				// A resize handle always passes BOTH width and height together
+				// (see DesignerCanvas.tsx's handlePointerUp), even when the user
+				// only dragged one edge — the untouched dimension just carries its
+				// unchanged value through in the same patch object. So "height" in
+				// patch is true for every resize, not just ones that actually
+				// changed it; comparing against the value from before this update
+				// is what actually tells the two apart. A pure width-only drag
+				// (height passed through unchanged) still auto-grows height if the
+				// new width now wraps into more lines — but a drag that DOES
+				// change height, even to something smaller than the content
+				// "needs", is the user directly choosing a height and must be
+				// respected, exactly like it always could before ensureTextFits
+				// existed. Neither renderer clips overflowing text either way, so
+				// this was never blocking anything useful — only ever fighting
+				// the user's own resize gesture.
+				const heightWasExplicitlySet =
+					"height" in patch && patch.height !== previousHeight;
+				if ("width" in patch && !heightWasExplicitlySet) {
+					ensureTextFits(draft, id);
+				}
 			});
 		},
 
