@@ -10,8 +10,7 @@
     "357c0a85-2ec6-4f0b-9544-10cdcd4da359",
     "9eef1a1e-5104-4231-9d4e-f28a8047d284",
     "f7ab8799-5898-4318-898d-6e575fce9ecf",
-    "053b9f8d-ab70-4263-8f0d-b62f5366ca19",
-    "7a6dc84e-f3a7-4f58-a952-b5fbf0540757"
+    "053b9f8d-ab70-4263-8f0d-b62f5366ca19"
   ],
   "nodes": {
     "page-1": {
@@ -76,7 +75,9 @@
         "b9caa71c-db5e-4e57-90ba-22a4015ef2e3",
         "a869396a-3592-4ef7-a020-3d730e8485f4",
         "b6e22cab-0ebf-4bd5-920e-e6012e86cece",
-        "2fc1bded-d03e-4896-a99f-a9dc554673a7"
+        "2fc1bded-d03e-4896-a99f-a9dc554673a7",
+        "f6f7ed88-63d2-491b-bf2b-203ee099846e",
+        "65debfa5-ee5d-481e-a748-c45381f3f3df"
       ],
       "name": "Page 1",
       "visible": true,
@@ -112,13 +113,13 @@
       "opacity": 1,
       "frame": {
         "x": 32,
-        "y": 80,
+        "y": 80.1,
         "width": 552,
-        "height": 180,
+        "height": 222.99999999999997,
         "rotation": 0
       },
       "type": "text",
-      "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី {{disbursed_date.day}} ខែ {{disbursed_date.month}} ឆ្នាំ {{disbursed_date.year}} រវាង៖ \nធនាគារ វីង (ខេមបូឌា) ម.ក  ជាក្រុមហ៊ុនមហាជនទទួលខុសត្រូវមានកម្រិត (ចុះបញ្ជីពាណិជ្ជកម្មលេខ 00005108  ចុះថ្ងៃទី 18 ខែ សីហា ឆ្នាំ 2008) និង ទទួលបានអាជ្ញាបណ្ណធ្វើប្រតិបត្តិការធនាគារ ស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា និង​មានទីស្នាក់ការចុះបញ្ជីស្ថិតនៅវីងថៅវើ មហាវិថីព្រះមុនីវង្ស កែងមហាវិថីកម្ពុជាក្រោម ភូមិ ៦ សង្កាត់មនោរម្យ ខណ្ឌ៧មករា រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា (\"ធនាគារ\"​ ឬ \"ភាគី \"ក\") \n​និង ឈ្មោះ {{customer.name}} ភេទ {{customer.gender}} ​ថ្ងៃខែឆ្នាំកំណើត​​ ​​ ថ្ងៃទី {{customer.dob.day}} ខែ {{customer.dob.month}} ឆ្នាំ {{customer.dob.year}} សញ្ជាតិ​ {{customer.national}} កាន់អត្តសញ្ញាណប័ណ្ណលេខ {{national_id}} ថ្ងៃផុតកំណត់ ថ្ងៃទី [...] ខែ [...] ឆ្នាំ [...] [7] និងឈ្មោះ [...] ភេទ [...] ​ថ្ងៃខែឆ្នាំកំណើត​​ ថ្ងៃទី [...] សញ្ជាតិ​ [...] កាន់អត្តសញ្ញាណប័ណ្ណលេខ/លិខិតឆ្លងដែនលេខ [...] ចុះថ្ងៃទី [...] មានអាសយដ្ឋានបច្ចុប្បន្នស្ថិតនៅ ផ្ទះលេខ [...]​ ផ្លូវ [...] ភូមិ [8] [...] ឃុំ-សង្កាត់ [9] [...] ក្រុង-ស្រុក-ខណ្ឌ [10] [...] ខេត្ត-រាជធានី​ [11]​ [...] (តទៅហៅថា \"ភាគី \"ខ\")។ (ភាគី \"ក\" និង ភាគី \"ខ\" អាចត្រូវបានហៅជារួមគ្នាថា \"គូភាគី\" និងហៅដោយឡែកពីគ្នាថា \"ភាគី\")។ ",
+      "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី {{info.disbursement_date_day}} ខែ {{info.disbursement_date_month}} ឆ្នាំ {{info.disbursement_date_year}} រវាង៖ \nធនាគារ វីង (ខេមបូឌា) ម.ក  ជាក្រុមហ៊ុនមហាជនទទួលខុសត្រូវមានកម្រិត (ចុះបញ្ជីពាណិជ្ជកម្មលេខ 00005108  ចុះថ្ងៃទី 18 ខែ សីហា ឆ្នាំ 2008) និង ទទួលបានអាជ្ញាបណ្ណធ្វើប្រតិបត្តិការធនាគារ ស្របតាមច្បាប់នៃព្រះរាជាណាចក្រកម្ពុជា និង​មានទីស្នាក់ការចុះបញ្ជីស្ថិតនៅវីងថៅវើ មហាវិថីព្រះមុនីវង្ស កែងមហាវិថីកម្ពុជាក្រោម ភូមិ ៦ សង្កាត់មនោរម្យ ខណ្ឌ៧មករា រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា (\"ធនាគារ\"​ ឬ \"ភាគី \"ក\") \n​និង ឈ្មោះ {{info.name}} ភេទ {{info.gender}} ​ថ្ងៃខែឆ្នាំកំណើត​​ ​​ ថ្ងៃទី {{info.dob_day}} ខែ {{info.dob_month}} ឆ្នាំ {{info.dob_year}} សញ្ជាតិ​ {{info.nationality}} កាន់អត្តសញ្ញាណប័ណ្ណលេខ {{info.id_number}} ថ្ងៃផុតកំណត់ ថ្ងៃទី [...] ខែ [...] ឆ្នាំ [...] [7] និងឈ្មោះ [...] ភេទ [...] ​ថ្ងៃខែឆ្នាំកំណើត​​ ថ្ងៃទី [...] សញ្ជាតិ​ [...] កាន់អត្តសញ្ញាណប័ណ្ណលេខ/លិខិតឆ្លងដែនលេខ [...] ចុះថ្ងៃទី [...] មានអាសយដ្ឋានបច្ចុប្បន្នស្ថិតនៅ ផ្ទះលេខ [...]​ ផ្លូវ [...] ភូមិ [8] [...] ឃុំ-សង្កាត់ [9] [...] ក្រុង-ស្រុក-ខណ្ឌ [10] [...] ខេត្ត-រាជធានី​ [11]​ [...] (តទៅហៅថា \"ភាគី \"ខ\")។ (ភាគី \"ក\" និង ភាគី \"ខ\" អាចត្រូវបានហៅជារួមគ្នាថា \"គូភាគី\" និងហៅដោយឡែកពីគ្នាថា \"ភាគី\")។ ",
       "style": {
         "fontFamily": "Battambang",
         "fontSize": 10,
@@ -134,19 +135,10 @@
       },
       "runs": [
         {
-          "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី "
+          "text": "កិច្ចសន្យាខ្ចីបរិភោគនេះ ត្រូវបានធ្វើឡើងនៅថ្ងៃទី {{info.disbursement_date_day}} ខែ "
         },
         {
-          "text": "{{disbursed_date.day}}",
-          "style": {
-            "color": "#0000ff"
-          }
-        },
-        {
-          "text": " ខែ "
-        },
-        {
-          "text": "{{disbursed_date.month}}",
+          "text": "{{info.disbursement_date_month}}",
           "style": {
             "color": "#0000ff"
           }
@@ -155,7 +147,7 @@
           "text": " ឆ្នាំ "
         },
         {
-          "text": "{{disbursed_date.year}}",
+          "text": "{{info.disbursement_date_year}}",
           "style": {
             "color": "#0000ff"
           }
@@ -191,7 +183,7 @@
           "text": ") \n​និង ឈ្មោះ "
         },
         {
-          "text": "{{customer.name}}",
+          "text": "{{info.name}}",
           "style": {
             "color": "#0000ff"
           }
@@ -200,7 +192,7 @@
           "text": " ភេទ "
         },
         {
-          "text": "{{customer.gender}}",
+          "text": "{{info.gender}}",
           "style": {
             "color": "#0000ff"
           }
@@ -209,7 +201,7 @@
           "text": " ​ថ្ងៃខែឆ្នាំកំណើត​​ ​​ ថ្ងៃទី "
         },
         {
-          "text": "{{customer.dob.day}}",
+          "text": "{{info.dob_day}}",
           "style": {
             "color": "#0000ff"
           }
@@ -218,7 +210,7 @@
           "text": " ខែ "
         },
         {
-          "text": "{{customer.dob.month}}",
+          "text": "{{info.dob_month}}",
           "style": {
             "color": "#0000ff"
           }
@@ -227,7 +219,7 @@
           "text": " ឆ្នាំ "
         },
         {
-          "text": "{{customer.dob.year}}",
+          "text": "{{info.dob_year}}",
           "style": {
             "color": "#0000ff"
           }
@@ -236,7 +228,7 @@
           "text": " សញ្ជាតិ​ "
         },
         {
-          "text": "{{customer.national}}",
+          "text": "{{info.nationality}}",
           "style": {
             "color": "#0000ff"
           }
@@ -245,9 +237,9 @@
           "text": " កាន់អត្តសញ្ញាណប័ណ្ណលេខ "
         },
         {
-          "text": "{{national_id}}",
+          "text": "{{info.id_number}}",
           "style": {
-            "color": "#0033ff"
+            "color": "#0000ff"
           }
         },
         {
@@ -322,7 +314,7 @@
         "x": 245,
         "y": 38,
         "width": 120,
-        "height": 22,
+        "height": 42.099999999999994,
         "rotation": 0
       },
       "type": "text",
@@ -361,7 +353,7 @@
         "x": 32,
         "y": 222,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -400,7 +392,7 @@
         "x": 32,
         "y": 238,
         "width": 472,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -469,7 +461,7 @@
         "x": 29,
         "y": 488,
         "width": 176,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -508,7 +500,7 @@
         "x": 32,
         "y": 410,
         "width": 344,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -550,7 +542,7 @@
         "x": 61,
         "y": 427,
         "width": 456,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -589,7 +581,7 @@
         "x": 30,
         "y": 427,
         "width": 48,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -628,7 +620,7 @@
         "x": 29,
         "y": 457,
         "width": 48,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -667,7 +659,7 @@
         "x": 61,
         "y": 457,
         "width": 456,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -715,7 +707,7 @@
         "x": 29,
         "y": 506,
         "width": 48,
-        "height": 16,
+        "height": 31,
         "rotation": 0
       },
       "type": "text",
@@ -754,7 +746,7 @@
         "x": 61,
         "y": 506,
         "width": 456,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -800,7 +792,7 @@
         "x": 29,
         "y": 538,
         "width": 48,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -839,7 +831,7 @@
         "x": 61,
         "y": 538,
         "width": 456,
-        "height": 54,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -885,7 +877,7 @@
         "x": 216,
         "y": 80,
         "width": 152,
-        "height": 17,
+        "height": 36.11999999999999,
         "rotation": 0
       },
       "type": "text",
@@ -1045,10 +1037,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 40,
+        "x": 34,
         "y": 257,
-        "width": 64,
-        "height": 18,
+        "width": 88,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1061,7 +1053,7 @@
         "color": "#111111",
         "lineHeight": 1.4,
         "letterSpacing": 0,
-        "align": "left",
+        "align": "center",
         "verticalAlign": "top",
         "decoration": "none",
         "wrap": true
@@ -1084,10 +1076,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 151,
+        "x": 133,
         "y": 258,
-        "width": 64,
-        "height": 18,
+        "width": 111,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1100,7 +1092,7 @@
         "color": "#111111",
         "lineHeight": 1.4,
         "letterSpacing": 0,
-        "align": "left",
+        "align": "center",
         "verticalAlign": "top",
         "decoration": "none",
         "wrap": true
@@ -1126,7 +1118,7 @@
         "x": 256,
         "y": 257,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1265,7 +1257,7 @@
         "x": 256,
         "y": 275,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1304,7 +1296,7 @@
         "x": 256,
         "y": 293,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1343,7 +1335,7 @@
         "x": 255,
         "y": 311,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1382,7 +1374,7 @@
         "x": 255,
         "y": 329,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1471,7 +1463,7 @@
         "x": 255,
         "y": 347,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1510,7 +1502,7 @@
         "x": 255,
         "y": 367,
         "width": 8,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1549,7 +1541,7 @@
         "x": 255,
         "y": 386,
         "width": 8,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1635,7 +1627,7 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 312,
+        "x": 309,
         "y": 330,
         "width": 147,
         "height": 1,
@@ -1660,10 +1652,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 389,
+        "x": 362,
+        "y": 387,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1699,10 +1691,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 369,
+        "x": 362,
+        "y": 367,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1738,10 +1730,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 278,
+        "x": 362,
+        "y": 276,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1777,10 +1769,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 351,
+        "x": 362,
+        "y": 349,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1816,10 +1808,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 297,
+        "x": 362,
+        "y": 295,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1855,10 +1847,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 315,
+        "x": 362,
+        "y": 313,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1894,10 +1886,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 360,
-        "y": 333,
+        "x": 363,
+        "y": 329,
         "width": 21,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1936,7 +1928,7 @@
         "x": 404,
         "y": 275,
         "width": 144,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -1972,14 +1964,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 404,
-        "y": 292,
-        "width": 112,
-        "height": 18,
+        "x": 392,
+        "y": 292.7,
+        "width": 180,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "{{monthly_interest_fee}}",
+      "text": "{{info.monthly_interest_rate}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -1995,7 +1987,7 @@
       },
       "runs": [
         {
-          "text": "{{monthly_interest_fee}}",
+          "text": "{{info.monthly_interest_rate}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -2012,14 +2004,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 404,
-        "y": 310,
-        "width": 104,
-        "height": 18,
+        "x": 392,
+        "y": 310.35,
+        "width": 160,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "{{tenure}}",
+      "text": "{{info.loan_term}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -2035,7 +2027,7 @@
       },
       "runs": [
         {
-          "text": "{{tenure}}",
+          "text": "{{info.loan_term}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -2052,14 +2044,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 404,
+        "x": 392,
         "y": 328,
-        "width": 144,
-        "height": 18,
+        "width": 172,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "{{amount_processing_fee}}",
+      "text": "{{info.processing_fee}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -2075,7 +2067,7 @@
       },
       "runs": [
         {
-          "text": "{{amount_processing_fee}}",
+          "text": "{{info.processing_fee}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -2092,14 +2084,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 404,
-        "y": 346,
-        "width": 104,
-        "height": 18,
+        "x": 393,
+        "y": 348,
+        "width": 152,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "{{amount_upfront_fee}}",
+      "text": "{{info.upfront_fee}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -2115,7 +2107,7 @@
       },
       "runs": [
         {
-          "text": "{{amount_upfront_fee}}",
+          "text": "{{info.upfront_fee}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -2135,7 +2127,7 @@
         "x": 61,
         "y": 589,
         "width": 456,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -2219,7 +2211,7 @@
         "x": 29,
         "y": 591,
         "width": 48,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2258,7 +2250,7 @@
         "x": 29,
         "y": 643,
         "width": 176,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2297,7 +2289,7 @@
         "x": 61,
         "y": 661,
         "width": 456,
-        "height": 48,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -2336,7 +2328,7 @@
         "x": 29,
         "y": 696,
         "width": 24,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2375,7 +2367,7 @@
         "x": 29,
         "y": 661,
         "width": 48,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2414,7 +2406,7 @@
         "x": 61,
         "y": 693,
         "width": 528,
-        "height": 54,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -2474,7 +2466,7 @@
         "x": 77,
         "y": 745,
         "width": 456,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2513,7 +2505,7 @@
         "x": 76,
         "y": 761,
         "width": 456,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -2552,7 +2544,7 @@
         "x": 58,
         "y": 38,
         "width": 528,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -2598,7 +2590,7 @@
         "x": 48,
         "y": 56,
         "width": 504,
-        "height": 136,
+        "height": 170.39999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -2745,7 +2737,7 @@
         "x": 48,
         "y": 179,
         "width": 512,
-        "height": 190,
+        "height": 232.49999999999997,
         "rotation": 0
       },
       "type": "text",
@@ -2805,7 +2797,7 @@
         "x": 48,
         "y": 513,
         "width": 504,
-        "height": 90,
+        "height": 96.8,
         "rotation": 0
       },
       "type": "text",
@@ -2845,7 +2837,7 @@
         "x": 48,
         "y": 357,
         "width": 504,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -2884,7 +2876,7 @@
         "x": 32,
         "y": 340,
         "width": 128,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -2930,7 +2922,7 @@
         "x": 32,
         "y": 91,
         "width": 32,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -2972,7 +2964,7 @@
         "x": 57,
         "y": 90,
         "width": 520,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -3011,7 +3003,7 @@
         "x": 58,
         "y": 124,
         "width": 520,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -3050,7 +3042,7 @@
         "x": 32,
         "y": 124,
         "width": 32,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3092,7 +3084,7 @@
         "x": 58,
         "y": 158,
         "width": 520,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -3131,7 +3123,7 @@
         "x": 32,
         "y": 158,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3170,7 +3162,7 @@
         "x": 32,
         "y": 210,
         "width": 160,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3213,7 +3205,7 @@
         "x": 58,
         "y": 228,
         "width": 520,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -3252,7 +3244,7 @@
         "x": 32,
         "y": 228,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3291,7 +3283,7 @@
         "x": 58,
         "y": 262,
         "width": 472,
-        "height": 108,
+        "height": 138.2,
         "rotation": 0
       },
       "type": "text",
@@ -3357,7 +3349,7 @@
         "x": 58,
         "y": 368,
         "width": 320,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3396,7 +3388,7 @@
         "x": 32,
         "y": 368,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3433,9 +3425,9 @@
       "opacity": 1,
       "frame": {
         "x": 58,
-        "y": 386,
+        "y": 387.7000000000001,
         "width": 528,
-        "height": 180,
+        "height": 168,
         "rotation": 0
       },
       "type": "text",
@@ -3490,9 +3482,9 @@
       "opacity": 1,
       "frame": {
         "x": 58,
-        "y": 568,
+        "y": 551,
         "width": 520,
-        "height": 36,
+        "height": 40,
         "rotation": 0
       },
       "type": "text",
@@ -3529,9 +3521,9 @@
       "opacity": 1,
       "frame": {
         "x": 31,
-        "y": 568,
+        "y": 551,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3568,9 +3560,9 @@
       "opacity": 1,
       "frame": {
         "x": 58,
-        "y": 600,
+        "y": 583,
         "width": 520,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -3607,9 +3599,9 @@
       "opacity": 1,
       "frame": {
         "x": 32,
-        "y": 600,
+        "y": 583,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3646,9 +3638,9 @@
       "opacity": 1,
       "frame": {
         "x": 32,
-        "y": 631,
+        "y": 614,
         "width": 32,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -3685,9 +3677,9 @@
       "opacity": 1,
       "frame": {
         "x": 58,
-        "y": 631,
+        "y": 614,
         "width": 520,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -3724,9 +3716,9 @@
       "opacity": 1,
       "frame": {
         "x": 32,
-        "y": 687,
+        "y": 670,
         "width": 160,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3775,7 +3767,7 @@
         "x": 32,
         "y": 38,
         "width": 168,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3816,9 +3808,9 @@
       "opacity": 1,
       "frame": {
         "x": 58,
-        "y": 720,
+        "y": 703,
         "width": 520,
-        "height": 36,
+        "height": 40,
         "rotation": 0
       },
       "type": "text",
@@ -3855,9 +3847,9 @@
       "opacity": 1,
       "frame": {
         "x": 32,
-        "y": 704,
+        "y": 687,
         "width": 384,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3900,7 +3892,7 @@
         "x": 32,
         "y": 163,
         "width": 320,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -3975,7 +3967,7 @@
         "x": 32,
         "y": 392,
         "width": 192,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -4021,7 +4013,7 @@
         "x": 48,
         "y": 408,
         "width": 408,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -4060,7 +4052,7 @@
         "x": 32,
         "y": 444,
         "width": 192,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -4106,7 +4098,7 @@
         "x": 48,
         "y": 461,
         "width": 408,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -4145,7 +4137,7 @@
         "x": 32,
         "y": 497,
         "width": 192,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -4186,7 +4178,7 @@
         "x": 32,
         "y": 584,
         "width": 192,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -4227,7 +4219,7 @@
         "x": 48,
         "y": 602,
         "width": 500,
-        "height": 40,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -4266,7 +4258,7 @@
         "x": 48,
         "y": 639,
         "width": 500,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -4305,7 +4297,7 @@
         "x": 32,
         "y": 40,
         "width": 500,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -4351,7 +4343,7 @@
         "x": 139,
         "y": 87,
         "width": 32,
-        "height": 64,
+        "height": 87.6,
         "rotation": 0
       },
       "type": "text",
@@ -4393,7 +4385,7 @@
         "x": 403,
         "y": 89,
         "width": 32,
-        "height": 64,
+        "height": 87.6,
         "rotation": 0
       },
       "type": "text",
@@ -4435,7 +4427,7 @@
         "x": 139,
         "y": 122,
         "width": 40,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -4474,7 +4466,7 @@
         "x": 368,
         "y": 107,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -4514,7 +4506,7 @@
         "x": 388,
         "y": 122,
         "width": 64,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -4553,7 +4545,7 @@
         "x": 307,
         "y": 122,
         "width": 40,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -4592,7 +4584,7 @@
         "x": 499,
         "y": 122,
         "width": 40,
-        "height": 18,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -4916,11 +4908,11 @@
         "x": 32,
         "y": 252,
         "width": 176,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "ឈ្មោះ {{customer.name}} ",
+      "text": "ឈ្មោះ {{info.name}} ",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -4942,7 +4934,7 @@
           }
         },
         {
-          "text": "{{customer.name}} ",
+          "text": "{{info.name}} ",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -4962,11 +4954,11 @@
         "x": 32,
         "y": 268,
         "width": 176,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": "អត្តសញ្ញាណប័ណ្ណ {{national_id}}",
+      "text": "អត្តសញ្ញាណប័ណ្ណ {{info.nationality}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -4988,7 +4980,7 @@
           }
         },
         {
-          "text": "{{national_id}}",
+          "text": "{{info.nationality}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -5008,7 +5000,7 @@
         "x": 216,
         "y": 252,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5047,7 +5039,7 @@
         "x": 216,
         "y": 268,
         "width": 104,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5086,7 +5078,7 @@
         "x": 386,
         "y": 252,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5125,7 +5117,7 @@
         "x": 32,
         "y": 452,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5164,7 +5156,7 @@
         "x": 211,
         "y": 452,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5203,7 +5195,7 @@
         "x": 139,
         "y": 324,
         "width": 24,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5242,7 +5234,7 @@
         "x": 128,
         "y": 340,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5281,7 +5273,7 @@
         "x": 312,
         "y": 340,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5326,14 +5318,15 @@
         "06536304-bf0a-4086-b946-a60e6dcfedfb",
         "d8f0281a-16be-4a4b-9a0f-1f2a31c6481b",
         "c026bb97-71c4-48b2-b37e-96e517abd33d",
-        "bd2214aa-0549-4830-9074-d71c33f8023b",
         "f538fabf-3743-4233-914b-edb121160961",
         "a6e7bc43-961d-44c7-b9bb-60b38d479b4b",
         "4c15a05f-e257-4e8c-921f-1db0a3fb550a",
         "9e729873-5c85-44a7-b330-b792782fa00d",
         "21a127b8-b952-46b1-b1ec-2aa6bd17fa7a",
         "44ef7525-0428-4ccc-acac-8d52b3376e93",
-        "ed8e74c1-ba7a-4460-b8e6-af25c74e55f6"
+        "ed8e74c1-ba7a-4460-b8e6-af25c74e55f6",
+        "f00b06c8-a19b-479a-9bc8-3d9b239c35e3",
+        "5ddcf188-d65c-4eb5-81b8-1dad5f5eed9d"
       ],
       "name": "Page",
       "visible": true,
@@ -5371,7 +5364,7 @@
         "x": 32,
         "y": 480,
         "width": 232,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5411,7 +5404,7 @@
         "x": 32,
         "y": 497,
         "width": 464,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5509,7 +5502,7 @@
         "x": 184,
         "y": 40,
         "width": 208,
-        "height": 24,
+        "height": 42.099999999999994,
         "rotation": 0
       },
       "type": "text",
@@ -5570,10 +5563,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 489,
+        "x": 480,
         "y": 34,
-        "width": 56,
-        "height": 25,
+        "width": 81,
+        "height": 48.349999999999994,
         "rotation": 0
       },
       "type": "text",
@@ -5586,7 +5579,7 @@
         "color": "#111111",
         "lineHeight": 1.4,
         "letterSpacing": 0,
-        "align": "left",
+        "align": "center",
         "verticalAlign": "top",
         "decoration": "none",
         "wrap": true
@@ -5612,7 +5605,7 @@
         "x": 32,
         "y": 80,
         "width": 304,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -5641,7 +5634,8 @@
         {
           "text": "{{checkbox: true}}",
           "style": {
-            "fontWeight": 700
+            "fontWeight": 400,
+            "color": "#0000ff"
           }
         }
       ]
@@ -5658,7 +5652,7 @@
         "x": 32,
         "y": 135,
         "width": 304,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -5678,7 +5672,21 @@
       },
       "runs": [
         {
-          "text": "ខ.\tការធានាដោយចលនវត្ថុ៖\t មាន {{checkbox: false}}\t  គ្មាន  ",
+          "text": "ខ.\tការធានាដោយចលនវត្ថុ៖\t មាន ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "{{checkbox: false}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 400
+          }
+        },
+        {
+          "text": "\t  គ្មាន  ",
           "style": {
             "fontFamily": "Battambang",
             "fontWeight": 700
@@ -5687,7 +5695,8 @@
         {
           "text": "{{checkbox: true}}",
           "style": {
-            "fontWeight": 700
+            "fontWeight": 400,
+            "color": "#0000ff"
           }
         }
       ]
@@ -5704,7 +5713,7 @@
         "x": 32,
         "y": 207,
         "width": 304,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -5724,7 +5733,21 @@
       },
       "runs": [
         {
-          "text": "គ.\tការធានាដោយបុគ្គល៖ មាន {{checkbox: false}}\t  គ្មាន  ",
+          "text": "គ.\tការធានាដោយបុគ្គល៖ មាន ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "{{checkbox: false}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 400
+          }
+        },
+        {
+          "text": "\t  គ្មាន  ",
           "style": {
             "fontFamily": "Battambang",
             "fontWeight": 700
@@ -5733,7 +5756,8 @@
         {
           "text": "{{checkbox: true}}",
           "style": {
-            "fontWeight": 700
+            "fontWeight": 400,
+            "color": "#0000ff"
           }
         }
       ]
@@ -5750,7 +5774,7 @@
         "x": 32,
         "y": 241,
         "width": 416,
-        "height": 32,
+        "height": 50.8,
         "rotation": 0
       },
       "type": "text",
@@ -5770,7 +5794,21 @@
       },
       "runs": [
         {
-          "text": "ឃ.\tការធានាឥណទានពីសាជីវកម្មធានាឥណទានកម្ពុជា (CGCC) ៖\t មាន {{checkbox: false}}\t  គ្មាន  ",
+          "text": "ឃ.\tការធានាឥណទានពីសាជីវកម្មធានាឥណទានកម្ពុជា (CGCC) ៖\t មាន ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        },
+        {
+          "text": "{{checkbox: false}}\t",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 400
+          }
+        },
+        {
+          "text": "  គ្មាន  ",
           "style": {
             "fontFamily": "Battambang",
             "fontWeight": 700
@@ -5779,7 +5817,8 @@
         {
           "text": "{{checkbox: true}}",
           "style": {
-            "fontWeight": 700
+            "fontWeight": 400,
+            "color": "#0000ff"
           }
         }
       ]
@@ -5796,7 +5835,7 @@
         "x": 48,
         "y": 98,
         "width": 472,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -5835,7 +5874,7 @@
         "x": 48,
         "y": 152,
         "width": 472,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -5872,9 +5911,9 @@
       "opacity": 1,
       "frame": {
         "x": 48,
-        "y": 224,
+        "y": 223.65,
         "width": 344,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -5913,7 +5952,7 @@
         "x": 48,
         "y": 256,
         "width": 480,
-        "height": 40,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -5952,7 +5991,7 @@
         "x": 48,
         "y": 293,
         "width": 472,
-        "height": 162,
+        "height": 200.29999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -5991,7 +6030,7 @@
         "x": 31,
         "y": 453,
         "width": 416,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -6031,7 +6070,7 @@
         "x": 32,
         "y": 523,
         "width": 88,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -6099,52 +6138,6 @@
         }
       ]
     },
-    "bd2214aa-0549-4830-9074-d71c33f8023b": {
-      "id": "bd2214aa-0549-4830-9074-d71c33f8023b",
-      "parentId": "54b88ab7-71fc-43f4-bd19-60989428e753",
-      "children": [],
-      "name": "Text",
-      "visible": true,
-      "locked": false,
-      "opacity": 1,
-      "frame": {
-        "x": 32,
-        "y": 558,
-        "width": 320,
-        "height": 36,
-        "rotation": 0
-      },
-      "type": "text",
-      "text": "ឆ.\tជម្រើសក្នុងការបើកប្រាក់ ៖ {{checkbox: false}} បើកប្រាក់តែមួយលើក    {{checkbox: false}}បើកប្រាក់តាមដំណាក់កាល ",
-      "style": {
-        "fontFamily": "Inter",
-        "fontSize": 10,
-        "fontWeight": 400,
-        "fontStyle": "normal",
-        "color": "#111111",
-        "lineHeight": 1.4,
-        "letterSpacing": 0,
-        "align": "left",
-        "verticalAlign": "top",
-        "decoration": "none",
-        "wrap": true
-      },
-      "runs": [
-        {
-          "text": "ឆ.\tជម្រើសក្នុងការបើកប្រាក់ ៖ {{checkbox: false}}",
-          "style": {
-            "fontFamily": "Battambang",
-            "fontWeight": 700
-          }
-        },
-        {
-          "text": " បើកប្រាក់តែមួយលើក    {{checkbox: false}}បើកប្រាក់តាមដំណាក់កាល ",
-          "style": {
-            "fontFamily": "Battambang"
-          }
-        }
-      ]
-    },
     "f538fabf-3743-4233-914b-edb121160961": {
       "id": "f538fabf-3743-4233-914b-edb121160961",
       "parentId": "54b88ab7-71fc-43f4-bd19-60989428e753",
@@ -6157,7 +6150,7 @@
         "x": 48,
         "y": 469,
         "width": 496,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "type": "text",
@@ -6193,14 +6186,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 48,
+        "x": 49,
         "y": 540,
         "width": 544,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
-      "text": "{{checkbox: false}}ម្នាក់ក្នុងចំណោមភាគី “ខ”  ​{{checkbox: false}}ទាំងអស់គ្នានៃភាគី“ខ”  {{checkbox: false}} តាមលក្ខខណ្ឌបើកគណនី  {{checkbox: false}} មានតែឈ្មោះ {{customer.name}}",
+      "text": "{{checkbox: false}}ម្នាក់ក្នុងចំណោមភាគី “ខ”  ​{{checkbox: false}}ទាំងអស់គ្នានៃភាគី“ខ”  {{checkbox: false}} តាមលក្ខខណ្ឌបើកគណនី  {{checkbox: true}} មានតែឈ្មោះ {{info.name}}",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -6222,7 +6215,10 @@
           }
         },
         {
-          "text": "{{checkbox: false}}"
+          "text": "{{checkbox: true}}",
+          "style": {
+            "color": "#0000ff"
+          }
         },
         {
           "text": " មានតែឈ្មោះ ",
@@ -6231,7 +6227,7 @@
           }
         },
         {
-          "text": "{{customer.name}}",
+          "text": "{{info.name}}",
           "style": {
             "fontFamily": "Battambang",
             "color": "#0000ff"
@@ -6248,14 +6244,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 48,
-        "y": 576.6,
-        "width": 480,
+        "x": 44.999999999999986,
+        "y": 576,
+        "width": 456,
         "height": 96.8,
         "rotation": 0
       },
       "type": "text",
-      "text": "-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... ត្រូវបាន      ផ្ទេរចូលគណនីឥណទានលេខ៖.............................................................................................. របស់ភាគី “ខ” និង\n-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... \nត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖..............................................................................................។ ",
+      "text": "-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... ត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖.............................................................................................. របស់ភាគី “ខ” និង\n-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... \nត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖..............................................................................................។ ",
       "style": {
         "fontFamily": "Inter",
         "fontSize": 10,
@@ -6271,7 +6267,7 @@
       },
       "runs": [
         {
-          "text": "-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... ត្រូវបាន      ផ្ទេរចូលគណនីឥណទានលេខ៖.............................................................................................. របស់ភាគី “ខ” និង\n-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... \nត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖..............................................................................................។ ",
+          "text": "-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... ត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖.............................................................................................. របស់ភាគី “ខ” និង\n-   លើក...........  ប្រាក់............................ ចំនួនជាលេខ.............................. ជាអក្សរ.......................................................... \nត្រូវបានផ្ទេរចូលគណនីឥណទានលេខ៖..............................................................................................។ ",
           "style": {
             "fontFamily": "Battambang"
           }
@@ -6378,7 +6374,9 @@
         "79aaea0f-6c51-4be2-9801-e21a3cabd884",
         "5115d13b-8ba3-445f-b5c5-07cd1a99faee",
         "20916dc3-401b-4933-94ac-c3d55bdd9628",
-        "fdd1260e-d486-4780-b3a8-62870784d17e"
+        "fdd1260e-d486-4780-b3a8-62870784d17e",
+        "217e45b1-d381-4b3f-8be4-876259bf09a7",
+        "411e42c5-7595-4d9a-ab72-b088fd0aba89"
       ],
       "name": "Page",
       "visible": true,
@@ -6440,7 +6438,7 @@
         "x": 209,
         "y": 59,
         "width": 152,
-        "height": 17,
+        "height": 36.11999999999999,
         "rotation": 0
       },
       "type": "text",
@@ -6476,7 +6474,7 @@
         "x": 120,
         "y": 40,
         "width": 360,
-        "height": 44,
+        "height": 67.39999999999999,
         "rotation": 0
       },
       "type": "text",
@@ -6515,7 +6513,7 @@
         "x": 494,
         "y": -480,
         "width": 56,
-        "height": 25,
+        "height": 48.349999999999994,
         "rotation": 0
       },
       "type": "text",
@@ -6551,10 +6549,10 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 485,
+        "x": 480,
         "y": 36,
-        "width": 56,
-        "height": 25,
+        "width": 80,
+        "height": 48.349999999999994,
         "rotation": 0
       },
       "type": "text",
@@ -6567,7 +6565,7 @@
         "color": "#111111",
         "lineHeight": 1.4,
         "letterSpacing": 0,
-        "align": "left",
+        "align": "center",
         "verticalAlign": "top",
         "decoration": "none",
         "wrap": true
@@ -6593,7 +6591,7 @@
         "x": 32,
         "y": 112,
         "width": 312,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -6633,7 +6631,7 @@
         "x": 48,
         "y": 128,
         "width": 512,
-        "height": 108,
+        "height": 138.2,
         "rotation": 0
       },
       "type": "text",
@@ -6669,14 +6667,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 48,
+        "x": 68,
         "y": 236,
         "width": 376,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": " ការអនុលោមតាម ច្បាប់ និងបទបញ្ញត្តិបរិស្ថាន និងសង្គមជាតិ និងបទដ្ឋានអនុវត្តរបស់ស្ថាប័នផ្តល់ប្រាក់កម្ចី ",
+      "text": "ការអនុលោមតាម ច្បាប់ និងបទបញ្ញត្តិបរិស្ថាន និងសង្គមជាតិ និងបទដ្ឋានអនុវត្តរបស់ស្ថាប័នផ្តល់ប្រាក់កម្ចី ",
       "style": {
         "fontFamily": "Wingdings 2",
         "fontSize": 10,
@@ -6691,9 +6689,6 @@
         "wrap": true
       },
       "runs": [
-        {
-          "text": " "
-        },
         {
           "text": "ការអនុលោមតាម ច្បាប់ និងបទបញ្ញត្តិបរិស្ថាន និងសង្គមជាតិ និងបទដ្ឋានអនុវត្តរបស់ស្ថាប័នផ្តល់ប្រាក់កម្ចី ",
           "style": {
@@ -6711,14 +6706,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 48,
-        "y": 252,
+        "x": 67,
+        "y": 253,
         "width": 504,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
-      "text": " ការគោរពបទដ្ឋានអនុវត្តបរិស្ថាន​ និងសង្គម (Environmental and Social Performance Standard) ដោយត្រូវចៀសវាង",
+      "text": "ការគោរពបទដ្ឋានអនុវត្តបរិស្ថាន​ និងសង្គម (Environmental and Social Performance Standard) ដោយត្រូវចៀសវាង",
       "style": {
         "fontFamily": "Wingdings 2",
         "fontSize": 10,
@@ -6733,9 +6728,6 @@
         "wrap": true
       },
       "runs": [
-        {
-          "text": " "
-        },
         {
           "text": "ការគោរពបទដ្ឋានអនុវត្តបរិស្ថាន​ និងសង្គម (Environmental and Social Performance Standard) ដោយត្រូវចៀសវាង",
           "style": {
@@ -6756,7 +6748,7 @@
         "x": 67,
         "y": 269,
         "width": 488,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -6795,7 +6787,7 @@
         "x": 83,
         "y": 286,
         "width": 504,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -6873,7 +6865,7 @@
         "x": 93,
         "y": 306,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -6909,7 +6901,7 @@
         "x": 93,
         "y": 395.2,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -6945,7 +6937,7 @@
         "x": 93,
         "y": 412.2,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -6981,7 +6973,7 @@
         "x": 93,
         "y": 432,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7017,7 +7009,7 @@
         "x": 83,
         "y": 468,
         "width": 504,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -7095,7 +7087,7 @@
         "x": 93,
         "y": 629,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7131,7 +7123,7 @@
         "x": 93,
         "y": 542,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7167,7 +7159,7 @@
         "x": 93,
         "y": 504,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7203,7 +7195,7 @@
         "x": 93,
         "y": 360,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7239,7 +7231,7 @@
         "x": 93,
         "y": 595.8000000000001,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7317,7 +7309,7 @@
         "x": 93,
         "y": 742,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7353,7 +7345,7 @@
         "x": 93,
         "y": 706,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7389,7 +7381,7 @@
         "x": 93,
         "y": 760,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7445,7 +7437,8 @@
         "7a337ef1-2b24-4281-bf49-b30554d0493c",
         "d8ab418f-5c2d-4b86-81c6-d4159c8fc56f",
         "16925230-e740-478c-8e70-ee72e1341139",
-        "7f8c1696-ea92-4c33-8f42-bf50805e42cf"
+        "7f8c1696-ea92-4c33-8f42-bf50805e42cf",
+        "189e2123-fd26-4d0c-8403-b9cd1b3356f5"
       ],
       "name": "Page",
       "visible": true,
@@ -7483,7 +7476,7 @@
         "x": 83,
         "y": 666,
         "width": 472,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -7580,7 +7573,7 @@
         "x": 80,
         "y": 40,
         "width": 472,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -7619,7 +7612,7 @@
         "x": 93,
         "y": 57,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7694,7 +7687,7 @@
         "x": 93,
         "y": 75,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7730,7 +7723,7 @@
         "x": 93,
         "y": 113.75,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7766,7 +7759,7 @@
         "x": 93,
         "y": 130,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7799,16 +7792,16 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 56,
-        "y": 328,
-        "width": 156,
+        "x": 46,
+        "y": 330,
+        "width": 147,
         "height": 1,
         "rotation": 90
       },
       "type": "line",
       "x1": 0,
       "y1": 0,
-      "x2": 156,
+      "x2": 147,
       "y2": 1,
       "stroke": {
         "color": "#333333",
@@ -7827,7 +7820,7 @@
         "x": 80,
         "y": 144,
         "width": 472,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
@@ -7908,7 +7901,7 @@
         "x": 93,
         "y": 180,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7944,7 +7937,7 @@
         "x": 93,
         "y": 216,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -7980,7 +7973,7 @@
         "x": 93,
         "y": 234,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8016,7 +8009,7 @@
         "x": 93,
         "y": 270,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8052,7 +8045,7 @@
         "x": 80,
         "y": 288,
         "width": 472,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -8130,7 +8123,7 @@
         "x": 93,
         "y": 304,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8166,7 +8159,7 @@
         "x": 93,
         "y": 340,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8199,14 +8192,14 @@
       "locked": false,
       "opacity": 1,
       "frame": {
-        "x": 48,
-        "y": 372,
+        "x": 64.00000000000003,
+        "y": 370.1,
         "width": 472,
-        "height": 36,
+        "height": 55.4,
         "rotation": 0
       },
       "type": "text",
-      "text": " គ្រប់ផលិតផលឥណទានដែលផ្តល់ជូនអតិថិជន ត្រូវតែមានការត្រួតពិនិត្យជាមួយនឹងបញ្ជីអាជីវកម្មដែលត្រូវហាមឃាត់ (Exclusion List) ដូចខាងក្រោម៖ ",
+      "text": "គ្រប់ផលិតផលឥណទានដែលផ្តល់ជូនអតិថិជន ត្រូវតែមានការត្រួតពិនិត្យជាមួយនឹងបញ្ជីអាជីវកម្មដែលត្រូវហាមឃាត់ (Exclusion List) ដូចខាងក្រោម៖ ",
       "style": {
         "fontFamily": "Wingdings 2",
         "fontSize": 10,
@@ -8222,13 +8215,7 @@
       },
       "runs": [
         {
-          "text": "",
-          "style": {
-            "fontFamily": "Wingdings 2"
-          }
-        },
-        {
-          "text": " គ្រប់ផលិតផលឥណទានដែលផ្តល់ជូនអតិថិជន ត្រូវតែមានការត្រួតពិនិត្យជាមួយនឹងបញ្ជីអាជីវកម្មដែលត្រូវហាមឃាត់ (Exclusion List) ដូចខាងក្រោម៖ ",
+          "text": "គ្រប់ផលិតផលឥណទានដែលផ្តល់ជូនអតិថិជន ត្រូវតែមានការត្រួតពិនិត្យជាមួយនឹងបញ្ជីអាជីវកម្មដែលត្រូវហាមឃាត់ (Exclusion List) ដូចខាងក្រោម៖ ",
           "style": {
             "fontFamily": "Battambang"
           }
@@ -8289,7 +8276,7 @@
         "x": 60,
         "y": 410,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8325,7 +8312,7 @@
         "x": 60,
         "y": 446,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8361,7 +8348,7 @@
         "x": 60,
         "y": 500,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8397,7 +8384,7 @@
         "x": 60,
         "y": 465,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8433,7 +8420,7 @@
         "x": 60,
         "y": 482,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8469,7 +8456,7 @@
         "x": 60,
         "y": 554,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8505,7 +8492,7 @@
         "x": 60,
         "y": 626,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8541,7 +8528,7 @@
         "x": 60,
         "y": 662,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8577,7 +8564,7 @@
         "x": 60,
         "y": 698,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8613,7 +8600,7 @@
         "x": 60,
         "y": 735,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8733,7 +8720,7 @@
         "x": 60,
         "y": 43,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8769,7 +8756,7 @@
         "x": 60,
         "y": 62,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8805,7 +8792,7 @@
         "x": 60,
         "y": 79,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8841,7 +8828,7 @@
         "x": 60,
         "y": 115,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8877,7 +8864,7 @@
         "x": 60,
         "y": 133,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8913,7 +8900,7 @@
         "x": 60,
         "y": 190,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8949,7 +8936,7 @@
         "x": 60,
         "y": 206,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -8985,7 +8972,7 @@
         "x": 60,
         "y": 224,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -9021,7 +9008,7 @@
         "x": 60,
         "y": 241,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -9057,7 +9044,7 @@
         "x": 60,
         "y": 277,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -9093,7 +9080,7 @@
         "x": 32,
         "y": 293,
         "width": 312,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "type": "text",
@@ -9135,7 +9122,7 @@
         "x": 55,
         "y": 308,
         "width": 472,
-        "height": 72,
+        "height": 76.1,
         "rotation": 0
       },
       "style": {
@@ -9279,7 +9266,7 @@
         "x": 208,
         "y": 40,
         "width": 160,
-        "height": 48,
+        "height": 67.39999999999999,
         "rotation": 0
       },
       "style": {
@@ -9318,7 +9305,7 @@
         "x": 32,
         "y": 90,
         "width": 504,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "style": {
@@ -9357,7 +9344,7 @@
         "x": 32,
         "y": 143,
         "width": 56,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -9397,7 +9384,7 @@
         "x": 48,
         "y": 680,
         "width": 168,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -9436,7 +9423,7 @@
         "x": 32,
         "y": 664,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -9473,10 +9460,10 @@
       "type": "text",
       "text": "ធនាគារ សំដៅទៅលើ ធនាគារវីង (ខេមបូឌា) ម.ក ដែលជាធនាគារពាណិជ្ជ ចុះបញ្ជីក្រោមច្បាប់​នៃព្រះ​រាជាណាចក្រ​កម្ពុជា រួមទាំងសាខាធនាគារ​ដែលបានចុះបញ្ជី (“ភាគី ក”)។ \n\nអ្នកស្នើឥណទាន/កម្ចី សំដៅទៅលើបុគ្គលដែលដាក់ស្នើសេវាកម្ចី វីង ឌីជីថលឡូនតាមរយៈកម្មវិធីទូរសព្ទវីង និងភ្នាក់ងារវីង និងស្ម័គ្រចិត្តអនុវត្តតាម​ដំណើរការដាក់ស្នើកម្ចី រហូតដល់ពេលដែលកម្ចីត្រូវបានបដិសេធ ឬទទួលបានជោគជ័យ (“លោកអ្នក” ឬ “ភាគី ខ”)។ \n\nកិច្ចសន្យាខ្ចីបរិភោគ សំដៅដល់កិច្ចសន្យាខ្ចីបរិភោគរវាងលោកអ្នក និងធនាគារសម្រាប់ការប្រើប្រាស់កម្ចី វីង ឌីជីថលឡូន។​ កិច្ចសន្យាខ្ចីបរិភោគត្រូវបានភ្ជាប់នៅខាងលើនេះ។\n\nរ៉ូយ៉ាល់គ្រុប សំដៅទៅលើក្រុមហ៊ុនទាំងឡាយ ដែលជាសម្ព័ន្ធក្រុមហ៊ុន និងត្រូវបានចាត់ថ្នាក់ជាក្រុមហ៊ុននៅក្រោមរ៉ូយ៉ាល់គ្រុប ហើយបញ្ជីចាត់ថ្នាក់ក្រុមហ៊ុននេះ អាចនឹងត្រូវបន្ថែម ឬកែប្រែក្នុងពេលណាមួយ។ \n\nកម្ចីប្រាក់បៀវត្សរ៍ រ៉ូយ៉ាល់គ្រុប សំដៅលើប្រាក់កម្ចីផ្ទាល់ខ្លួនដែលផ្តល់ដោយធនាគារវីងដល់បុគ្គលិកនៃក្រុមហ៊ុនទាំងឡាយដែលជា  សម្ព័ន្ធក្រុមហ៊ុន និងត្រូវបានចាត់ថ្នាក់ជាក្រុមហ៊ុននៅក្រោមរ៉ូយ៉ាល់គ្រុប។ ទំហំឥណទានអាចមានរហូតដល់ ១០.០០០ ដុល្លារ        អាមេរិក។ កម្ចីនេះមានភាពងាយស្រួល និងឆាប់រហ័សតាមបែបឌីជីថល​​ ពុំតម្រូវអោយមានទ្រព្យបញ្ចាំ ឬ អ្នកធានាឡើយ ហើយនឹងបញ្ចេញប្រាក់កម្ចីដោយផ្ទាល់ទៅក្នុងគណនីរបស់អតិថិជន (“កម្ចី វីងឌីជីថលឡូន”)។ \n \nព័ត៌មានបឋម សំដៅទៅលើព័ត៌មាន និងឯកសារចំាបាច់ដែលផ្តល់អោយដោយអ្នកស្នើឥណទាន ទៅធនាគារតាមរយៈកម្មវិធីទូរសព្ទវីង ឬភ្នាក់ងារវីង សម្រាប់គោលបំណងវាយតម្លៃឥណទាន​ដែលព័ត៌មានទាំងនោះរួមមាន ឈ្មោះ​ ភេទ​ ថ្ងៃខែឆ្នាំកំណើត ទីកន្លែងកំណើត ទីលំនៅ មុខរបរ របាយការណ៍ហិរញ្ញវត្ថុ និងឯកសារគាំទ្រផ្សេងទៀត។ \n\nភ្នាក់ងារវីង សំដៅទៅលើភ្នាក់ងារឯករាជ្យដែល ត្រូវបានតែងតាំង​ និងផ្តល់សិទ្ធិអោយធ្វើប្រតិបត្តិការ​ផ្តាច់មុខលើ​សេវាកម្មដែល​ផ្តល់​ដោយធនាគារ ទៅកាន់​អតិថិជន​របស់​ធនាគារ រួមមានធ្វើប្រតិបត្តិការស្នើកម្ចី វីង ឌីជីថលឡូន។ \n\nគណនីធនាគារ\tសំដៅទៅលើ គណនីធនាគារមួយ (ឬច្រើន)​ ដែលកាន់កាប់ដោយអ្នកស្នើឥណទាន រាប់បញ្ចូលទំាងគណនីប្រាក់បៀវត្សរ៍ និងគណនីផ្សេងទៀតដែលអ្នកស្នើឥណទានបានបើកនៅធនាគារ។​ \n\nកម្មវិធីទូរសព្ទវីង (Wing Bank App) សំដៅលើកម្មវិធីនៅលើទូរសព្ទដែលជាកម្មសិទ្ធិ​ផ្តាច់មុខ​របស់​ធនាគារ ដែលជាមធ្យោបាយប្រើប្រាស់ដោយអ្នកស្នើឥណទាន សម្រាប់ស្នើឥណទាន។ ",
       "frame": {
-        "x": 45,
-        "y": 156,
+        "x": 44,
+        "y": 160.35,
         "width": 504,
-        "height": 582.0999999999999,
+        "height": 496,
         "rotation": 0
       },
       "style": {
@@ -9688,7 +9675,9 @@
         "90b42f7d-d425-4fab-bf02-f89b0fe15216",
         "6e31a241-a982-4e2d-b433-b60ade4778d9",
         "31b860a4-f069-4556-87f5-6340f5225ee9",
-        "baa4d252-81f0-4e9a-98c2-4d28bc61e48a"
+        "baa4d252-81f0-4e9a-98c2-4d28bc61e48a",
+        "dcbc7c52-1064-40c6-81d2-b818bdcb002c",
+        "d0248424-10ce-48bf-b42d-b11685d8964e"
       ],
       "name": "Page",
       "visible": true,
@@ -9728,7 +9717,7 @@
         "x": 48,
         "y": 695,
         "width": 480,
-        "height": 117.49999999999999,
+        "height": 96,
         "rotation": 0
       },
       "style": {
@@ -9795,8 +9784,8 @@
       "opacity": 1,
       "type": "image",
       "frame": {
-        "x": 248,
-        "y": 424,
+        "x": 247,
+        "y": 384,
         "width": 96,
         "height": 40,
         "rotation": 0
@@ -9818,7 +9807,7 @@
         "x": 32,
         "y": 40,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -9858,7 +9847,7 @@
         "x": 48,
         "y": 104,
         "width": 520,
-        "height": 90,
+        "height": 88,
         "rotation": 0
       },
       "style": {
@@ -9897,7 +9886,7 @@
         "x": 47,
         "y": 54,
         "width": 496,
-        "height": 40,
+        "height": 55.4,
         "rotation": 0
       },
       "style": {
@@ -9936,7 +9925,7 @@
         "x": 32,
         "y": 88,
         "width": 200,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -9976,7 +9965,7 @@
         "x": 32,
         "y": 192,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -10014,9 +10003,9 @@
       "text": "៦.\tការទទួលខុសត្រូវ",
       "frame": {
         "x": 32,
-        "y": 293,
+        "y": 281.35,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -10053,10 +10042,10 @@
       "type": "text",
       "text": "ប្រសិនបើកម្ចីនេះមានភ្ជាប់មក​ជាមួយជាមួយការធានារ៉ាប់រង (ក្នុង​ករណីមាន​ការ​ស្លាប់​ ឬ​ពិការភាព​ទាំងស្រុង និង​អចិន្ត្រៃយ៍) ដែល​ផ្តល់​ដោយ​ជា​ដៃគូធានារ៉ាប់រងរបស់​ធនាគារ​ ​ហើយដែល​ត្រូវបាន​ទិញដោយធនាគារក្នុងនាមលោកអ្នក លោក​អ្នក​យល់​ព្រម​ឱ្យធនាគារយកផលធានារ៉ាប់រងនោះ មក​ធ្វើ​ការ​ទូទាត់​បំណុលរបស់​លោក​អ្នក​ ដែល​មាន​ជាមួយ​ធនាគារជាមុន​សិន ទាំងអស់របស់លោក​អ្នក រហូត​ទាល់​តែ​ធនាគារ ទទួល​បាន​ការ​បានទូទាត់បំណុល​ចប់សព្វគ្រប់ ទើបធនាគារ​ធ្វើ​ការ​ទូទាត់ផល​ធានារ៉ាប់រងដែល​នៅ​សល់ ​ទៅឱ្យអ្នក​ទទួល​ផល​របស់​លោក​អ្នក។",
       "frame": {
-        "x": 48,
-        "y": 206,
+        "x": 47,
+        "y": 209.35,
         "width": 512,
-        "height": 90,
+        "height": 72,
         "rotation": 0
       },
       "style": {
@@ -10090,12 +10079,12 @@
       "locked": false,
       "opacity": 1,
       "type": "text",
-      "text": "ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា កម្មវិធីទូរសព្ទវីងនឹងអាចចូលទៅប្រើប្រាស់បានគ្រប់ពេលវេលា ដំណើរការ​បាន​ល្អ មិនមានការរំខាន ដំណើរការទាន់ពេលវេលា មានសុវត្ថិភាព មិនមានកំហុស ឬមិនមានការលុកលុយពីមេរោគក្នុងកុំព្យូទ័រណាមួយឡើយ។ \n\n \n\nទោះជាធនាគារខិតខំប្រឹងប្រែងដើម្បីធានាថាប្រព័ន្ធរបស់ធនាគារមានសុវត្ថិភាព លោកអ្នកទទួលស្គាល់ថារាល់ការផ្ទេរ ការរក្សាទុក និងកំណត់ត្រាទិន្នន័យអេឡិចត្រូនិកអាចត្រូវបានរំខាន​ ឬលួចយកដោយអ្នកដទៃ។ ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា ព័ត៌មាន និងឯកសារដែលលោកអ្នកបានផ្តល់ជូនធនាគារ នឹងមិនត្រូវបានគ្រប់គ្រង និងអានដោយអ្នកដទៃឡើយ។ ",
+      "text": "ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា កម្មវិធីទូរសព្ទវីងនឹងអាចចូលទៅប្រើប្រាស់បានគ្រប់ពេលវេលា ដំណើរការ​បាន​ល្អ មិនមានការរំខាន ដំណើរការទាន់ពេលវេលា មានសុវត្ថិភាព មិនមានកំហុស ឬមិនមានការលុកលុយពីមេរោគក្នុងកុំព្យូទ័រណាមួយឡើយ។ \nទោះជាធនាគារខិតខំប្រឹងប្រែងដើម្បីធានាថាប្រព័ន្ធរបស់ធនាគារមានសុវត្ថិភាព លោកអ្នកទទួលស្គាល់ថារាល់ការផ្ទេរ ការរក្សាទុក និងកំណត់ត្រាទិន្នន័យអេឡិចត្រូនិកអាចត្រូវបានរំខាន​ ឬលួចយកដោយអ្នកដទៃ។ ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា ព័ត៌មាន និងឯកសារដែលលោកអ្នកបានផ្តល់ជូនធនាគារ នឹងមិនត្រូវបានគ្រប់គ្រង និងអានដោយអ្នកដទៃឡើយ។ ",
       "frame": {
         "x": 48,
-        "y": 309,
+        "y": 298.70000000000005,
         "width": 512,
-        "height": 136,
+        "height": 88,
         "rotation": 0
       },
       "style": {
@@ -10113,7 +10102,7 @@
       },
       "runs": [
         {
-          "text": "ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា កម្មវិធីទូរសព្ទវីងនឹងអាចចូលទៅប្រើប្រាស់បានគ្រប់ពេលវេលា ដំណើរការ​បាន​ល្អ មិនមានការរំខាន ដំណើរការទាន់ពេលវេលា មានសុវត្ថិភាព មិនមានកំហុស ឬមិនមានការលុកលុយពីមេរោគក្នុងកុំព្យូទ័រណាមួយឡើយ។ \n\n \n\nទោះជាធនាគារខិតខំប្រឹងប្រែងដើម្បីធានាថាប្រព័ន្ធរបស់ធនាគារមានសុវត្ថិភាព លោកអ្នកទទួលស្គាល់ថារាល់ការផ្ទេរ ការរក្សាទុក និងកំណត់ត្រាទិន្នន័យអេឡិចត្រូនិកអាចត្រូវបានរំខាន​ ឬលួចយកដោយអ្នកដទៃ។ ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា ព័ត៌មាន និងឯកសារដែលលោកអ្នកបានផ្តល់ជូនធនាគារ នឹងមិនត្រូវបានគ្រប់គ្រង និងអានដោយអ្នកដទៃឡើយ។ ",
+          "text": "ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា កម្មវិធីទូរសព្ទវីងនឹងអាចចូលទៅប្រើប្រាស់បានគ្រប់ពេលវេលា ដំណើរការ​បាន​ល្អ មិនមានការរំខាន ដំណើរការទាន់ពេលវេលា មានសុវត្ថិភាព មិនមានកំហុស ឬមិនមានការលុកលុយពីមេរោគក្នុងកុំព្យូទ័រណាមួយឡើយ។ \nទោះជាធនាគារខិតខំប្រឹងប្រែងដើម្បីធានាថាប្រព័ន្ធរបស់ធនាគារមានសុវត្ថិភាព លោកអ្នកទទួលស្គាល់ថារាល់ការផ្ទេរ ការរក្សាទុក និងកំណត់ត្រាទិន្នន័យអេឡិចត្រូនិកអាចត្រូវបានរំខាន​ ឬលួចយកដោយអ្នកដទៃ។ ធនាគារមិនធានា និងមិនទទួលខុសត្រូវថា ព័ត៌មាន និងឯកសារដែលលោកអ្នកបានផ្តល់ជូនធនាគារ នឹងមិនត្រូវបានគ្រប់គ្រង និងអានដោយអ្នកដទៃឡើយ។ ",
           "style": {
             "fontFamily": "Battambang"
           }
@@ -10129,12 +10118,12 @@
       "locked": false,
       "opacity": 1,
       "type": "text",
-      "text": "លោកអ្នកយល់ព្រមអោយធនាគារពិនិត្យ និងទទួលយកព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកពីក្រុមហ៊ុនក្រេឌីត ប្យូរ៉ូ (ខេមបូឌា) ខូ អិលធីឌី (“ស៊ីប៊ីស៊ី”) ដែលមានទីតំាងនៅ អគារ វឌ្ឍនៈ លេខ៦៦ ជាន់ទី៩ មហាវិថីព្រះមុនីវង្ស ​សង្កាត់វត្តភ្នំ ខណ្ឌដូនពេញ រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា​ និងយល់ព្រមបញ្ចេញព័ត៌មានទំាងនេះទៅធនាគារ ដែលធនាគារជាអ្នកទទួលបន្ទុកក្នុងការប្រមូល ដំណើរការ ផ្សព្វផ្សាយ និងផ្ទេរព័ត៌មានដែលបានទទួល។ លោកអ្នកក៏យល់ព្រមអោយធនាគារបញ្ចេញព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកទៅកាន់ស៊ីប៊ីស៊ី ដែលព័ត៌មានទាំងនោះ​ស្ថិតក្រោម​ការគ្រប់គ្រងរបស់ធនាគារ។​ លោកអ្នកមានសិទ្ធិទទួលបានព័ត៌មានរបស់លោកអ្នក ព្រមទំាងមានសិទ្ធិក្នុងការប្តឹងតវ៉ាដើម្បីទទួលបានការកែប្រែ ឬក៏លុបចោលព័ត៌មានទំាងនោះ​ នៅពេលដែលមានហេតុផលសមរម្យស្របទៅតាមនីតិវិធីដែលបានបង្កើតឡើយ ក្រោមប្រកាសស្តីពីការចែករំលែកព័ត៌មានឥណទាន និង ក្រមសីលធម៌វិជ្ជាជីវៈ។  \n\n \n\nលោកអ្នកយល់ព្រមអោយធនាគារបញ្ចេញ/ចែករំលេកព័ត៌មានបឋម ព័ត៌មាន និងឯកសារ​នានា ដែលលោកអ្នក​បានផ្តល់ជូនធនាគារ​ទាក់ទងនឹងការស្នើសេវាកម្ចីនេះ ទៅកាន់ក្រុមហ៊ុនបុត្រសម្ព័ន្ធរបស់ធនាគារ អ្នកផ្តល់សេវា ភ្នាក់ងារ អ្នកប្រឹក្សា ដៃគូពាណិជ្ជកម្ម ក្រុមហ៊ុនធានារ៉ាប់រង អ្នកដំណើរការទិន្នន័យ អាជ្ញាធរមានសមត្ថកិច្ច​ និងបុគ្គលដទៃផ្សេងទៀតដែលចំាបាច់ក្នុងការដឹងព័ត៌មានទាំងនេះ (”អ្នកទទួល”) និងយល់ព្រមអោយអ្នកទទួល រក្សាទុក ចងក្រង ប្រើប្រាស់  បញ្ចេញ និងផ្ទេរព័ត៌មានទំាងនេះ សម្រាប់គោលបំណងក្នុងការស្នើឥណទាន និងពិចារណាលើការស្នើឥណទាន ការសម្របសម្រួល​លើការផ្តល់ឥណទាន ការពង្រឹង ការគ្រប់គ្រង និងការពិនិត្យទៅលើលទ្ធភាពនៃការសងឥណទាន ការវិភាគ​ទិន្នន័យ ការគ្រប់គ្រងអាជីវកម្ម ការផ្តល់សេវាកម្ម ការអនុលោមទៅតាមច្បាប់ជាធរមាន ការតែងតំាង/អនុប្បទានអោយតតិយជនធ្វើជាតំណាងរបស់ធនាគារសម្រាប់ការងារពាក់ព័ន្ធនឹងព័ត៌មានវិទ្យា ការទំនាក់ទំនង ការប្រមូល និងសម្រាប់គោលបំណងស្របច្បាប់ផ្សេងទៀត។",
+      "text": "លោកអ្នកយល់ព្រមអោយធនាគារពិនិត្យ និងទទួលយកព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកពីក្រុមហ៊ុនក្រេឌីត ប្យូរ៉ូ (ខេមបូឌា) ខូ អិលធីឌី (“ស៊ីប៊ីស៊ី”) ដែលមានទីតំាងនៅ អគារ វឌ្ឍនៈ លេខ៦៦ ជាន់ទី៩ មហាវិថីព្រះមុនីវង្ស ​សង្កាត់វត្តភ្នំ ខណ្ឌដូនពេញ រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា​ និងយល់ព្រមបញ្ចេញព័ត៌មានទំាងនេះទៅធនាគារ ដែលធនាគារជាអ្នកទទួលបន្ទុកក្នុងការប្រមូល ដំណើរការ ផ្សព្វផ្សាយ និងផ្ទេរព័ត៌មានដែលបានទទួល។ លោកអ្នកក៏យល់ព្រមអោយធនាគារបញ្ចេញព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកទៅកាន់ស៊ីប៊ីស៊ី ដែលព័ត៌មានទាំងនោះ​ស្ថិតក្រោម​ការគ្រប់គ្រងរបស់ធនាគារ។​ លោកអ្នកមានសិទ្ធិទទួលបានព័ត៌មានរបស់លោកអ្នក ព្រមទំាងមានសិទ្ធិក្នុងការប្តឹងតវ៉ាដើម្បីទទួលបានការកែប្រែ ឬក៏លុបចោលព័ត៌មានទំាងនោះ​ នៅពេលដែលមានហេតុផលសមរម្យស្របទៅតាមនីតិវិធីដែលបានបង្កើតឡើយ ក្រោមប្រកាសស្តីពីការចែករំលែកព័ត៌មានឥណទាន និង ក្រមសីលធម៌វិជ្ជាជីវៈ។  \nលោកអ្នកយល់ព្រមអោយធនាគារបញ្ចេញ/ចែករំលេកព័ត៌មានបឋម ព័ត៌មាន និងឯកសារ​នានា ដែលលោកអ្នក​បានផ្តល់ជូនធនាគារ​ទាក់ទងនឹងការស្នើសេវាកម្ចីនេះ ទៅកាន់ក្រុមហ៊ុនបុត្រសម្ព័ន្ធរបស់ធនាគារ អ្នកផ្តល់សេវា ភ្នាក់ងារ អ្នកប្រឹក្សា ដៃគូពាណិជ្ជកម្ម ក្រុមហ៊ុនធានារ៉ាប់រង អ្នកដំណើរការទិន្នន័យ អាជ្ញាធរមានសមត្ថកិច្ច​ និងបុគ្គលដទៃផ្សេងទៀតដែលចំាបាច់ក្នុងការដឹងព័ត៌មានទាំងនេះ (”អ្នកទទួល”) និងយល់ព្រមអោយអ្នកទទួល រក្សាទុក ចងក្រង ប្រើប្រាស់  បញ្ចេញ និងផ្ទេរព័ត៌មានទំាងនេះ សម្រាប់គោលបំណងក្នុងការស្នើឥណទាន និងពិចារណាលើការស្នើឥណទាន ការសម្របសម្រួល​លើការផ្តល់ឥណទាន ការពង្រឹង ការគ្រប់គ្រង និងការពិនិត្យទៅលើលទ្ធភាពនៃការសងឥណទាន ការវិភាគ​ទិន្នន័យ ការគ្រប់គ្រងអាជីវកម្ម ការផ្តល់សេវាកម្ម ការអនុលោមទៅតាមច្បាប់ជាធរមាន ការតែងតំាង/អនុប្បទានអោយតតិយជនធ្វើជាតំណាងរបស់ធនាគារសម្រាប់ការងារពាក់ព័ន្ធនឹងព័ត៌មានវិទ្យា ការទំនាក់ទំនង ការប្រមូល និងសម្រាប់គោលបំណងស្របច្បាប់ផ្សេងទៀត។",
       "frame": {
         "x": 51,
-        "y": 477,
+        "y": 438,
         "width": 520,
-        "height": 334,
+        "height": 248,
         "rotation": 0
       },
       "style": {
@@ -10165,7 +10154,7 @@
           }
         },
         {
-          "text": ") ដែលមានទីតំាងនៅ អគារ វឌ្ឍនៈ លេខ៦៦ ជាន់ទី៩ មហាវិថីព្រះមុនីវង្ស ​សង្កាត់វត្តភ្នំ ខណ្ឌដូនពេញ រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា​ និងយល់ព្រមបញ្ចេញព័ត៌មានទំាងនេះទៅធនាគារ ដែលធនាគារជាអ្នកទទួលបន្ទុកក្នុងការប្រមូល ដំណើរការ ផ្សព្វផ្សាយ និងផ្ទេរព័ត៌មានដែលបានទទួល។ លោកអ្នកក៏យល់ព្រមអោយធនាគារបញ្ចេញព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកទៅកាន់ស៊ីប៊ីស៊ី ដែលព័ត៌មានទាំងនោះ​ស្ថិតក្រោម​ការគ្រប់គ្រងរបស់ធនាគារ។​ លោកអ្នកមានសិទ្ធិទទួលបានព័ត៌មានរបស់លោកអ្នក ព្រមទំាងមានសិទ្ធិក្នុងការប្តឹងតវ៉ាដើម្បីទទួលបានការកែប្រែ ឬក៏លុបចោលព័ត៌មានទំាងនោះ​ នៅពេលដែលមានហេតុផលសមរម្យស្របទៅតាមនីតិវិធីដែលបានបង្កើតឡើយ ក្រោមប្រកាសស្តីពីការចែករំលែកព័ត៌មានឥណទាន និង ក្រមសីលធម៌វិជ្ជាជីវៈ។  \n\n \n\nលោកអ្នកយល់ព្រមអោយធនាគារបញ្ចេញ/ចែករំលេកព័ត៌មានបឋម ព័ត៌មាន និងឯកសារ​នានា ដែលលោកអ្នក​បានផ្តល់ជូនធនាគារ​ទាក់ទងនឹងការស្នើសេវាកម្ចីនេះ ទៅកាន់ក្រុមហ៊ុនបុត្រសម្ព័ន្ធរបស់ធនាគារ អ្នកផ្តល់សេវា ភ្នាក់ងារ អ្នកប្រឹក្សា ដៃគូពាណិជ្ជកម្ម ក្រុមហ៊ុនធានារ៉ាប់រង អ្នកដំណើរការទិន្នន័យ អាជ្ញាធរមានសមត្ថកិច្ច​ និងបុគ្គលដទៃផ្សេងទៀតដែលចំាបាច់ក្នុងការដឹងព័ត៌មានទាំងនេះ (",
+          "text": ") ដែលមានទីតំាងនៅ អគារ វឌ្ឍនៈ លេខ៦៦ ជាន់ទី៩ មហាវិថីព្រះមុនីវង្ស ​សង្កាត់វត្តភ្នំ ខណ្ឌដូនពេញ រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា​ និងយល់ព្រមបញ្ចេញព័ត៌មានទំាងនេះទៅធនាគារ ដែលធនាគារជាអ្នកទទួលបន្ទុកក្នុងការប្រមូល ដំណើរការ ផ្សព្វផ្សាយ និងផ្ទេរព័ត៌មានដែលបានទទួល។ លោកអ្នកក៏យល់ព្រមអោយធនាគារបញ្ចេញព័ត៌មានផ្ទាល់ខ្លួន និងព័ត៌មានឥណទានរបស់លោកអ្នកទៅកាន់ស៊ីប៊ីស៊ី ដែលព័ត៌មានទាំងនោះ​ស្ថិតក្រោម​ការគ្រប់គ្រងរបស់ធនាគារ។​ លោកអ្នកមានសិទ្ធិទទួលបានព័ត៌មានរបស់លោកអ្នក ព្រមទំាងមានសិទ្ធិក្នុងការប្តឹងតវ៉ាដើម្បីទទួលបានការកែប្រែ ឬក៏លុបចោលព័ត៌មានទំាងនោះ​ នៅពេលដែលមានហេតុផលសមរម្យស្របទៅតាមនីតិវិធីដែលបានបង្កើតឡើយ ក្រោមប្រកាសស្តីពីការចែករំលែកព័ត៌មានឥណទាន និង ក្រមសីលធម៌វិជ្ជាជីវៈ។  \nលោកអ្នកយល់ព្រមអោយធនាគារបញ្ចេញ/ចែករំលេកព័ត៌មានបឋម ព័ត៌មាន និងឯកសារ​នានា ដែលលោកអ្នក​បានផ្តល់ជូនធនាគារ​ទាក់ទងនឹងការស្នើសេវាកម្ចីនេះ ទៅកាន់ក្រុមហ៊ុនបុត្រសម្ព័ន្ធរបស់ធនាគារ អ្នកផ្តល់សេវា ភ្នាក់ងារ អ្នកប្រឹក្សា ដៃគូពាណិជ្ជកម្ម ក្រុមហ៊ុនធានារ៉ាប់រង អ្នកដំណើរការទិន្នន័យ អាជ្ញាធរមានសមត្ថកិច្ច​ និងបុគ្គលដទៃផ្សេងទៀតដែលចំាបាច់ក្នុងការដឹងព័ត៌មានទាំងនេះ (",
           "style": {
             "fontFamily": "Battambang"
           }
@@ -10197,9 +10186,9 @@
       "text": "៧. \tការចែករំលែកព័ត៌មានផ្ទាល់ខ្លួន ",
       "frame": {
         "x": 32,
-        "y": 463,
+        "y": 424,
         "width": 152,
-        "height": 18,
+        "height": 34.7,
         "rotation": 0
       },
       "style": {
@@ -10224,67 +10213,6 @@
           }
         }
       ]
-    },
-    "7a6dc84e-f3a7-4f58-a952-b5fbf0540757": {
-      "id": "7a6dc84e-f3a7-4f58-a952-b5fbf0540757",
-      "parentId": null,
-      "children": [
-        "26c825d6-a00d-421d-9705-701c74640c2f",
-        "d0248424-10ce-48bf-b42d-b11685d8964e",
-        "dcbc7c52-1064-40c6-81d2-b818bdcb002c"
-      ],
-      "name": "Page",
-      "visible": true,
-      "locked": false,
-      "opacity": 1,
-      "type": "page",
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "width": 595.28,
-        "height": 841.89,
-        "rotation": 0
-      },
-      "paper": {
-        "preset": "A4",
-        "orientation": "portrait"
-      },
-      "margin": {
-        "top": 48,
-        "right": 48,
-        "bottom": 48,
-        "left": 48
-      },
-      "background": "#ffffff"
-    },
-    "26c825d6-a00d-421d-9705-701c74640c2f": {
-      "id": "26c825d6-a00d-421d-9705-701c74640c2f",
-      "parentId": "7a6dc84e-f3a7-4f58-a952-b5fbf0540757",
-      "children": [],
-      "name": "Line",
-      "visible": true,
-      "locked": false,
-      "opacity": 1,
-      "frame": {
-        "x": 16,
-        "y": 808,
-        "width": 560,
-        "height": 0,
-        "rotation": 0
-      },
-      "type": "line",
-      "x1": 0,
-      "y1": 0,
-      "x2": 560,
-      "y2": 0,
-      "stroke": {
-        "color": "#000000",
-        "width": 0.5,
-        "dash": [
-          2,
-          2
-        ]
-      }
     },
     "baa4d252-81f0-4e9a-98c2-4d28bc61e48a": {
       "id": "baa4d252-81f0-4e9a-98c2-4d28bc61e48a",
@@ -10317,7 +10245,7 @@
     },
     "dcbc7c52-1064-40c6-81d2-b818bdcb002c": {
       "id": "dcbc7c52-1064-40c6-81d2-b818bdcb002c",
-      "parentId": "7a6dc84e-f3a7-4f58-a952-b5fbf0540757",
+      "parentId": "053b9f8d-ab70-4263-8f0d-b62f5366ca19",
       "children": [],
       "name": "Text",
       "visible": true,
@@ -10327,9 +10255,9 @@
       "text": "៨.  ការទទួលស្គាល់ហត្ថលេខាអេឡិចត្រូនិក ",
       "frame": {
         "x": 32,
-        "y": 40,
+        "y": 688,
         "width": 200,
-        "height": 18,
+        "height": 16,
         "rotation": 0
       },
       "style": {
@@ -10357,7 +10285,7 @@
     },
     "d0248424-10ce-48bf-b42d-b11685d8964e": {
       "id": "d0248424-10ce-48bf-b42d-b11685d8964e",
-      "parentId": "7a6dc84e-f3a7-4f58-a952-b5fbf0540757",
+      "parentId": "053b9f8d-ab70-4263-8f0d-b62f5366ca19",
       "children": [],
       "name": "Text",
       "visible": true,
@@ -10366,10 +10294,10 @@
       "type": "text",
       "text": "លោកអ្នកយល់ និងទទួលស្គាល់ថាការ​បញ្ចូលលេខកូដ​តាមរយៈសារ (SMS) ឬ លេខកូដសម្ងាត់ (PIN) របស់គណនីវីងរបស់លោកអ្នកខាងក្រោម គឺជាហត្ថលេខាអេទ្បិចត្រូនិករបស់​លោកអ្នក ហើយ​លោកអ្នកបាន​អាន និងយល់ព្រម​លើខចែង និងលក្ខខណ្ឌទាំងនេះ នៅកាលបរិច្ឆេទ ដែលលោកអ្នកបានយល់ព្រមចំពោះខចែង និងលក្ខខណ្ឌនេះ។ ",
       "frame": {
-        "x": 48,
-        "y": 56,
+        "x": 48.00000000000007,
+        "y": 704,
         "width": 512,
-        "height": 56,
+        "height": 76.1,
         "rotation": 0
       },
       "style": {
@@ -10406,7 +10334,7 @@
         "x": 60,
         "y": 169,
         "width": 16,
-        "height": 16,
+        "height": 30.099999999999998,
         "rotation": 0
       },
       "type": "text",
@@ -10429,6 +10357,280 @@
           "text": "-"
         }
       ]
+    },
+    "f6f7ed88-63d2-491b-bf2b-203ee099846e": {
+      "id": "f6f7ed88-63d2-491b-bf2b-203ee099846e",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 32,
+        "y": 327.35,
+        "width": 88,
+        "height": 34.7,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "កម្ចីប្រើប្រាស់ផ្ទាល់ខ្លួន",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "កម្ចីប្រើប្រាស់ផ្ទាល់ខ្លួន",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "65debfa5-ee5d-481e-a748-c45381f3f3df": {
+      "id": "65debfa5-ee5d-481e-a748-c45381f3f3df",
+      "parentId": "page-1",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 120,
+        "y": 328,
+        "width": 128,
+        "height": 34.7,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{info.loan_amount}}",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "center",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{info.loan_amount}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 400,
+            "color": "#0000ff"
+          }
+        }
+      ]
+    },
+    "f00b06c8-a19b-479a-9bc8-3d9b239c35e3": {
+      "id": "f00b06c8-a19b-479a-9bc8-3d9b239c35e3",
+      "parentId": "54b88ab7-71fc-43f4-bd19-60989428e753",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 31,
+        "y": 558,
+        "width": 120,
+        "height": 34.7,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "ឆ.\t​ជម្រើសក្នុងការ​​​បើកប្រាក់​​​​៖ ",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "ឆ.\t​ជម្រើសក្នុងការ​​​បើកប្រាក់​​​​៖ ",
+          "style": {
+            "fontFamily": "Battambang",
+            "fontWeight": 700
+          }
+        }
+      ]
+    },
+    "5ddcf188-d65c-4eb5-81b8-1dad5f5eed9d": {
+      "id": "5ddcf188-d65c-4eb5-81b8-1dad5f5eed9d",
+      "parentId": "54b88ab7-71fc-43f4-bd19-60989428e753",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "frame": {
+        "x": 136,
+        "y": 558,
+        "width": 408,
+        "height": 34.7,
+        "rotation": 0
+      },
+      "type": "text",
+      "text": "{{checkbox: true}} បើកប្រាក់តែមួយលើក  ​{{checkbox: false}}បើកប្រាក់តាមដំណាក់កាល",
+      "style": {
+        "fontFamily": "Inter",
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": "{{checkbox: true}}",
+          "style": {
+            "fontFamily": "Battambang",
+            "color": "#0000ff"
+          }
+        },
+        {
+          "text": " បើកប្រាក់តែមួយលើក  ​{{checkbox: false}}បើកប្រាក់តាមដំណាក់កាល",
+          "style": {
+            "fontFamily": "Battambang"
+          }
+        }
+      ]
+    },
+    "217e45b1-d381-4b3f-8be4-876259bf09a7": {
+      "id": "217e45b1-d381-4b3f-8be4-876259bf09a7",
+      "parentId": "092b3af9-5c1b-4e65-8aa5-3839ab2609ea",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "type": "text",
+      "text": "",
+      "frame": {
+        "x": 46.99999999999999,
+        "y": 234,
+        "width": 24,
+        "height": 48.16,
+        "rotation": 0
+      },
+      "style": {
+        "fontFamily": "Wingding",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    "411e42c5-7595-4d9a-ab72-b088fd0aba89": {
+      "id": "411e42c5-7595-4d9a-ab72-b088fd0aba89",
+      "parentId": "092b3af9-5c1b-4e65-8aa5-3839ab2609ea",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "type": "text",
+      "text": "",
+      "frame": {
+        "x": 46.99999999999999,
+        "y": 251,
+        "width": 24,
+        "height": 48.16,
+        "rotation": 0
+      },
+      "style": {
+        "fontFamily": "Wingding",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    "189e2123-fd26-4d0c-8403-b9cd1b3356f5": {
+      "id": "189e2123-fd26-4d0c-8403-b9cd1b3356f5",
+      "parentId": "357c0a85-2ec6-4f0b-9544-10cdcd4da359",
+      "children": [],
+      "name": "Text",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "type": "text",
+      "text": "",
+      "frame": {
+        "x": 40.00000000000002,
+        "y": 369.1,
+        "width": 24,
+        "height": 48.16,
+        "rotation": 0
+      },
+      "style": {
+        "fontFamily": "Wingding",
+        "fontSize": 16,
+        "fontWeight": 400,
+        "fontStyle": "normal",
+        "color": "#111111",
+        "lineHeight": 1.4,
+        "letterSpacing": 0,
+        "align": "left",
+        "verticalAlign": "top",
+        "decoration": "none",
+        "wrap": true
+      },
+      "runs": [
+        {
+          "text": ""
+        }
+      ]
     }
   },
   "assets": {
@@ -10447,26 +10649,33 @@
   },
   "fonts": {},
   "bindingData": {
-    "national_id": "00005108",
-    "disbursed_date": {
-      "day": "1",
-      "month": "06",
-      "year": "2026"
-    },
-    "customer": {
-      "name": "PMO Test Phirom",
-      "gender": "male",
-      "national": "Khmer",
-      "dob": {
-        "day": "11",
-        "month": "06",
-        "year": "1999"
+    "secured_loan": false,
+    "info": {
+      "disbursement_date_day": "22",
+      "disbursement_date_month": "06",
+      "disbursement_date_year": "2026",
+      "name": "PMOTest Piseth",
+      "gender": "ប្រុស",
+      "dob_day": "11",
+      "dob_month": "12",
+      "dob_year": "1999",
+      "nationality": "ខ្មែរ",
+      "id_number": "004508009",
+      "id_type": "ID_NATIONAL",
+      "id_expiry_date": "",
+      "address": {
+        "province": "បន្ទាយមានជ័យ",
+        "commune": "និមិត្ដ",
+        "district": "ប៉ោយប៉ែត",
+        "village": "រស្មីសេរីភាព"
       },
-      "ay": true
-    },
-    "monthly_interest_fee": "1.50% ក្នុង១ខែ",
-    "tenure": "ក្នុង១ខែ",
-    "amount_processing_fee": "10.00 ដុល្លារ",
-    "amount_upfront_fee": "10.00 ដុល្លារ"
+      "loan_amount": "200.00 ដុល្លារ",
+      "monthly_interest_rate": "1.50% ក្នុង១ខែ",
+      "loan_term": "3 ខែ",
+      "processing_fee": "10.00 ដុល្លារ",
+      "upfront_fee": "10.00 ដុល្លារ",
+      "td_account_no": null,
+      "td_currency": null
+    }
   }
 }
