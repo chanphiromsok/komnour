@@ -55,7 +55,24 @@ app.register(
   },
   { prefix: "/api" },
 );
-app.get("/health", async () => ({ ok: true }));
+// Memory stats in the health response give production a zero-setup way to
+// watch for native bloat: skia's canvases live outside the JS heap, so
+// `rss` — not heapUsed, not a heap snapshot — is the number to alert on.
+// Flat rss across many exports is what healthy looks like; a steady climb
+// under a constant workload is a leak (see packages/report/README.md).
+app.get("/health", async () => {
+	const memory = process.memoryUsage();
+	const toMb = (bytes: number) => Math.round(bytes / 1024 / 1024);
+	return {
+		ok: true,
+		uptimeSec: Math.round(process.uptime()),
+		memoryMb: {
+			rss: toMb(memory.rss),
+			heapUsed: toMb(memory.heapUsed),
+			external: toMb(memory.external),
+		},
+	};
+});
 
 const port = Number(process.env.PORT ?? 3001);
 await app.listen({ port, host: "0.0.0.0" });

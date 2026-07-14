@@ -34,6 +34,7 @@ export class SkiaAdapter implements RendererAdapter {
 	private canvas: Canvas | null = null;
 	private ctx: CanvasRenderingContext2D | null = null;
 	private readonly gpu: boolean;
+	private readonly output: "pdf" | "raster";
 
 	/**
 	 * Renders on the CPU by default (`gpu: false`): PDF output goes through
@@ -41,12 +42,20 @@ export class SkiaAdapter implements RendererAdapter {
 	 * servers skipping GPU probing avoids allocating a Vulkan context that
 	 * would only ever sit idle. Pass `{ gpu: true }` for raster (PNG)
 	 * rendering on a machine that actually has a GPU worth using.
+	 *
+	 * `output` defaults to "pdf": endDocument serializes the PDF and then
+	 * immediately releases the canvas. Pass "raster" when the render's real
+	 * product is `currentPageToPng()` — endDocument then skips PDF
+	 * generation entirely (previously every PNG export paid for a full PDF
+	 * that was thrown away) and keeps the canvas alive for the PNG call,
+	 * which releases it instead.
 	 */
 	constructor(
 		private readonly pixelRatio = 1,
-		options?: { gpu?: boolean },
+		options?: { gpu?: boolean; output?: "pdf" | "raster" },
 	) {
 		this.gpu = options?.gpu ?? false;
+		this.output = options?.output ?? "pdf";
 	}
 
 	private get context(): CanvasRenderingContext2D {
@@ -87,7 +96,18 @@ export class SkiaAdapter implements RendererAdapter {
 
 	async endDocument(): Promise<Uint8Array> {
 		if (!this.canvas) return new Uint8Array();
+		// In raster mode the finished product is currentPageToPng's PNG, so
+		// don't serialize a PDF nobody will read — and keep the canvas alive
+		// for that PNG call, which releases it.
+		if (this.output === "raster") return new Uint8Array();
 		const buffer = await this.canvas.pdf;
+		// Drop the canvas the moment its output exists rather than waiting to
+		// be garbage-collected with this adapter: the canvas is mostly native
+		// (non-V8) memory, which JS heap pressure won't hurry to collect, so
+		// deterministic release keeps a busy server's footprint flat instead
+		// of GC-timing-dependent.
+		this.canvas = null;
+		this.ctx = null;
 		// A view over the native buffer's memory, not a copy — a finished PDF
 		// can be tens of MB, and copying it here (and typically again in the
 		// caller's Buffer.from) tripled peak memory per export.
@@ -98,7 +118,9 @@ export class SkiaAdapter implements RendererAdapter {
 	async currentPageToPng(): Promise<Uint8Array> {
 		if (!this.canvas) return new Uint8Array();
 		const buffer = await this.canvas.png;
-		// Zero-copy view, same reasoning as endDocument above.
+		// Deterministic release + zero-copy view, same as endDocument above.
+		this.canvas = null;
+		this.ctx = null;
 		return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	}
 

@@ -163,6 +163,16 @@ To compare two commits, check each out, rebuild, and rerun the same command — 
 
 For a live server, start it with `node --heapsnapshot-signal=SIGUSR2 ...` and `kill -USR2 <pid>` to dump the JS heap on demand — useful for finding JS-side leaks (retained documents, caches), just not for the native canvas/PDF memory above. `docker stats` / cgroup memory give the container-level rss equivalent.
 
+### Production guardrails against native memory bloat
+
+skia-canvas is a native addon, so treat it with the standard native-addon discipline — trust, but bound the blast radius:
+
+1. **Deterministic release.** `SkiaAdapter` drops its canvas the moment the PDF/PNG bytes exist (it does not wait to be garbage-collected — native memory doesn't create JS heap pressure, so GC won't hurry). Nothing render-scoped survives the request.
+2. **Soak test before you trust a version.** `node --expose-gc scripts/bench-pdf.mjs --runs 200` on your exact platform and skia-canvas version: if `settled after gc` heapUsed/external match the post-warmup values after 200 renders, that build doesn't leak per-render. Re-run this whenever you bump skia-canvas — it had a confirmed per-render leak once (async output paths in v1.0.1, [#145](https://github.com/samizdatco/skia-canvas/issues/145), long fixed), so pin the version and re-soak on upgrades.
+3. **Watch rss in production.** The komnour server's `/health` returns `memoryMb.rss`; alert on a steady climb under constant workload, not on the absolute number (allocators hold freed pages, so rss plateaus above baseline — that's normal).
+4. **Bound the worst case with a restart policy.** This is the industry-standard containment for any native-addon service: `pm2 start server.js --max-memory-restart 600M`, or a Kubernetes/Docker memory limit with restart-on-OOM. Exports are stateless request/response, so a recycle is invisible to users — a leak becomes a periodic restart instead of an outage.
+5. **Keep concurrency capped** (`REPORT_RENDER_CONCURRENCY`, default 2) so peak usage stays predictable enough for the limit in step 4 to be set tightly.
+
 #### `FontLibrary`
 
 Re-exported directly from `skia-canvas` — call `FontLibrary.use(family, paths)` to register font files before rendering any document that needs them. See [skia-canvas's own docs](https://github.com/samizdatco/skia-canvas#fontlibrary) for the full API (weight/style variants, listing installed fonts, etc.).
