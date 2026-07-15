@@ -105,6 +105,13 @@ export interface DesignerState {
 	setSpawnCenterProvider: (provider: () => { x: number; y: number } | null) => void;
 	setActivePageId: (pageId: NodeId) => void;
 	/**
+	 * Moves the page at `fromIndex` to `toIndex` in `document.pages` — the
+	 * array whose order is exactly the order pages render in the preview and
+	 * export in the PDF. Routed through `commit()`, so reordering is undoable
+	 * like any other document edit.
+	 */
+	movePage: (fromIndex: number, toIndex: number) => void;
+	/**
 	 * JSON data used to resolve `{{path}}` bindings (preview + exports). Lives
 	 * on `document.bindingData` — not a separate field — so it's part of the
 	 * document's own JSON tree: downloading/copying/importing the document,
@@ -269,6 +276,16 @@ export const useDesignerStore = create<DesignerState>()(
 			spawnCenterProvider = provider;
 		},
 		setActivePageId: (pageId) => set({ activePageId: pageId, selection: [] }),
+		movePage: (fromIndex, toIndex) => {
+			commit((draft) => {
+				const pages = draft.pages;
+				if (fromIndex === toIndex) return;
+				if (fromIndex < 0 || fromIndex >= pages.length) return;
+				if (toIndex < 0 || toIndex >= pages.length) return;
+				const [moved] = pages.splice(fromIndex, 1);
+				pages.splice(toIndex, 0, moved);
+			});
+		},
 		setBindingData: (data) => {
 			commit((draft) => {
 				draft.bindingData = data;

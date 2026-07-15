@@ -66,12 +66,20 @@ export function Toolbar() {
 	const defaultFontSize = useDesignerStore((s) => s.defaultFontSize);
 	const getSpawnCenter = useDesignerStore((s) => s.getSpawnCenter);
 
+	const movePage = useDesignerStore((s) => s.movePage);
+
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [importOpen, setImportOpen] = useState(false);
 	const [dataOpen, setDataOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Drag-to-reorder state for the page tabs. The dragged index rides in
+	// component state rather than dataTransfer because dataTransfer's payload
+	// is unreadable during dragover (HTML5 DnD only exposes it on drop),
+	// and the drop-target highlight needs it live while hovering.
+	const [dragPageIndex, setDragPageIndex] = useState<number | null>(null);
+	const [dropPageIndex, setDropPageIndex] = useState<number | null>(null);
 
 	async function handleCopyJson() {
 		try {
@@ -140,6 +148,37 @@ export function Toolbar() {
 					<button
 						key={pageId}
 						type="button"
+						title="Drag to reorder pages — this order is the exported PDF's page order"
+						draggable
+						onDragStart={(event) => {
+							setDragPageIndex(index);
+							event.dataTransfer.effectAllowed = "move";
+							// Some browsers (Firefox) won't start a drag without data.
+							event.dataTransfer.setData("text/plain", pageId);
+						}}
+						onDragOver={(event) => {
+							if (dragPageIndex === null || dragPageIndex === index) return;
+							// preventDefault marks this tab as a valid drop target —
+							// without it the browser cancels the drop.
+							event.preventDefault();
+							event.dataTransfer.dropEffect = "move";
+							setDropPageIndex(index);
+						}}
+						onDragLeave={() => {
+							setDropPageIndex((current) => (current === index ? null : current));
+						}}
+						onDrop={(event) => {
+							event.preventDefault();
+							if (dragPageIndex !== null && dragPageIndex !== index) {
+								movePage(dragPageIndex, index);
+							}
+							setDragPageIndex(null);
+							setDropPageIndex(null);
+						}}
+						onDragEnd={() => {
+							setDragPageIndex(null);
+							setDropPageIndex(null);
+						}}
 						onClick={() => {
 							setActivePageId(pageId);
 							setSelection([pageId]);
@@ -147,7 +186,9 @@ export function Toolbar() {
 						className={`h-7 max-w-32 truncate rounded-md px-2 font-medium text-[11px] transition-colors ${pageId === activePageId
 								? "bg-white text-neutral-950 shadow-sm"
 								: "text-neutral-400 hover:bg-white/10 hover:text-neutral-100"
-							}`}
+							} ${dragPageIndex === index ? "opacity-40" : ""} ${
+							dropPageIndex === index ? "ring-2 ring-blue-400" : ""
+						}`}
 					>
 						{reportDocument.nodes[pageId]?.name || `Page ${index + 1}`}
 					</button>
