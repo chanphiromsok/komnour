@@ -7,7 +7,7 @@ import {
 } from "#/features/designer/bindings/paths";
 import { useFontFamilies } from "#/features/designer/fonts/useFontFamilies";
 import { useDesignerStore } from "#/features/designer/store/reportStore";
-import { measureMinTextHeight } from "#/features/designer/store/textMeasurement";
+import { requiredTextHeight } from "#/features/designer/store/textMeasurement";
 import {
 	applyInlineStyleToRuns,
 	inlineStyleAt,
@@ -65,12 +65,11 @@ export function TextEditOverlay({
 	const committedRef = useRef(false);
 	const blurCommitFrameRef = useRef<number | null>(null);
 	const [active, setActive] = useState<Partial<InlineTextStyle>>({});
-	// Tracks the SAME minimum-height calculation the store applies on
-	// commit (ensureTextFits/measureMinTextHeight) — recomputed on every
-	// keystroke so the box you're looking at while typing is already the
-	// size it'll commit as, instead of staying pinned to the pre-edit size
-	// (clipping newly-typed content behind overflow:hidden) and only
-	// jumping to its real size once you click away.
+	// Tracks the SAME height calculation the store applies on commit
+	// (ensureTextFits/requiredTextHeight) — recomputed on every keystroke so
+	// the box you're looking at while typing is already the size it'll
+	// commit as: unchanged while the content fits the box's own height,
+	// grown only when it genuinely overflows.
 	const [liveHeight, setLiveHeight] = useState(frame.height);
 
 	const bindingData = useDesignerStore((s) => s.document.bindingData ?? null);
@@ -133,11 +132,13 @@ export function TextEditOverlay({
 		// This only needs the current value at the moment of measurement, not
 		// to react to it, so a plain non-subscribing read is exactly right.
 		const customFonts = Object.values(useDesignerStore.getState().document.fonts);
-		const minHeight = measureMinTextHeight(
-			{ text: runsToText(runs), runs, style, frame: { width: frame.width } },
-			customFonts,
+		setLiveHeight(
+			requiredTextHeight(
+				{ text: runsToText(runs), runs, style, frame: { width: frame.width } },
+				frame.height,
+				customFonts,
+			),
 		);
-		setLiveHeight(Math.max(frame.height, minHeight));
 	}
 
 	useEffect(() => {

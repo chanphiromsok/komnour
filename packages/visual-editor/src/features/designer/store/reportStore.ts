@@ -25,7 +25,7 @@ import type {
 } from "@komnour/report/src/model/types";
 import { buildApiUrl } from "#/lib/apiBase";
 import {
-	measureMinTextHeight,
+	requiredTextHeight,
 	waitForFontsReady,
 } from "#/features/designer/store/textMeasurement";
 
@@ -198,8 +198,15 @@ export function snapToGrid(value: number): number {
 function ensureTextFits(draft: ReportDocument, id: NodeId): void {
 	const node = draft.nodes[id];
 	if (!node || node.type !== "text") return;
-	const minHeight = measureMinTextHeight(node, Object.values(draft.fonts));
-	if (minHeight > node.frame.height) node.frame.height = minHeight;
+	// requiredTextHeight returns the current height untouched whenever the
+	// content still fits it — so editing text inside a box the user sized
+	// comfortably never inflates that box; only genuine overflow grows it.
+	const required = requiredTextHeight(
+		node,
+		node.frame.height,
+		Object.values(draft.fonts),
+	);
+	if (required > node.frame.height) node.frame.height = required;
 }
 
 /**
@@ -217,11 +224,11 @@ function healTextHeights(document: ReportDocument): ReportDocument {
 	const customFonts = Object.values(document.fonts);
 	for (const node of Object.values(document.nodes)) {
 		if (node.type !== "text") continue;
-		const minHeight = measureMinTextHeight(node, customFonts);
-		if (minHeight > node.frame.height) {
+		const required = requiredTextHeight(node, node.frame.height, customFonts);
+		if (required > node.frame.height) {
 			if (!changed) nodes = { ...nodes };
 			changed = true;
-			nodes[node.id] = { ...node, frame: { ...node.frame, height: minHeight } };
+			nodes[node.id] = { ...node, frame: { ...node.frame, height: required } };
 		}
 	}
 	return changed ? { ...document, nodes } : document;
@@ -738,3 +745,12 @@ export const useDesignerStore = create<DesignerState>()(
 		},
 	),
 );
+
+// Dev-only handle so E2E scripts (Playwright) can drive real store actions —
+// the same code paths the UI uses — without brittle canvas coordinate math.
+// import.meta.env.DEV is statically false in production builds, so the whole
+// branch (and the global) is dead-code-eliminated there.
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+	(window as unknown as Record<string, unknown>).__designerStore =
+		useDesignerStore;
+}
