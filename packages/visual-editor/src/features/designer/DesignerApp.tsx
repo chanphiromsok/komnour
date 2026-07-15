@@ -7,6 +7,8 @@ import { useDesignerStore } from "#/features/designer/store/reportStore";
 
 export function DesignerApp() {
 	const theme = useDesignerStore((s) => s.theme);
+	const showLayersPanel = useDesignerStore((s) => s.showLayersPanel);
+	const showPropertyPanel = useDesignerStore((s) => s.showPropertyPanel);
 
 	// Reflect the store's theme onto <html> so the `dark:` custom variant and
 	// native `color-scheme` (see index.css) take effect app-wide.
@@ -18,9 +20,9 @@ export function DesignerApp() {
 		<div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-100 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
 			<Toolbar />
 			<div className="flex min-h-0 flex-1 overflow-hidden">
-				<LayersPanel />
+				{showLayersPanel && <LayersPanel />}
 				<DesignerCanvas />
-				<PropertyPanel />
+				{showPropertyPanel && <PropertyPanel />}
 			</div>
 		</div>
 	);

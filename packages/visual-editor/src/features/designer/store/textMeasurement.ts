@@ -85,31 +85,27 @@ export function waitForFontsReady(
  * what gives complex scripts like Khmer correct text shaping; a hand-rolled
  * whitespace tokenizer can't be trusted with that). That's a second,
  * independent layout engine that generally agrees with this one but isn't
- * guaranteed to break at exactly the same words, so this measurement is
- * padded rather than trusted as an exact number: 15% scales with paragraph
- * length (covers a handful of lines coming out longer), and one full extra
- * line-height covers a short block landing just one line over.
+ * guaranteed to break at exactly the same words, so when a box has to GROW,
+ * the target is padded rather than trusted as an exact number: 15% scales
+ * with paragraph length (covers a handful of lines coming out longer), and
+ * one full extra line-height covers a short block landing just one line
+ * over. The padding is applied only when growing — it is never a reason to
+ * override a user-chosen height that already fits the content.
  */
 const SAFETY_MARGIN_FACTOR = 1.15;
 
 /**
- * The minimum frame.height a text node's box needs to render its current
- * content without visually overflowing into whatever sits below it — the
- * exact bug class behind a text box authored (or resized) shorter than its
- * wrapped content, which the renderer never clips, so the overflow just
- * silently bleeds into the next node down. Padded above the browser's own
- * measurement (see SAFETY_MARGIN_FACTOR) since the PDF export's text engine
- * can land on a slightly different line count for the same content.
- *
- * Synchronous and best-effort: if a font hasn't finished loading yet, the
- * measurement may undercount for that one call. Fine for a live edit (the
- * next keystroke/commit re-measures once the font's promise has resolved);
- * callers that need a guaranteed-accurate one-shot answer (e.g. healing a
- * just-imported document) should `await waitForFontsReady(...)` first.
+ * Float tolerance when comparing a measured content height against a stored
+ * frame height, so a height that was previously baked from this very
+ * measurement (e.g. 27.089999999999996) never reads as "overflowing" by a
+ * rounding hair and triggers a pointless grow.
  */
-export function measureMinTextHeight(
+const FIT_EPSILON = 0.5;
+
+/** The browser's own measured height for the node's content — unpadded. */
+function measureTextContentHeight(
 	node: MeasurableText,
-	customFonts: FontDefinition[] = [],
+	customFonts: FontDefinition[],
 ): number {
 	// Kicks off loading if it hasn't started yet; intentionally not awaited
 	// here so this stays usable from synchronous Immer producers.
@@ -122,7 +118,34 @@ export function measureMinTextHeight(
 		node.style,
 		node.frame.width,
 	);
-	if (metrics.height === 0) return 0;
+	return metrics.height;
+}
+
+/**
+ * The frame.height a text node's box should end up at, given the height it
+ * currently has: `currentHeight` unchanged whenever the content fits inside
+ * it, or the padded grow target (see SAFETY_MARGIN_FACTOR) when the content
+ * genuinely overflows. Neither renderer clips overflowing text — a too-short
+ * box silently bleeds into whatever sits below it — which is why overflow
+ * forces a grow; but a height the user chose that DOES fit its content is
+ * always respected, so editing text inside a comfortably-sized box never
+ * inflates it.
+ *
+ * Synchronous and best-effort: if a font hasn't finished loading yet, the
+ * measurement may undercount for that one call. Fine for a live edit (the
+ * next keystroke/commit re-measures once the font's promise has resolved);
+ * callers that need a guaranteed-accurate one-shot answer (e.g. healing a
+ * just-imported document) should `await waitForFontsReady(...)` first.
+ */
+export function requiredTextHeight(
+	node: MeasurableText,
+	currentHeight: number,
+	customFonts: FontDefinition[] = [],
+): number {
+	const contentHeight = measureTextContentHeight(node, customFonts);
+	if (contentHeight === 0 || contentHeight <= currentHeight + FIT_EPSILON) {
+		return currentHeight;
+	}
 	const oneLineHeight = node.style.fontSize * node.style.lineHeight;
-	return metrics.height * SAFETY_MARGIN_FACTOR + oneLineHeight;
+	return contentHeight * SAFETY_MARGIN_FACTOR + oneLineHeight;
 }

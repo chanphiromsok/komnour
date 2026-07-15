@@ -20,7 +20,9 @@ export async function renderPageToPng(
 	const pageId = doc.pages[pageIndex];
 	if (!pageId) throw new Error(`Page index out of range: ${pageIndex}`);
 
-	const adapter = new SkiaAdapter(options.scale ?? 1);
+	// "raster" skips endDocument's PDF serialization — without it, every PNG
+	// export also generated (and discarded) a complete PDF of the page.
+	const adapter = new SkiaAdapter(options.scale ?? 1, { output: "raster" });
 	await renderDocument(extractPageDocument(doc, pageId), adapter, data, {
 		resolveAsset: resolveAssetServer,
 	});
