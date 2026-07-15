@@ -14,6 +14,8 @@ import {
 	Minus,
 	Moon,
 	MousePointer2,
+	PanelLeft,
+	PanelRight,
 	Plus,
 	QrCode,
 	Redo2,
@@ -67,6 +69,10 @@ export function Toolbar() {
 	const getSpawnCenter = useDesignerStore((s) => s.getSpawnCenter);
 
 	const movePage = useDesignerStore((s) => s.movePage);
+	const showLayersPanel = useDesignerStore((s) => s.showLayersPanel);
+	const showPropertyPanel = useDesignerStore((s) => s.showPropertyPanel);
+	const toggleLayersPanel = useDesignerStore((s) => s.toggleLayersPanel);
+	const togglePropertyPanel = useDesignerStore((s) => s.togglePropertyPanel);
 
 	const [exportingPdf, setExportingPdf] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
@@ -415,6 +421,20 @@ export function Toolbar() {
 			<div className="flex-1" />
 
 			<div className="flex items-center gap-0.5 rounded-lg bg-black/15 p-0.5">
+				<ToolbarButton
+					active={showLayersPanel}
+					label={showLayersPanel ? "Hide layers panel" : "Show layers panel"}
+					onClick={toggleLayersPanel}
+				>
+					<PanelLeft size={16} />
+				</ToolbarButton>
+				<ToolbarButton
+					active={showPropertyPanel}
+					label={showPropertyPanel ? "Hide design panel" : "Show design panel"}
+					onClick={togglePropertyPanel}
+				>
+					<PanelRight size={16} />
+				</ToolbarButton>
 				<ToolbarButton
 					label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
 					onClick={toggleTheme}

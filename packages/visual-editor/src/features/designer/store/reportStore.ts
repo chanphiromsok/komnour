@@ -86,8 +86,18 @@ export interface DesignerState {
 	 */
 	defaultFontFamily: string;
 	defaultFontSize: number;
+	/**
+	 * Visibility of the two side panels — Layers on the left, Design
+	 * (properties) on the right. Editor-level settings like theme (not part
+	 * of any document), persisted so the workspace reopens the way it was
+	 * left; hiding both gives the canvas the full window width.
+	 */
+	showLayersPanel: boolean;
+	showPropertyPanel: boolean;
 
 	toggleTheme: () => void;
+	toggleLayersPanel: () => void;
+	togglePropertyPanel: () => void;
 	setBoundFieldIndicatorColor: (color: string) => void;
 	setDefaultFontFamily: (family: string) => void;
 	setDefaultFontSize: (size: number) => void;
@@ -269,9 +279,15 @@ export const useDesignerStore = create<DesignerState>()(
 		boundFieldIndicatorColor: DEFAULT_BOUND_FIELD_INDICATOR_COLOR,
 		defaultFontFamily: DEFAULT_FONT_FAMILY,
 		defaultFontSize: DEFAULT_FONT_SIZE,
+		showLayersPanel: true,
+		showPropertyPanel: true,
 		clipboard: null,
 		verify: { status: "idle", pngDataUrl: null },
 
+		toggleLayersPanel: () =>
+			set((state) => ({ showLayersPanel: !state.showLayersPanel })),
+		togglePropertyPanel: () =>
+			set((state) => ({ showPropertyPanel: !state.showPropertyPanel })),
 		toggleTheme: () =>
 			set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
 		setBoundFieldIndicatorColor: (color) =>
@@ -689,6 +705,8 @@ export const useDesignerStore = create<DesignerState>()(
 				boundFieldIndicatorColor: state.boundFieldIndicatorColor,
 				defaultFontFamily: state.defaultFontFamily,
 				defaultFontSize: state.defaultFontSize,
+				showLayersPanel: state.showLayersPanel,
+				showPropertyPanel: state.showPropertyPanel,
 			}),
 			// Validate the persisted document before adopting it; a corrupt or
 			// out-of-date entry falls back to the fresh sample rather than
@@ -704,6 +722,8 @@ export const useDesignerStore = create<DesignerState>()(
 							boundFieldIndicatorColor?: string;
 							defaultFontFamily?: string;
 							defaultFontSize?: number;
+							showLayersPanel?: boolean;
+							showPropertyPanel?: boolean;
 					  }
 					| undefined;
 				const theme: Theme = saved?.theme === "dark" ? "dark" : "light";
@@ -714,6 +734,10 @@ export const useDesignerStore = create<DesignerState>()(
 					typeof saved?.defaultFontSize === "number" && saved.defaultFontSize > 0
 						? saved.defaultFontSize
 						: DEFAULT_FONT_SIZE;
+				// Only an explicit `false` hides a panel — entries saved before
+				// these settings existed keep both visible.
+				const showLayersPanel = saved?.showLayersPanel !== false;
+				const showPropertyPanel = saved?.showPropertyPanel !== false;
 				const parsed = ReportDocumentSchema.safeParse(saved?.document);
 				if (!parsed.success)
 					return {
@@ -722,6 +746,8 @@ export const useDesignerStore = create<DesignerState>()(
 						boundFieldIndicatorColor,
 						defaultFontFamily,
 						defaultFontSize,
+						showLayersPanel,
+						showPropertyPanel,
 					};
 				const document = parsed.data as ReportDocument;
 				// Fold in the old sibling-field shape so upgrading doesn't drop it.
@@ -740,6 +766,8 @@ export const useDesignerStore = create<DesignerState>()(
 					boundFieldIndicatorColor,
 					defaultFontFamily,
 					defaultFontSize,
+					showLayersPanel,
+					showPropertyPanel,
 				};
 			},
 		},
