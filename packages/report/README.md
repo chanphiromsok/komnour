@@ -173,6 +173,31 @@ skia-canvas is a native addon, so treat it with the standard native-addon discip
 4. **Bound the worst case with a restart policy.** This is the industry-standard containment for any native-addon service: `pm2 start server.js --max-memory-restart 600M`, or a Kubernetes/Docker memory limit with restart-on-OOM. Exports are stateless request/response, so a recycle is invisible to users — a leak becomes a periodic restart instead of an outage.
 5. **Keep concurrency capped** (`REPORT_RENDER_CONCURRENCY`, default 2) so peak usage stays predictable enough for the limit in step 4 to be set tightly.
 
+### Capping CPU (when slower renders are acceptable)
+
+Render CPU spikes have two multipliers, each with its own cap:
+
+1. **Threads per render** — skia-canvas renders async output (`canvas.pdf`, `canvas.png`) on a [rayon worker pool sized to your core count](https://github.com/samizdatco/skia-canvas#multithreading) by default, so one export can briefly saturate *every* core. Set the env var **`SKIA_CANVAS_THREADS=1`** to keep a single render on one native thread.
+2. **Renders at once** — `REPORT_RENDER_CONCURRENCY=1` (the komnour server's gate) queues additional exports instead of running them in parallel.
+
+With both set to 1, exports can never use more than ~1 core, whatever the traffic. For a hard ceiling *below* one core — trading latency for a flat CPU graph — add a kernel-enforced quota; the render just takes proportionally longer:
+
+```yaml
+# docker compose — at most half a core, ever
+services:
+  server:
+    environment:
+      - SKIA_CANVAS_THREADS=1
+      - REPORT_RENDER_CONCURRENCY=1
+    cpus: "0.5"
+```
+
+Kubernetes: `resources: { limits: { cpu: "500m" } }`. systemd: `CPUQuota=50%`. Bare host: `cpulimit -l 50 -p <pid>`.
+
+If the real problem is exports starving *other* services on a shared box (rather than the absolute number on a graph), prefer priority over quota — `nice -n 19 node server.js` or systemd `CPUWeight=20` lets renders use idle CPU at full speed but yield instantly under contention.
+
+Measure the latency cost of any of these with the same bench as always: `SKIA_CANVAS_THREADS=1 node --expose-gc scripts/bench-pdf.mjs --pages 30 --runs 10` vs. unset.
+
 #### `FontLibrary`
 
 Re-exported directly from `skia-canvas` — call `FontLibrary.use(family, paths)` to register font files before rendering any document that needs them. See [skia-canvas's own docs](https://github.com/samizdatco/skia-canvas#fontlibrary) for the full API (weight/style variants, listing installed fonts, etc.).
